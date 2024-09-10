@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="98.801819"
+   height="97.540581"
+   viewBox="0 0 26.141314 25.807612"
+   version="1.1"
+   id="svg5"
+   inkscape:export-filename="emotic.png"
+   inkscape:export-xdpi="500"
+   inkscape:export-ydpi="500"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false" />
+  <defs
+     id="defs2">
+    <rect
+       x="11.771587"
+       y="27.95752"
+       width="76.305107"
+       height="42.88221"
+       id="rect790-6" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-0.02720323,-0.41652459)">
+    <rect
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:0.558033"
+       id="rect1004"
+       width="25.583282"
+       height="25.249578"
+       x="0.30621973"
+       y="0.69554108"
+       ry="1.2269781"
+       inkscape:export-filename="rect1004.png"
+       inkscape:export-xdpi="500"
+       inkscape:export-ydpi="500" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,0.81351143,0.61401654)"
+       id="text788"
+       style="font-weight:bold;font-size:37.7953px;line-height:1.25;font-family:'Times New Roman Cyr';-inkscape-font-specification:'Times New Roman Cyr Bold';white-space:pre;shape-inside:url(#rect790-6);display:inline"><tspan
+         x="11.771484"
+         y="61.676765"
+         id="tspan1163"><tspan
+           style="font-weight:normal;font-family:'Hack Nerd Font Mono';-inkscape-font-specification:'Hack Nerd Font Mono'"
+           id="tspan1161">OwO</tspan></tspan></text>
+  </g>
+</svg>
