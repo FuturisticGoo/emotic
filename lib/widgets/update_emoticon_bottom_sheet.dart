@@ -1,5 +1,6 @@
 import 'package:emotic/core/emoticon.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 class UpdateEmoticonBottomSheet extends StatefulWidget {
   const UpdateEmoticonBottomSheet({
@@ -21,8 +22,10 @@ class UpdateEmoticonBottomSheet extends StatefulWidget {
       _UpdateEmoticonBottomSheetState();
 }
 
-class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet> {
+class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
+    with SingleTickerProviderStateMixin {
   late final TextEditingController emoticonTextController;
+  late final AnimationController animationController;
   Map<String, bool> tagsSelection = {};
   @override
   void initState() {
@@ -30,6 +33,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet> {
     emoticonTextController = TextEditingController(
       text: widget.emoticon.text,
     );
+    animationController = AnimationController(vsync: this);
     tagsSelection = Map.fromEntries(
       widget.allTags.map(
         (tag) => MapEntry(
@@ -42,6 +46,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet> {
 
   @override
   void dispose() {
+    animationController.dispose();
     emoticonTextController.dispose();
     super.dispose();
   }
@@ -49,6 +54,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return BottomSheet(
+      animationController: animationController,
       showDragHandle: true,
       enableDrag: false,
       onClosing: () {},
@@ -75,33 +81,40 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet> {
               const SizedBox(
                 height: 10,
               ),
-              Wrap(
-                spacing: 5.0,
-                runSpacing: 5.0,
-                children: [...tagsSelection.keys, "+"]
-                    .map(
-                      (tag) => FilterChip(
-                        label: Text(tag),
-                        selected: tagsSelection[tag] ?? false,
-                        onSelected: (selected) async {
-                          if (tag == "+") {
-                            final newTag = await addNewTag(context);
-                            if (newTag != null) {
-                              setState(() {
-                                tagsSelection[newTag] = true;
-                              });
-                            }
-                          } else {
-                            setState(() {
-                              tagsSelection[tag] = selected;
-                            });
-                          }
-                        },
-                      ),
-                    )
-                    .toList(),
+              Expanded(
+                flex: 3,
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 5.0,
+                    runSpacing: 5.0,
+                    children: [...tagsSelection.keys, "+"]
+                        .map(
+                          (tag) => FilterChip(
+                            label: Text(tag),
+                            selected: tagsSelection[tag] ?? false,
+                            onSelected: (selected) async {
+                              if (tag == "+") {
+                                final newTag = await addNewTag(context);
+                                if (newTag != null) {
+                                  setState(() {
+                                    tagsSelection[newTag] = true;
+                                  });
+                                }
+                              } else {
+                                setState(() {
+                                  tagsSelection[tag] = selected;
+                                });
+                              }
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
               ),
-              const Spacer(),
+              const Spacer(
+                flex: 1,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -153,6 +166,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet> {
           contentPadding: const EdgeInsets.all(8.0),
           children: [
             TextField(
+              autofocus: true,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 label: Text("Tag"),

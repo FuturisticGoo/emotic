@@ -11,7 +11,9 @@ class EmoticonsRepository {
   });
   Future<void> _loadEmoticonsToDatabase() async {
     final emoticons = await assetSource.getEmoticons();
-    await database.saveEmoticons(emoticons: emoticons);
+    for (final emoticon in emoticons) {
+      await database.saveEmoticon(emoticon: emoticon);
+    }
   }
 
   Future<List<Emoticon>> getEmoticons({
@@ -23,7 +25,17 @@ class EmoticonsRepository {
     return database.getEmoticons();
   }
 
-  Future<void> saveEmoticon({required Emoticon emoticon}) async {
-    await database.saveEmoticons(emoticons: [emoticon]);
+  Future<void> saveEmoticon({
+    required Emoticon emoticon,
+    Emoticon? oldEmoticon,
+  }) async {
+    await database.saveEmoticon(
+      emoticon: emoticon,
+      oldEmoticon: oldEmoticon,
+    );
+  }
+
+  Future<void> deleteEmoticon({required Emoticon emoticon}) async {
+    await database.deleteEmoticon(emoticon: emoticon);
   }
 }

@@ -8,7 +8,13 @@ import 'package:sqlite3/sqlite3.dart';
 
 abstract class EmoticonsSource {
   Future<List<Emoticon>> getEmoticons();
-  Future<void> saveEmoticons({required List<Emoticon> emoticons});
+  Future<void> saveEmoticon({
+    required Emoticon emoticon,
+    Emoticon? oldEmoticon,
+  }); // In case of update
+  Future<void> deleteEmoticon({
+    required Emoticon emoticon,
+  });
 }
 
 class EmoticonsSourceAssetBundle implements EmoticonsSource {
@@ -60,51 +66,19 @@ class EmoticonsSourceAssetBundle implements EmoticonsSource {
   }
 
   @override
-  Future<void> saveEmoticons({required List<Emoticon> emoticons}) {
+  Future<void> saveEmoticon({
+    required Emoticon emoticon,
+    Emoticon? oldEmoticon,
+  }) {
     throw AssertionError("saveEmoticon should not be called on Asset source");
   }
-}
-
-/*
-class EmoticonsHiveSource implements EmoticonsSource {
-  final Box box;
-  const EmoticonsHiveSource({
-    required this.box,
-  });
 
   @override
-  Future<List<Emoticon>> getEmoticons() async {
-    var emoticonsMap = box.toMap();
-    emoticonsMap.remove(isFirstTimeKey);
-    List<Emoticon> emoticons = [];
-    for (final value in emoticonsMap.values) {
-      final json = Map<String, dynamic>.from(value);
-      emoticons.add(Emoticon.fromJson(json));
-    }
-    return emoticons;
-  }
-
-  @override
-  Future<void> saveEmoticons({required List<Emoticon> emoticons}) async {
-    var emoticonsMap = box.toMap();
-    emoticonsMap.remove(isFirstTimeKey);
-    var idList = List<int>.from(emoticonsMap.keys);
-    var lastIndex = idList.fold(0, max);
-
-    for (final emoticon in emoticons) {
-      final id = emoticon.id ?? (++lastIndex);
-      await box.put(
-        id,
-        Emoticon(
-          id: id,
-          text: emoticon.text,
-          emoticonTags: emoticon.emoticonTags,
-        ).toJson(),
-      );
-    }
+  Future<void> deleteEmoticon({required Emoticon emoticon}) {
+    throw AssertionError("deleteEmoticon should not be called on Asset source");
   }
 }
-*/
+
 class EmoticonsSqliteSource implements EmoticonsSource {
   final Database db;
   late final PreparedStatement createEmoticonTableStmt;
@@ -199,28 +173,24 @@ WHERE $sqldbEmoticonsId==?
     createEmoticonTagMappingTableStmt.execute();
   }
 
-  Future<void> _saveEmoticon({
+  @override
+  Future<void> saveEmoticon({
     required Emoticon emoticon,
     Emoticon? oldEmoticon, // In case of update
   }) async {
     int emoticonId;
     // If the emoticon already exists in table (ie, to update or merge)
-    final emoticonText = oldEmoticon?.text ?? emoticon.text;
-    final emoticonResultSet = emoticonExistsCheckStmt.select(
-      [emoticonText],
-    );
 
-    if (emoticonResultSet.isNotEmpty) {
-      // Remove that emoticon, because its easier this way
-      final emoticonIdToRemove = emoticonResultSet.single[sqldbEmoticonsId];
-      emoticonRemoveStmt.execute([emoticonIdToRemove]);
-      removeAllTagsStmt.execute([emoticonIdToRemove]);
+    if (oldEmoticon != null) {
+      // This helps when an emoticon is updated with new text, so remove the old
+      // one
+      await deleteEmoticon(emoticon: oldEmoticon);
     }
+
+    await deleteEmoticon(emoticon: emoticon);
+
     emoticonInsertStmt.execute([emoticon.text]);
     emoticonId = db.lastInsertRowId;
-
-    // Before inserting tags and or updating, just remove all the existing
-    // mapping since its just easier to insert again than check for duplicates
 
     for (final tag in emoticon.emoticonTags) {
       int tagId;
@@ -236,10 +206,14 @@ WHERE $sqldbEmoticonsId==?
   }
 
   @override
-  Future<void> saveEmoticons({required List<Emoticon> emoticons}) async {
-    _ensureTables();
-    for (final emoticon in emoticons) {
-      await _saveEmoticon(emoticon: emoticon);
+  Future<void> deleteEmoticon({required Emoticon emoticon}) async {
+    final emoticonResultSet = emoticonExistsCheckStmt.select(
+      [emoticon.text],
+    );
+    if (emoticonResultSet.isNotEmpty) {
+      final emoticonIdToRemove = emoticonResultSet.single[sqldbEmoticonsId];
+      emoticonRemoveStmt.execute([emoticonIdToRemove]);
+      removeAllTagsStmt.execute([emoticonIdToRemove]);
     }
   }
 

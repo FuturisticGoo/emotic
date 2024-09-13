@@ -76,7 +76,7 @@ class EmoticHomePage extends StatelessWidget {
                                   if (newEmoticon != null && context.mounted) {
                                     context
                                         .read<EmoticonsListingCubit>()
-                                        .updateEmoticon(
+                                        .saveEmoticon(
                                           emoticon: newEmoticon,
                                         );
                                   }
@@ -108,7 +108,7 @@ class EmoticHomePage extends StatelessWidget {
                               children: [
                                 TextField(
                                   decoration: InputDecoration(
-                                    hintText: "Search",
+                                    hintText: "Search tag",
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(32),
                                     ),
@@ -124,14 +124,15 @@ class EmoticHomePage extends StatelessWidget {
                                   height: 20,
                                 ),
                                 Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
                                   spacing: 4.0,
                                   runSpacing: 4.0,
                                   children: emoticonsToShow.map(
                                     (emoticon) {
                                       return CopyableEmoticon(
                                         emoticon: emoticon,
-                                        onLongPress: (emoticon) async {
-                                          final modifiedEmoticon =
+                                        onEditPressed: (emoticon) async {
+                                          final editedEmoticon =
                                               await showModalBottomSheet<
                                                   Emoticon?>(
                                             context: context,
@@ -143,14 +144,22 @@ class EmoticHomePage extends StatelessWidget {
                                               );
                                             },
                                           );
-                                          if (modifiedEmoticon != null &&
+                                          if (editedEmoticon != null &&
                                               context.mounted) {
                                             context
                                                 .read<EmoticonsListingCubit>()
-                                                .updateEmoticon(
-                                                  emoticon: modifiedEmoticon,
+                                                .saveEmoticon(
+                                                  emoticon: editedEmoticon,
+                                                  oldEmoticon: emoticon,
                                                 );
                                           }
+                                        },
+                                        onDeletePressed: (emoticon) {
+                                          context
+                                              .read<EmoticonsListingCubit>()
+                                              .deleteEmoticon(
+                                                emoticon: emoticon,
+                                              );
                                         },
                                       );
                                     },

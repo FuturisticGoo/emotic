@@ -34,8 +34,19 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
     );
   }
 
-  void updateEmoticon({required Emoticon emoticon}) async {
-    await emoticonsRepository.saveEmoticon(emoticon: emoticon);
+  void saveEmoticon({
+    required Emoticon emoticon,
+    Emoticon? oldEmoticon,
+  }) async {
+    await emoticonsRepository.saveEmoticon(
+      emoticon: emoticon,
+      oldEmoticon: oldEmoticon,
+    );
+    loadEmoticons(shouldLoadFromAsset: false);
+  }
+
+  void deleteEmoticon({required Emoticon emoticon}) async {
+    await emoticonsRepository.deleteEmoticon(emoticon: emoticon);
     loadEmoticons(shouldLoadFromAsset: false);
   }
 
