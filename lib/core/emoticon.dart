@@ -7,7 +7,8 @@ part 'emoticon.g.dart';
 class Emoticon extends Equatable {
   /// id is the unique identifier for an emoticon. If its null, it means
   /// it hasn't been added to the database yet.
-  /// This id is only valid in the app, its not the one used in the database
+  /// This id here is only used for uniqueness within the context of app logic,
+  /// it may/may not be same as the one used in the database
   final int? id;
   final String text;
   final List<String> emoticonTags;

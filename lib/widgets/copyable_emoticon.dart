@@ -95,9 +95,12 @@ class _CopyableEmoticonState extends State<CopyableEmoticon> {
       context: context,
       builder: (context) {
         return SimpleDialog(
-          title: const Text("Confirm deletion"),
-          contentPadding: const EdgeInsets.all(8.0),
+          title: const Text("You sure?"),
+          contentPadding: const EdgeInsets.all(16.0),
           children: [
+            const SizedBox(
+              height: 20,
+            ),
             Builder(builder: (context) {
               return Row(
                 mainAxisAlignment: MainAxisAlignment.end,

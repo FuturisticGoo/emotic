@@ -1,6 +1,5 @@
 import 'package:emotic/core/emoticon.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 class UpdateEmoticonBottomSheet extends StatefulWidget {
   const UpdateEmoticonBottomSheet({
@@ -68,6 +67,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                 height: 20,
               ),
               TextField(
+                autofocus: true,
                 controller: emoticonTextController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
@@ -163,7 +163,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
         String newTagText = "";
         return SimpleDialog(
           title: const Text("Add new tag"),
-          contentPadding: const EdgeInsets.all(8.0),
+          contentPadding: const EdgeInsets.all(16.0),
           children: [
             TextField(
               autofocus: true,

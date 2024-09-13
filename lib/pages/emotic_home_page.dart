@@ -103,70 +103,83 @@ class EmoticHomePage extends StatelessWidget {
                         ):
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(
-                                    hintText: "Search tag",
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(32),
-                                    ),
-                                    suffixIcon: const Icon(Icons.search),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextField(
+                                decoration: InputDecoration(
+                                  hintText: "Search by tag",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(32),
                                   ),
-                                  onChanged: (value) {
-                                    context
-                                        .read<EmoticonsListingCubit>()
-                                        .searchEmoticons(searchTerm: value);
-                                  },
+                                  suffixIcon: const Icon(Icons.search),
                                 ),
-                                const SizedBox(
-                                  height: 20,
-                                ),
-                                Wrap(
-                                  alignment: WrapAlignment.spaceBetween,
-                                  spacing: 4.0,
-                                  runSpacing: 4.0,
-                                  children: emoticonsToShow.map(
-                                    (emoticon) {
-                                      return CopyableEmoticon(
-                                        emoticon: emoticon,
-                                        onEditPressed: (emoticon) async {
-                                          final editedEmoticon =
-                                              await showModalBottomSheet<
-                                                  Emoticon?>(
-                                            context: context,
-                                            builder: (context) {
-                                              return UpdateEmoticonBottomSheet(
-                                                emoticon: emoticon,
-                                                isEditMode: true,
-                                                allTags: allTags,
-                                              );
-                                            },
-                                          );
-                                          if (editedEmoticon != null &&
-                                              context.mounted) {
-                                            context
-                                                .read<EmoticonsListingCubit>()
-                                                .saveEmoticon(
-                                                  emoticon: editedEmoticon,
-                                                  oldEmoticon: emoticon,
+                                onChanged: (value) {
+                                  context
+                                      .read<EmoticonsListingCubit>()
+                                      .searchEmoticons(searchTerm: value);
+                                },
+                              ),
+                              // TagFilter(
+                              //   allTags: allTags,
+                              // ),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    children: [
+                                      Wrap(
+                                        alignment: WrapAlignment.spaceBetween,
+                                        spacing: 4.0,
+                                        runSpacing: 4.0,
+                                        children: emoticonsToShow.map(
+                                          (emoticon) {
+                                            return CopyableEmoticon(
+                                              emoticon: emoticon,
+                                              onEditPressed: (emoticon) async {
+                                                final editedEmoticon =
+                                                    await showModalBottomSheet<
+                                                        Emoticon?>(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return UpdateEmoticonBottomSheet(
+                                                      emoticon: emoticon,
+                                                      isEditMode: true,
+                                                      allTags: allTags,
+                                                    );
+                                                  },
                                                 );
-                                          }
-                                        },
-                                        onDeletePressed: (emoticon) {
-                                          context
-                                              .read<EmoticonsListingCubit>()
-                                              .deleteEmoticon(
-                                                emoticon: emoticon,
-                                              );
-                                        },
-                                      );
-                                    },
-                                  ).toList(),
+                                                if (editedEmoticon != null &&
+                                                    context.mounted) {
+                                                  context
+                                                      .read<
+                                                          EmoticonsListingCubit>()
+                                                      .saveEmoticon(
+                                                        emoticon:
+                                                            editedEmoticon,
+                                                        oldEmoticon: emoticon,
+                                                      );
+                                                }
+                                              },
+                                              onDeletePressed: (emoticon) {
+                                                context
+                                                    .read<
+                                                        EmoticonsListingCubit>()
+                                                    .deleteEmoticon(
+                                                      emoticon: emoticon,
+                                                    );
+                                              },
+                                            );
+                                          },
+                                        ).toList(),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         );
                     }
@@ -179,3 +192,53 @@ class EmoticHomePage extends StatelessWidget {
     );
   }
 }
+
+/*
+// Might use it later
+class TagFilter extends StatefulWidget {
+  final List<String> allTags;
+  const TagFilter({
+    super.key,
+    required this.allTags,
+  });
+
+  @override
+  State<TagFilter> createState() => _TagFilterState();
+}
+
+class _TagFilterState extends State<TagFilter> {
+  Map<String, bool> tagSelection = {};
+  @override
+  void initState() {
+    super.initState();
+    tagSelection = Map.fromEntries(
+      widget.allTags.map(
+        (tag) => MapEntry(tag, false),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Wrap(
+        spacing: 5,
+        children: tagSelection.keys
+            .map(
+              (tag) => FilterChip(
+                label: Text(tag),
+                selected: tagSelection[tag] ?? false,
+                onSelected: (selected) async {
+                  setState(() {
+                    tagSelection[tag] = selected;
+                  });
+                },
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+*/

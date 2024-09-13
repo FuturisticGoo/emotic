@@ -179,7 +179,6 @@ WHERE $sqldbEmoticonsId==?
     Emoticon? oldEmoticon, // In case of update
   }) async {
     int emoticonId;
-    // If the emoticon already exists in table (ie, to update or merge)
 
     if (oldEmoticon != null) {
       // This helps when an emoticon is updated with new text, so remove the old
@@ -187,6 +186,9 @@ WHERE $sqldbEmoticonsId==?
       await deleteEmoticon(emoticon: oldEmoticon);
     }
 
+    // TODO: this method is not perfect, I need to find to insert/update
+    // emoticons without deleting it first, since deleting it gets rid of all
+    // its tag relation which the user may have added
     await deleteEmoticon(emoticon: emoticon);
 
     emoticonInsertStmt.execute([emoticon.text]);
