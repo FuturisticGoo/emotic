@@ -67,7 +67,6 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                 height: 20,
               ),
               TextField(
-                autofocus: true,
                 controller: emoticonTextController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),

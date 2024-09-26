@@ -107,6 +107,7 @@ class EmoticHomePage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               TextField(
+                                autofocus: false,
                                 decoration: InputDecoration(
                                   hintText: "Search by tag",
                                   border: OutlineInputBorder(
