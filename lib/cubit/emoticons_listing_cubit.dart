@@ -71,7 +71,7 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
 
       final fuzzy = Fuzzy(allTags);
       final searchResult = fuzzy
-          .search(searchTermTrimmed, 3)
+          .search(searchTermTrimmed, 1)
           .map(
             (e) => e.item,
           )
