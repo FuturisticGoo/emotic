@@ -1,0 +1,11 @@
+<b>A simple app which lists a bunch of emoticons (not emojis!).</b>
+
+Features:
+<ul>
+<li>Browse through a list of emoticons which you can copy to clipboard</li>
+without using internet or any websites.
+<li>Add or modify your own emoticons.</li>
+<li>Search using related tags.</li>
+</ul>
+
+App is written in Flutter, using Material 3 and supports dark/light mode.
