@@ -1,0 +1,7 @@
+[submodule "flutter"]
+	path = submodules/flutter
+	url = https://github.com/flutter/flutter.git
+	branch = stable
+[submodule "submodules/reproducible-apk-tools"]
+	path = submodules/reproducible-apk-tools
+	url = https://github.com/obfusk/reproducible-apk-tools.git
