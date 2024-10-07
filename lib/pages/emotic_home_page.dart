@@ -67,6 +67,7 @@ class EmoticHomePage extends StatelessWidget {
                                   final newEmoticon =
                                       await showModalBottomSheet<Emoticon?>(
                                     context: context,
+                                    isScrollControlled: true,
                                     builder: (context) {
                                       return UpdateEmoticonBottomSheet(
                                         allTags: allTags,
@@ -144,6 +145,7 @@ class EmoticHomePage extends StatelessWidget {
                                                     await showModalBottomSheet<
                                                         Emoticon?>(
                                                   context: context,
+                                                  isScrollControlled: true,
                                                   builder: (context) {
                                                     return UpdateEmoticonBottomSheet(
                                                       emoticon: emoticon,

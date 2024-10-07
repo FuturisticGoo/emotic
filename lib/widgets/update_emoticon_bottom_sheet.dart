@@ -52,10 +52,15 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenSize < 640;
     return BottomSheet(
       animationController: animationController,
       showDragHandle: true,
       enableDrag: false,
+      constraints: BoxConstraints.expand(
+        height: isSmallScreen ? screenSize : screenSize * 0.7,
+      ),
       onClosing: () {},
       builder: (context) {
         return Padding(
@@ -63,8 +68,8 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
           child: Column(
             children: [
               Text("${widget.isEditMode ? 'Modify' : 'Add'} emoticon"),
-              const SizedBox(
-                height: 20,
+              SizedBox(
+                height: isSmallScreen ? 10 : 20,
               ),
               TextField(
                 controller: emoticonTextController,
@@ -73,15 +78,15 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                   label: Text("Emoticon"),
                 ),
               ),
-              const SizedBox(
-                height: 30,
+              SizedBox(
+                height: isSmallScreen ? 15 : 30,
               ),
               Text("${widget.isEditMode ? 'Modify' : 'Add'} tags"),
               const SizedBox(
                 height: 10,
               ),
               Expanded(
-                flex: 3,
+                flex: isSmallScreen ? 6 : 4,
                 child: SingleChildScrollView(
                   child: Wrap(
                     spacing: 5.0,
