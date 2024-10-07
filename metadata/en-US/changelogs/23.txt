@@ -1,0 +1,3 @@
+* Fix tags in modify emoticons not showing correctly in tiny screens
+* Add 21 new emoticons
+* Cleanup metadata
