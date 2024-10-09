@@ -5,6 +5,8 @@ import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/emoticons_listing_cubit.dart';
 import 'package:emotic/cubit/emoticons_listing_state.dart';
 import 'package:emotic/widgets/copyable_emoticon.dart';
+import 'package:emotic/widgets/left_drawer.dart';
+import 'package:emotic/widgets/search_bar.dart';
 import 'package:emotic/widgets/update_emoticon_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -90,6 +92,7 @@ class EmoticHomePage extends StatelessWidget {
                     ),
                   ],
                 ),
+                drawer: const LeftDrawer(),
                 body: BlocBuilder<EmoticonsListingCubit, EmoticonsListingState>(
                   builder: (context, state) {
                     switch (state) {
@@ -107,21 +110,7 @@ class EmoticHomePage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              TextField(
-                                autofocus: false,
-                                decoration: InputDecoration(
-                                  hintText: "Search by tag",
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(32),
-                                  ),
-                                  suffixIcon: const Icon(Icons.search),
-                                ),
-                                onChanged: (value) {
-                                  context
-                                      .read<EmoticonsListingCubit>()
-                                      .searchEmoticons(searchTerm: value);
-                                },
-                              ),
+                              const EmoticonsSearchBar(),
                               // TagFilter(
                               //   allTags: allTags,
                               // ),
@@ -195,53 +184,3 @@ class EmoticHomePage extends StatelessWidget {
     );
   }
 }
-
-/*
-// Might use it later
-class TagFilter extends StatefulWidget {
-  final List<String> allTags;
-  const TagFilter({
-    super.key,
-    required this.allTags,
-  });
-
-  @override
-  State<TagFilter> createState() => _TagFilterState();
-}
-
-class _TagFilterState extends State<TagFilter> {
-  Map<String, bool> tagSelection = {};
-  @override
-  void initState() {
-    super.initState();
-    tagSelection = Map.fromEntries(
-      widget.allTags.map(
-        (tag) => MapEntry(tag, false),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Wrap(
-        spacing: 5,
-        children: tagSelection.keys
-            .map(
-              (tag) => FilterChip(
-                label: Text(tag),
-                selected: tagSelection[tag] ?? false,
-                onSelected: (selected) async {
-                  setState(() {
-                    tagSelection[tag] = selected;
-                  });
-                },
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-}
-*/
