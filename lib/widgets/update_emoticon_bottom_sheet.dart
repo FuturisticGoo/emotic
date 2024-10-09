@@ -52,14 +52,14 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size.height;
-    final isSmallScreen = screenSize < 640;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final isSmallScreen = screenHeight < 640;
     return BottomSheet(
       animationController: animationController,
       showDragHandle: true,
       enableDrag: false,
       constraints: BoxConstraints.expand(
-        height: isSmallScreen ? screenSize : screenSize * 0.7,
+        height: isSmallScreen ? screenHeight : screenHeight * 0.7,
       ),
       onClosing: () {},
       builder: (context) {
