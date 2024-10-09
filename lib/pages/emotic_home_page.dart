@@ -110,7 +110,9 @@ class EmoticHomePage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const EmoticonsSearchBar(),
+                              EmoticonsSearchBar(
+                                allTags: allTags,
+                              ),
                               // TagFilter(
                               //   allTags: allTags,
                               // ),

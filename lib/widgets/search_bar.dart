@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class EmoticonsSearchBar extends StatefulWidget {
+  final List<String> allTags;
   const EmoticonsSearchBar({
     super.key,
+    required this.allTags,
   });
 
   @override
@@ -13,6 +15,26 @@ class EmoticonsSearchBar extends StatefulWidget {
 
 class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
   bool showTagsSuggestion = false;
+  late TextEditingController controller;
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController();
+    controller.addListener(
+      () {
+        context.read<EmoticonsListingCubit>().searchEmoticons(
+              searchTerm: controller.text,
+            );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return TapRegion(
@@ -24,23 +46,26 @@ class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
       child: Column(
         children: [
           TextField(
+            controller: controller,
             autofocus: false,
             decoration: InputDecoration(
               hintText: "Search by tag",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(32),
               ),
-              suffixIcon: const Icon(Icons.search),
+              suffixIcon: controller.text.trim().isEmpty
+                  ? const Icon(Icons.search)
+                  : IconButton(
+                      onPressed: () {
+                        controller.text = "";
+                      },
+                      icon: const Icon(Icons.close),
+                    ),
             ),
             onTap: () {
               setState(() {
                 showTagsSuggestion = true;
               });
-            },
-            onChanged: (value) {
-              context
-                  .read<EmoticonsListingCubit>()
-                  .searchEmoticons(searchTerm: value);
             },
           ),
           AnimatedSize(
@@ -53,17 +78,22 @@ class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: List.generate(
-                        10,
-                        (index) {
-                          return Card.outlined(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text("Tag #$index"),
+                      children: widget.allTags.map(
+                        (tag) {
+                          return InkWell(
+                            child: Card.outlined(
+                              clipBehavior: Clip.hardEdge,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(tag),
+                              ),
                             ),
+                            onTap: () {
+                              controller.text = tag;
+                            },
                           );
                         },
-                      ),
+                      ).toList(),
                     ),
                   ),
                   const SizedBox(height: 5),
