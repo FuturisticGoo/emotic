@@ -2,6 +2,12 @@
 A Flutter app for showing a list of emoticons which can be copied to clipboard for any use.  
 (Just an alternative for those websites which do the same, I just wanted something which is available offline)
 
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+     alt="Get it on F-Droid"
+     height="80">](https://f-droid.org/packages/futuristicgoo.emotic/)
+
+Or download the latest APK from the [Releases Section](https://github.com/FuturisticGoo/emotic/releases/latest).
+
 ## Features
 * A whole bunch of emoticons for your perusal (I'll try to add more)
 * Add or modify emoticons
