@@ -22,6 +22,7 @@ cd emotic
 flutter pub get
 flutter build apk --release
 ```
+Use `--flavor=<flavor>` along with the build command, where flavor is either `fdroid` (unsigned) or `independent` (signed, you have to use your own key properties file)   
 This app should also work on all platforms Flutter supports, so go wild with emoticons on your obscure IRC channel, running on an obscure Linux distro ( ಠ‿<)  
 
 ## Contributing

@@ -2,8 +2,7 @@
 
 Features:
 <ul>
-<li>Browse through a list of emoticons which you can copy to clipboard
-without using internet or any websites.</li>
+<li>Browse through a list of emoticons which you can copy to clipboard without using internet or any websites.</li>
 <li>Add or modify your own emoticons.</li>
 <li>Search using related tags.</li>
 </ul>
