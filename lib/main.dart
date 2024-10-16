@@ -3,6 +3,7 @@ import 'package:emotic/core/settings.dart';
 import 'package:emotic/pages/emotic_home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'core/init_setup.dart' as init;
 
 Future<void> main() async {
@@ -20,19 +21,24 @@ class EmoticApp extends StatelessWidget {
       create: (context) => SettingsCubit(
         settingsSource: init.sl(),
       ),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Emotic',
-        theme: ThemeData(
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          useMaterial3: true,
-        ),
-        themeMode: ThemeMode.system,
-        home: const EmoticHomePage(),
-      ),
+      child: DynamicColorBuilder(
+          builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Emotic',
+          theme: ThemeData(
+            colorScheme: lightDynamic,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: darkDynamic,
+            brightness: Brightness.dark,
+            useMaterial3: true,
+          ),
+          themeMode: ThemeMode.system,
+          home: const EmoticHomePage(),
+        );
+      }),
     );
   }
 }
