@@ -62,9 +62,21 @@ Future<void> writeEmoticons({
 }) async {
   final existing = await readEmoticons(csvFilePath: csvFilePath);
   int currentLastId = int.parse(existing.last[0]);
+  final existingEmoticonSet = existing.sublist(1).map((row) => row[1]).toSet();
+  final newEmoticonSet = newEmoticons.toSet();
+
+  final duplicates = newEmoticonSet.intersection(existingEmoticonSet);
+  if (duplicates.isNotEmpty) {
+    print("The following emoticons alredy exists  /ᐠ｡ꞈ｡ᐟ\");
+    for (final emoticon in duplicates) {
+        print("- $emoticon");
+    }
+    print("Skipping these emoticons...");
+  }
+
   // I think its easier to just write it directly instead of using csv write
   final csvStringToAdd = StringBuffer();
-  for (final emoticon in newEmoticons) {
+  for (final emoticon in newEmoticonSet.difference(existingEmoticonSet)) {
     csvStringToAdd.write("${++currentLastId},\u001F$emoticon\u001F\n");
   }
   await File(csvFilePath)
@@ -306,7 +318,7 @@ Global commands (these commands will work everywhere)
 help: show this menu
 lse: show all emoticons with their id's
 lst: show all tags and the emoticon id's which are under it
-b: go back a menu 
+b: go back a menu
 quit: exit this program
 
 Menu
