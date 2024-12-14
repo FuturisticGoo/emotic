@@ -63,27 +63,31 @@ class TagEditorCubit extends Cubit<TagEditorState> {
     await loadEmoticons(shouldLoadFromAsset: false);
   }
 
-  void saveTag({
+  void addNewTag({required String tag}) async {
+    await emoticonsRepository.saveTag(tag: tag);
+    await loadEmoticons(
+      shouldLoadFromAsset: false,
+      selectedEmoticon: (state is TagEditorLoaded)
+          ? (state as TagEditorLoaded).selectedEmoticon
+          : null,
+    );
+  }
+
+  void updateTagForEmoticon({
+    required Emoticon emoticon,
     required String tag,
     required TagChange tagChange,
   }) async {
-    final currentState = state;
-    if (currentState case TagEditorLoaded(:final selectedEmoticon)) {
-      if (selectedEmoticon != null) {
-        await saveEmoticon(
-          emoticon: Emoticon(
-            id: selectedEmoticon.id,
-            text: selectedEmoticon.text,
-            emoticonTags: (tagChange == TagChange.add)
-                ? [...selectedEmoticon.emoticonTags, tag]
-                : selectedEmoticon.emoticonTags
-                    .where((element) => element != tag)
-                    .toList(),
-          ),
-          oldEmoticon: selectedEmoticon,
-        );
-      }
-    }
+    await saveEmoticon(
+      emoticon: Emoticon(
+        id: emoticon.id,
+        text: emoticon.text,
+        emoticonTags: (tagChange == TagChange.add)
+            ? [...emoticon.emoticonTags, tag]
+            : emoticon.emoticonTags.where((element) => element != tag).toList(),
+      ),
+      oldEmoticon: emoticon,
+    );
   }
 }
 

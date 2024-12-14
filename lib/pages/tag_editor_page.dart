@@ -3,6 +3,7 @@ import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/tag_editor_cubit.dart';
 import 'package:emotic/cubit/tag_editor_state.dart';
+import 'package:emotic/widgets/add_tag_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -85,6 +86,23 @@ class _TagEditorPageState extends State<TagEditorPage> {
                           leading: DrawerButton(
                             onPressed: context.openRootScaffoldDrawer,
                           ),
+                          actions: [
+                            PopupMenuButton(
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  child: const Text("Add tag"),
+                                  onTap: () async {
+                                    final tag = await addNewTag(context);
+                                    if (tag != null && context.mounted) {
+                                      context
+                                          .read<TagEditorCubit>()
+                                          .addNewTag(tag: tag);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                         body: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -134,15 +152,19 @@ class _TagEditorPageState extends State<TagEditorPage> {
                                                 .onPrimary,
                                             title: Text(e),
                                             onTap: () {
-                                              context
-                                                  .read<TagEditorCubit>()
-                                                  .saveTag(
-                                                    tag: e,
-                                                    tagChange:
-                                                        (tagging[e] == true)
-                                                            ? TagChange.remove
-                                                            : TagChange.add,
-                                                  );
+                                              if (selectedEmoticon != null) {
+                                                context
+                                                    .read<TagEditorCubit>()
+                                                    .updateTagForEmoticon(
+                                                      emoticon:
+                                                          selectedEmoticon,
+                                                      tag: e,
+                                                      tagChange:
+                                                          (tagging[e] == true)
+                                                              ? TagChange.remove
+                                                              : TagChange.add,
+                                                    );
+                                              }
                                             },
                                           ),
                                         ),
