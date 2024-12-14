@@ -14,7 +14,7 @@ class SettingsPage extends StatelessWidget {
         ),
       ),
       body: const Center(
-        child: Text("Settings page"),
+        child: Text("🛈 Under construction..."),
       ),
     );
   }

@@ -24,15 +24,18 @@ class EmoticApp extends StatelessWidget {
       ),
       child: BlocListener<SettingsCubit, SettingsState>(
         listener: (context, state) {
-          if (state is SettingsLoaded) {
-            if (state.settings.isFirstTime) {
-              context.read<SettingsCubit>().saveSettings(
-                    const Settings(
-                      isFirstTime: false,
-                      lastUsedVersion: version,
-                    ),
-                  );
-            }
+          if (state
+              case SettingsLoaded(
+                settings: Settings(
+                  isFirstTime: true,
+                ),
+              )) {
+            context.read<SettingsCubit>().saveSettings(
+                  const Settings(
+                    isFirstTime: false,
+                    lastUsedVersion: version,
+                  ),
+                );
           }
         },
         child: DynamicColorBuilder(

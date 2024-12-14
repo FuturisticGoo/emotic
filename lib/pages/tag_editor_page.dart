@@ -6,14 +6,14 @@ import 'package:emotic/cubit/tag_editor_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class TagLinkEditorPage extends StatefulWidget {
-  const TagLinkEditorPage({super.key});
+class TagEditorPage extends StatefulWidget {
+  const TagEditorPage({super.key});
 
   @override
-  State<TagLinkEditorPage> createState() => _TagLinkEditorPageState();
+  State<TagEditorPage> createState() => _TagEditorPageState();
 }
 
-class _TagLinkEditorPageState extends State<TagLinkEditorPage> {
+class _TagEditorPageState extends State<TagEditorPage> {
   Map<String, bool> tagging = {};
   @override
   Widget build(BuildContext context) {
@@ -96,22 +96,25 @@ class _TagLinkEditorPageState extends State<TagLinkEditorPage> {
                                   // crossAxisAlignment: CrossAxisAlignment.start,
                                   children: allEmoticons
                                       .map(
-                                        (e) => ListTile(
-                                          selected: e == selectedEmoticon,
-                                          selectedTileColor: Theme.of(context)
-                                              .colorScheme
-                                              .onSecondary,
-                                          title: Text(e.text),
-                                          onTap: () {
-                                            context
-                                                .read<TagEditorCubit>()
-                                                .selectEmoticon(
-                                                  emoticon:
-                                                      (e == selectedEmoticon)
-                                                          ? null
-                                                          : e,
-                                                );
-                                          },
+                                        (e) => Card.outlined(
+                                          clipBehavior: Clip.hardEdge,
+                                          child: ListTile(
+                                            selected: e == selectedEmoticon,
+                                            selectedTileColor: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                            title: Text(e.text),
+                                            onTap: () {
+                                              context
+                                                  .read<TagEditorCubit>()
+                                                  .selectEmoticon(
+                                                    emoticon:
+                                                        (e == selectedEmoticon)
+                                                            ? null
+                                                            : e,
+                                                  );
+                                            },
+                                          ),
                                         ),
                                       )
                                       .toList(),
@@ -122,23 +125,26 @@ class _TagLinkEditorPageState extends State<TagLinkEditorPage> {
                                   // crossAxisAlignment: CrossAxisAlignment.start,
                                   children: tagging.keys
                                       .map(
-                                        (e) => ListTile(
-                                          selected: tagging[e] ?? false,
-                                          selectedTileColor: Theme.of(context)
-                                              .colorScheme
-                                              .onSecondary,
-                                          title: Text(e),
-                                          onTap: () {
-                                            context
-                                                .read<TagEditorCubit>()
-                                                .saveTag(
-                                                  tag: e,
-                                                  tagChange:
-                                                      (tagging[e] == true)
-                                                          ? TagChange.remove
-                                                          : TagChange.add,
-                                                );
-                                          },
+                                        (e) => Card.outlined(
+                                          clipBehavior: Clip.hardEdge,
+                                          child: ListTile(
+                                            selected: tagging[e] ?? false,
+                                            selectedTileColor: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
+                                            title: Text(e),
+                                            onTap: () {
+                                              context
+                                                  .read<TagEditorCubit>()
+                                                  .saveTag(
+                                                    tag: e,
+                                                    tagChange:
+                                                        (tagging[e] == true)
+                                                            ? TagChange.remove
+                                                            : TagChange.add,
+                                                  );
+                                            },
+                                          ),
                                         ),
                                       )
                                       .toList(),

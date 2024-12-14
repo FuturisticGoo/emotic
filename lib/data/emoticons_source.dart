@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'dart:developer';
-
+import 'dart:io' as io;
+import 'package:path/path.dart' as p;
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
-import 'package:csv/csv.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 abstract class EmoticonsSource {
@@ -28,62 +28,84 @@ abstract class EmoticonsStore extends EmoticonsSource {
   });
 }
 
-class EmoticonsSourceAssetBundle implements EmoticonsSource {
+Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
+  List<Emoticon> emoticons = [];
+  final emoticonSet = db.select("""
+  SELECT $sqldbEmoticonsId, $sqldbEmoticonsText FROM $sqldbEmoticonsTableName
+""");
+  for (final row in emoticonSet) {
+    final emoticonId = row[sqldbEmoticonsId];
+    final tagSet = db.select(
+      """
+  SELECT tags.$sqldbTagName 
+    FROM $sqldbTagsTableName AS tags,
+         $sqldbEmoticonsToTagsJoinTableName AS tagjoin
+    WHERE tagjoin.$sqldbEmoticonsId==?
+      AND tagjoin.$sqldbTagsId==tags.$sqldbTagsId
+""",
+      [
+        emoticonId,
+      ],
+    );
+    final emoticon = Emoticon(
+      id: emoticonId,
+      text: row[sqldbEmoticonsText],
+      emoticonTags: tagSet.map(
+        (Row row) {
+          return row[sqldbTagName].toString();
+        },
+      ).toList(),
+    );
+    emoticons.add(emoticon);
+  }
+  return emoticons;
+}
+
+Future<List<String>> _getTagsFromDb({required Database db}) async {
+  final tagResultSet =
+      db.select("""SELECT $sqldbTagName FROM $sqldbTagsTableName""");
+  List<String> tags = tagResultSet
+      .map(
+        (element) => element[sqldbTagName].toString(),
+      )
+      .toList();
+  return tags;
+}
+
+class EmoticonsSourceAssetDB implements EmoticonsSource {
   final AssetBundle assetBundle;
-  EmoticonsSourceAssetBundle({required this.assetBundle});
+  EmoticonsSourceAssetDB({
+    required this.assetBundle,
+  });
+  Database? sourceDb;
+  io.File? dbFile;
+
+  Future<void> copyDbFromAsset() async {
+    if (sourceDb == null) {
+      final sourceDbFile = await assetBundle.load(emoticonsSourceDbAsset);
+      final appDataPath = await getApplicationDocumentsDirectory();
+      dbFile = io.File(p.join(appDataPath.path, emoticonsSourceDbName));
+      await dbFile!
+          .writeAsBytes(sourceDbFile.buffer.asUint8List(), flush: true);
+      sourceDb = sqlite3.open(dbFile!.path);
+    }
+  }
+
+  Future<void> dispose() async {
+    sourceDb?.dispose();
+    await dbFile?.delete();
+  }
+
   @override
   Future<List<Emoticon>> getEmoticons() async {
-    List<Emoticon> emoticons = [];
-
-    final emoticonsCsvString =
-        await assetBundle.loadString(emoticonsCsvAssetKey);
-    final emoticonDataFrame = CsvCodec(
-      shouldParseNumbers: false,
-      eol: "\n",
-      textDelimiter: emoticonsCsvStringDelimiter,
-    ).decoder.convert(emoticonsCsvString).sublist(1);
-
-    final emoticonTagsJsonString =
-        await assetBundle.loadString(emoticonsTagJsonAssetKey);
-    final emoticonTagMapUncasted =
-        Map<String, dynamic>.from(jsonDecode(emoticonTagsJsonString));
-    var emoticonTagMap = <String, List<String>>{};
-    for (final entry in emoticonTagMapUncasted.entries) {
-      emoticonTagMap[entry.key] = (entry.value as List)
-          .map(
-            (e) => e.toString(),
-          )
-          .toList();
-    }
-    for (final emoticonRow in emoticonDataFrame) {
-      emoticons.add(
-        Emoticon(
-          id: int.parse(emoticonRow[0]),
-          text: emoticonRow[1],
-          emoticonTags: emoticonTagMap.entries
-              .where(
-                // Getting all the tags of this emoticon
-                (tagEntry) => tagEntry.value.contains(emoticonRow[0]),
-              )
-              .map(
-                // Getting that tag name
-                (matchedTag) => matchedTag.key,
-              )
-              .toList(),
-        ),
-      );
-    }
-    return emoticons;
+    await copyDbFromAsset();
+    return _getEmoticonsFromDb(db: sourceDb!);
   }
 
   @override
   Future<List<String>> getTags() async {
-    final emoticons = await getEmoticons();
-    Set<String> tags = {};
-    for (final emoticon in emoticons) {
-      tags.addAll(emoticon.emoticonTags);
-    }
-    return tags.toList();
+    await copyDbFromAsset();
+    return _getTagsFromDb(db: sourceDb!);
   }
 }
 
@@ -213,18 +235,26 @@ WHERE $sqldbTagsId==?
   }) async {
     int emoticonId;
     if (oldEmoticon == null) {
-      emoticonInsertStmt.execute([emoticon.text]);
-      emoticonId = db.lastInsertRowId;
+      // // ! TODO: This will always write when app updates, which will introduce
+      // // duplicates. Fix that
+      final emoticonResultSet = emoticonExistsCheckStmt.select(
+        [emoticon.text],
+      );
+      if (emoticonResultSet.isEmpty) {
+        // Only inserting if its not there
+        emoticonInsertStmt.execute([emoticon.text]);
+        emoticonId = db.lastInsertRowId;
+      } else {
+        emoticonId = emoticonResultSet.first[sqldbEmoticonsId];
+      }
     } else {
       final emoticonResultSet = emoticonExistsCheckStmt.select(
         [emoticon.text],
       );
-      // if (emoticonResultSet.isNotEmpty) {
       if (emoticonResultSet.length != 1) {
         log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in saveEmoticon");
       }
       emoticonId = emoticonResultSet.first[sqldbEmoticonsId];
-      // }
       emoticonUpdateStmt.execute([emoticon.text, emoticonId]);
     }
     removeEmoticonFromJoinStmt.execute([emoticonId]);
@@ -257,14 +287,7 @@ WHERE $sqldbTagsId==?
 
   @override
   Future<List<String>> getTags() async {
-    final tagResultSet =
-        db.select("""SELECT $sqldbTagName FROM $sqldbTagsTableName""");
-    List<String> tags = tagResultSet
-        .map(
-          (element) => element[sqldbTagName].toString(),
-        )
-        .toList();
-    return tags;
+    return _getTagsFromDb(db: db);
   }
 
   @override
@@ -288,35 +311,6 @@ WHERE $sqldbTagsId==?
   @override
   Future<List<Emoticon>> getEmoticons() async {
     _ensureTables();
-    List<Emoticon> emoticons = [];
-    final emoticonSet = db.select("""
-  SELECT $sqldbEmoticonsId, $sqldbEmoticonsText FROM $sqldbEmoticonsTableName
-""");
-    for (final row in emoticonSet) {
-      final emoticonId = row[sqldbEmoticonsId];
-      final tagSet = db.select(
-        """
-  SELECT tags.$sqldbTagName 
-    FROM $sqldbTagsTableName AS tags,
-         $sqldbEmoticonsToTagsJoinTableName AS tagjoin
-    WHERE tagjoin.$sqldbEmoticonsId==?
-      AND tagjoin.$sqldbTagsId==tags.$sqldbTagsId
-""",
-        [
-          emoticonId,
-        ],
-      );
-      final emoticon = Emoticon(
-        id: emoticonId,
-        text: row[sqldbEmoticonsText],
-        emoticonTags: tagSet.map(
-          (Row row) {
-            return row[sqldbTagName].toString();
-          },
-        ).toList(),
-      );
-      emoticons.add(emoticon);
-    }
-    return emoticons;
+    return _getEmoticonsFromDb(db: db);
   }
 }

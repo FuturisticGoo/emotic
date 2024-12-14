@@ -1,14 +1,14 @@
 import 'package:emotic/pages/about_page.dart';
 import 'package:emotic/pages/emoticons_page.dart';
 import 'package:emotic/pages/settings_page.dart';
-import 'package:emotic/pages/tag_link_editor_page.dart';
+import 'package:emotic/pages/tag_editor_page.dart';
 import 'package:emotic/widgets/left_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class Routes {
   static const emoticonsPage = "/emoticons";
-  static const tagLinkEditorPage = "/tagLinkEditor";
+  static const tagEditorPage = "/tagEditor";
   static const settingsPage = "/settings";
   static const aboutPage = "/about";
 
@@ -40,9 +40,9 @@ class Routes {
                 },
               ),
               GoRoute(
-                path: tagLinkEditorPage,
+                path: tagEditorPage,
                 builder: (context, state) {
-                  return const TagLinkEditorPage();
+                  return const TagEditorPage();
                 },
               ),
               GoRoute(

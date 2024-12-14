@@ -25,10 +25,15 @@ Future<void> initSetup() async {
   const dbSource = "dbSource";
 
   sl.registerSingleton<EmoticonsSource>(
-    EmoticonsSourceAssetBundle(
+    EmoticonsSourceAssetDB(
       assetBundle: rootBundle,
     ),
     instanceName: assetSource,
+    dispose: (sourceDb) async {
+      if (sourceDb is EmoticonsSourceAssetDB) {
+        await sourceDb.dispose();
+      }
+    },
   );
   sl.registerSingleton<EmoticonsStore>(
     EmoticonsSqliteSource(db: db),

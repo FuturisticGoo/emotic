@@ -48,7 +48,13 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                     onPressed: context.openRootScaffoldDrawer,
                   ),
                   actions: [
-                    BlocBuilder<EmoticonsListingCubit, EmoticonsListingState>(
+                    BlocConsumer<EmoticonsListingCubit, EmoticonsListingState>(
+                      listener: (context, state) {
+                        if (state is EmoticonsListingLoaded &&
+                            settings.isFirstTime) {
+                          context.read<SettingsCubit>().refreshSettings();
+                        }
+                      },
                       builder: (context, state) {
                         return PopupMenuButton(
                           enabled: state is EmoticonsListingLoaded,
@@ -58,7 +64,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                               onTap: () {
                                 context
                                     .read<EmoticonsListingCubit>()
-                                    .loadEmoticons(shouldLoadFromAsset: false);
+                                    .loadEmoticons(shouldLoadFromAsset: true);
                               },
                             ),
                             PopupMenuItem(
