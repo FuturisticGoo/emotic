@@ -30,7 +30,7 @@ Future<void> initSetup() async {
     ),
     instanceName: assetSource,
   );
-  sl.registerSingleton<EmoticonsSource>(
+  sl.registerSingleton<EmoticonsStore>(
     EmoticonsSqliteSource(db: db),
     instanceName: dbSource,
     dispose: (param) {
@@ -42,7 +42,9 @@ Future<void> initSetup() async {
       assetSource: sl(
         instanceName: assetSource,
       ),
-      database: sl(instanceName: dbSource),
+      database: sl(
+        instanceName: dbSource,
+      ),
     ),
   );
 }

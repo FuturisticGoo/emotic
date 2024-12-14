@@ -1,12 +1,14 @@
-import 'package:emotic/cubit/emoticons_listing_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class EmoticonsSearchBar extends StatefulWidget {
   final List<String> allTags;
+  final TextEditingController controller;
+  final void Function(String) onChange;
   const EmoticonsSearchBar({
     super.key,
     required this.allTags,
+    required this.controller,
+    required this.onChange,
   });
 
   @override
@@ -15,24 +17,14 @@ class EmoticonsSearchBar extends StatefulWidget {
 
 class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
   bool showTagsSuggestion = false;
-  late TextEditingController controller;
   @override
   void initState() {
     super.initState();
-    controller = TextEditingController();
-    controller.addListener(
+    widget.controller.addListener(
       () {
-        context.read<EmoticonsListingCubit>().searchEmoticons(
-              searchTerm: controller.text,
-            );
+        widget.onChange(widget.controller.text);
       },
     );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -46,18 +38,18 @@ class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
       child: Column(
         children: [
           TextField(
-            controller: controller,
+            controller: widget.controller,
             autofocus: false,
             decoration: InputDecoration(
               hintText: "Search by tag",
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(32),
               ),
-              suffixIcon: controller.text.trim().isEmpty
+              suffixIcon: widget.controller.text.trim().isEmpty
                   ? const Icon(Icons.search)
                   : IconButton(
                       onPressed: () {
-                        controller.text = "";
+                        widget.controller.text = "";
                       },
                       icon: const Icon(Icons.close),
                     ),
@@ -89,7 +81,7 @@ class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
                               ),
                             ),
                             onTap: () {
-                              controller.text = tag;
+                              widget.controller.text = tag;
                             },
                           );
                         },

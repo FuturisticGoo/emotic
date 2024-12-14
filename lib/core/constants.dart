@@ -16,3 +16,4 @@ const sqldbTagsTableName = "tags";
 const sqldbTagsId = "tag_id";
 const sqldbTagName = "tag_name";
 const sqldbEmoticonsToTagsJoinTableName = "emoticon_to_tags";
+const sourceLink = "https://github.com/FuturisticGoo/emotic";

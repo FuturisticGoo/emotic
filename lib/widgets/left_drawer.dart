@@ -1,41 +1,53 @@
+import 'package:emotic/core/routes.dart';
+import 'package:emotic/pages/about_page.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-class LeftDrawer extends StatelessWidget {
-  const LeftDrawer({
-    super.key,
-  });
+class LeftDrawer extends StatefulWidget {
+  const LeftDrawer({super.key});
 
+  @override
+  State<LeftDrawer> createState() => _LeftDrawerState();
+}
+
+class _LeftDrawerState extends State<LeftDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
         children: [
-          DrawerHeader(
+          const DrawerHeader(
             child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "OwO",
-                  style: Theme.of(context).textTheme.displayLarge,
-                ),
-              ),
+              child: EmoticLogo(),
             ),
           ),
           ListTile(
             title: const Text("Emoticons"),
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).pop();
+              context.go(Routes.emoticonsPage);
+            },
           ),
           ListTile(
-            title: Text("Tag link editor"),
-            onTap: () {},
+            title: const Text("Tag link editor"),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.go(Routes.tagLinkEditorPage);
+            },
           ),
           ListTile(
-            title: Text("Settings"),
-            onTap: () {},
+            title: const Text("Settings"),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.go(Routes.settingsPage);
+            },
           ),
           ListTile(
-            title: Text("About"),
-            onTap: () {},
+            title: const Text("About"),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.go(Routes.aboutPage);
+            },
           ),
         ],
       ),

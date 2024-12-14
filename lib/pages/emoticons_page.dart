@@ -1,34 +1,33 @@
-import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
 import 'package:emotic/core/init_setup.dart';
+import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/emoticons_listing_cubit.dart';
 import 'package:emotic/cubit/emoticons_listing_state.dart';
 import 'package:emotic/widgets/copyable_emoticon.dart';
-import 'package:emotic/widgets/left_drawer.dart';
 import 'package:emotic/widgets/search_bar.dart';
 import 'package:emotic/widgets/update_emoticon_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class EmoticHomePage extends StatelessWidget {
-  const EmoticHomePage({super.key});
+class EmoticonsPage extends StatefulWidget {
+  const EmoticonsPage({super.key});
+
+  @override
+  State<EmoticonsPage> createState() => _EmoticonsPageState();
+}
+
+class _EmoticonsPageState extends State<EmoticonsPage> {
+  final TextEditingController controller = TextEditingController();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<SettingsCubit, SettingsState>(
-      listener: (context, state) {
-        if (state is SettingsLoaded) {
-          if (state.settings.isFirstTime) {
-            context.read<SettingsCubit>().saveSettings(
-                  const Settings(
-                    isFirstTime: false,
-                    lastUsedVersion: version,
-                  ),
-                );
-          }
-        }
-      },
+    return BlocBuilder<SettingsCubit, SettingsState>(
       builder: (context, state) {
         switch (state) {
           case SettingsInitial():
@@ -44,7 +43,10 @@ class EmoticHomePage extends StatelessWidget {
               ),
               child: Scaffold(
                 appBar: AppBar(
-                  title: const Text("Emotic"),
+                  title: const Text("Emoticons"),
+                  leading: DrawerButton(
+                    onPressed: context.openRootScaffoldDrawer,
+                  ),
                   actions: [
                     BlocBuilder<EmoticonsListingCubit, EmoticonsListingState>(
                       builder: (context, state) {
@@ -92,7 +94,6 @@ class EmoticHomePage extends StatelessWidget {
                     ),
                   ],
                 ),
-                drawer: const LeftDrawer(),
                 body: BlocBuilder<EmoticonsListingCubit, EmoticonsListingState>(
                   builder: (context, state) {
                     switch (state) {
@@ -112,6 +113,14 @@ class EmoticHomePage extends StatelessWidget {
                             children: [
                               EmoticonsSearchBar(
                                 allTags: allTags,
+                                controller: controller,
+                                onChange: (String text) {
+                                  context
+                                      .read<EmoticonsListingCubit>()
+                                      .searchEmoticons(
+                                        searchTerm: text,
+                                      );
+                                },
                               ),
                               // TagFilter(
                               //   allTags: allTags,
@@ -131,10 +140,10 @@ class EmoticHomePage extends StatelessWidget {
                                           (emoticon) {
                                             return CopyableEmoticon(
                                               emoticon: emoticon,
-                                              onEditPressed: (emoticon) async {
-                                                final editedEmoticon =
+                                              onLongPressed: (emoticon) async {
+                                                final result =
                                                     await showModalBottomSheet<
-                                                        Emoticon?>(
+                                                        BottomSheetResult?>(
                                                   context: context,
                                                   isScrollControlled: true,
                                                   builder: (context) {
@@ -145,25 +154,38 @@ class EmoticHomePage extends StatelessWidget {
                                                     );
                                                   },
                                                 );
-                                                if (editedEmoticon != null &&
-                                                    context.mounted) {
-                                                  context
-                                                      .read<
-                                                          EmoticonsListingCubit>()
-                                                      .saveEmoticon(
-                                                        emoticon:
-                                                            editedEmoticon,
-                                                        oldEmoticon: emoticon,
-                                                      );
+                                                if (context.mounted) {
+                                                  switch (result) {
+                                                    case DeleteEmoticon(
+                                                        :final emoticon
+                                                      ):
+                                                      context
+                                                          .read<
+                                                              EmoticonsListingCubit>()
+                                                          .deleteEmoticon(
+                                                            emoticon: emoticon,
+                                                          );
+
+                                                    case UpdateEmoticon(
+                                                        :final emoticon,
+                                                        :final newEmoticon
+                                                      ):
+                                                      context
+                                                          .read<
+                                                              EmoticonsListingCubit>()
+                                                          .saveEmoticon(
+                                                            emoticon:
+                                                                newEmoticon,
+                                                            oldEmoticon:
+                                                                emoticon,
+                                                          );
+                                                    case TagClicked(:final tag):
+                                                      controller.text = tag;
+                                                    case AddEmoticon():
+                                                    case null:
+                                                      break;
+                                                  }
                                                 }
-                                              },
-                                              onDeletePressed: (emoticon) {
-                                                context
-                                                    .read<
-                                                        EmoticonsListingCubit>()
-                                                    .deleteEmoticon(
-                                                      emoticon: emoticon,
-                                                    );
                                               },
                                             );
                                           },

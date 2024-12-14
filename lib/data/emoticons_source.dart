@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
@@ -8,12 +9,22 @@ import 'package:sqlite3/sqlite3.dart';
 
 abstract class EmoticonsSource {
   Future<List<Emoticon>> getEmoticons();
+  Future<List<String>> getTags();
+}
+
+abstract class EmoticonsStore extends EmoticonsSource {
   Future<void> saveEmoticon({
     required Emoticon emoticon,
     Emoticon? oldEmoticon,
   }); // In case of update
   Future<void> deleteEmoticon({
     required Emoticon emoticon,
+  });
+  Future<void> saveTag({
+    required String tag,
+  });
+  Future<void> deleteTag({
+    required String tag,
   });
 }
 
@@ -66,31 +77,34 @@ class EmoticonsSourceAssetBundle implements EmoticonsSource {
   }
 
   @override
-  Future<void> saveEmoticon({
-    required Emoticon emoticon,
-    Emoticon? oldEmoticon,
-  }) {
-    throw AssertionError("saveEmoticon should not be called on Asset source");
-  }
-
-  @override
-  Future<void> deleteEmoticon({required Emoticon emoticon}) {
-    throw AssertionError("deleteEmoticon should not be called on Asset source");
+  Future<List<String>> getTags() async {
+    final emoticons = await getEmoticons();
+    Set<String> tags = {};
+    for (final emoticon in emoticons) {
+      tags.addAll(emoticon.emoticonTags);
+    }
+    return tags.toList();
   }
 }
 
-class EmoticonsSqliteSource implements EmoticonsSource {
+class EmoticonsSqliteSource implements EmoticonsStore {
   final Database db;
   late final PreparedStatement createEmoticonTableStmt;
   late final PreparedStatement createTagsTableStmt;
   late final PreparedStatement createEmoticonTagMappingTableStmt;
+
   late final PreparedStatement emoticonExistsCheckStmt;
   late final PreparedStatement emoticonInsertStmt;
+  late final PreparedStatement emoticonUpdateStmt;
   late final PreparedStatement emoticonRemoveStmt;
-  late final PreparedStatement removeAllTagsStmt;
+  late final PreparedStatement emoticonTagMapStmt;
+  late final PreparedStatement removeEmoticonFromJoinStmt;
+
   late final PreparedStatement tagExistsCheckStmt;
   late final PreparedStatement tagInsertStmt;
-  late final PreparedStatement emoticonTagMapStmt;
+  late final PreparedStatement tagDeleteStmt;
+  late final PreparedStatement removeTagFromJoinStmt;
+
   EmoticonsSqliteSource({required this.db}) {
     createEmoticonTableStmt = db.prepare("""
 CREATE TABLE IF NOT EXISTS $sqldbEmoticonsTableName 
@@ -128,10 +142,26 @@ INSERT INTO $sqldbEmoticonsTableName
 VALUES
   (?)
 """);
+    emoticonUpdateStmt = db.prepare("""
+UPDATE $sqldbEmoticonsTableName
+SET $sqldbEmoticonsText=?
+WHERE $sqldbEmoticonsId==?
+""");
     emoticonRemoveStmt = db.prepare("""
 DELETE FROM $sqldbEmoticonsTableName
 WHERE $sqldbEmoticonsId==?
 """);
+    emoticonTagMapStmt = db.prepare("""
+INSERT INTO $sqldbEmoticonsToTagsJoinTableName
+  ($sqldbEmoticonsId, $sqldbTagsId)
+VALUES
+  (?, ?)
+""");
+    removeEmoticonFromJoinStmt = db.prepare("""
+DELETE FROM $sqldbEmoticonsToTagsJoinTableName
+WHERE $sqldbEmoticonsId==?
+""");
+
     tagExistsCheckStmt = db.prepare("""
 SELECT $sqldbTagsId FROM $sqldbTagsTableName
 WHERE $sqldbTagName==?
@@ -142,15 +172,13 @@ INSERT INTO $sqldbTagsTableName
 VALUES
   (?)
 """);
-    emoticonTagMapStmt = db.prepare("""
-INSERT INTO $sqldbEmoticonsToTagsJoinTableName
-  ($sqldbEmoticonsId, $sqldbTagsId)
-VALUES
-  (?, ?)
+    tagDeleteStmt = db.prepare("""
+DELETE FROM $sqldbTagsTableName
+WHERE $sqldbTagsId==?
 """);
-    removeAllTagsStmt = db.prepare("""
+    removeTagFromJoinStmt = db.prepare("""
 DELETE FROM $sqldbEmoticonsToTagsJoinTableName
-WHERE $sqldbEmoticonsId==?
+WHERE $sqldbTagsId==?
 """);
   }
 
@@ -158,13 +186,18 @@ WHERE $sqldbEmoticonsId==?
     createEmoticonTableStmt.dispose();
     createTagsTableStmt.dispose();
     createEmoticonTagMappingTableStmt.dispose();
+
     emoticonExistsCheckStmt.dispose();
     emoticonInsertStmt.dispose();
+    emoticonUpdateStmt.dispose();
     emoticonRemoveStmt.dispose();
-    removeAllTagsStmt.dispose();
+    emoticonTagMapStmt.dispose();
+    removeEmoticonFromJoinStmt.dispose();
+
     tagExistsCheckStmt.dispose();
     tagInsertStmt.dispose();
-    emoticonTagMapStmt.dispose();
+    tagDeleteStmt.dispose();
+    removeTagFromJoinStmt.dispose();
   }
 
   void _ensureTables() {
@@ -176,33 +209,33 @@ WHERE $sqldbEmoticonsId==?
   @override
   Future<void> saveEmoticon({
     required Emoticon emoticon,
-    Emoticon? oldEmoticon, // In case of update
+    Emoticon? oldEmoticon,
   }) async {
     int emoticonId;
-
-    if (oldEmoticon != null) {
-      // This helps when an emoticon is updated with new text, so remove the old
-      // one
-      await deleteEmoticon(emoticon: oldEmoticon);
-    }
-
-    // TODO: this method is not perfect, I need to find to insert/update
-    // emoticons without deleting it first, since deleting it gets rid of all
-    // its tag relation which the user may have added
-    await deleteEmoticon(emoticon: emoticon);
-
-    emoticonInsertStmt.execute([emoticon.text]);
-    emoticonId = db.lastInsertRowId;
-
-    for (final tag in emoticon.emoticonTags) {
-      int tagId;
-      final tagResultSet = tagExistsCheckStmt.select([tag]);
-      if (tagResultSet.isNotEmpty) {
-        tagId = tagResultSet.first[sqldbTagsId];
-      } else {
-        tagInsertStmt.execute([tag]);
-        tagId = db.lastInsertRowId;
+    if (oldEmoticon == null) {
+      emoticonInsertStmt.execute([emoticon.text]);
+      emoticonId = db.lastInsertRowId;
+    } else {
+      final emoticonResultSet = emoticonExistsCheckStmt.select(
+        [emoticon.text],
+      );
+      // if (emoticonResultSet.isNotEmpty) {
+      if (emoticonResultSet.length != 1) {
+        log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in saveEmoticon");
       }
+      emoticonId = emoticonResultSet.first[sqldbEmoticonsId];
+      // }
+      emoticonUpdateStmt.execute([emoticon.text, emoticonId]);
+    }
+    removeEmoticonFromJoinStmt.execute([emoticonId]);
+    // Its easier this way
+    for (final tag in emoticon.emoticonTags) {
+      await saveTag(tag: tag);
+      final tagResultSet = tagExistsCheckStmt.select([tag]);
+      if (tagResultSet.length != 1) {
+        log("Got ${tagResultSet.length} length result when checking tagExistsCheckStmt in saveEmoticon");
+      }
+      int tagId = tagResultSet.first[sqldbTagsId];
       emoticonTagMapStmt.execute([emoticonId, tagId]);
     }
   }
@@ -213,9 +246,42 @@ WHERE $sqldbEmoticonsId==?
       [emoticon.text],
     );
     if (emoticonResultSet.isNotEmpty) {
-      final emoticonIdToRemove = emoticonResultSet.single[sqldbEmoticonsId];
+      if (emoticonResultSet.length != 1) {
+        log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in deleteEmoticon");
+      }
+      final emoticonIdToRemove = emoticonResultSet.first[sqldbEmoticonsId];
       emoticonRemoveStmt.execute([emoticonIdToRemove]);
-      removeAllTagsStmt.execute([emoticonIdToRemove]);
+      removeEmoticonFromJoinStmt.execute([emoticonIdToRemove]);
+    }
+  }
+
+  @override
+  Future<List<String>> getTags() async {
+    final tagResultSet =
+        db.select("""SELECT $sqldbTagName FROM $sqldbTagsTableName""");
+    List<String> tags = tagResultSet
+        .map(
+          (element) => element[sqldbTagName].toString(),
+        )
+        .toList();
+    return tags;
+  }
+
+  @override
+  Future<void> saveTag({required String tag}) async {
+    final tagResultSet = tagExistsCheckStmt.select([tag]);
+    if (tagResultSet.isEmpty) {
+      tagInsertStmt.execute([tag]);
+    }
+  }
+
+  @override
+  Future<void> deleteTag({required String tag}) async {
+    final tagResultSet = tagExistsCheckStmt.select([tag]);
+    if (tagResultSet.isNotEmpty) {
+      int tagId = tagResultSet.single[sqldbTagsId];
+      tagDeleteStmt.execute([tagId]);
+      removeTagFromJoinStmt.execute([tagId]);
     }
   }
 

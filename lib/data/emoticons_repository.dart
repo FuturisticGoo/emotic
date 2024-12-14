@@ -3,7 +3,7 @@ import 'package:emotic/data/emoticons_source.dart';
 
 class EmoticonsRepository {
   final EmoticonsSource assetSource;
-  final EmoticonsSource database;
+  final EmoticonsStore database;
 
   EmoticonsRepository({
     required this.assetSource,
@@ -37,5 +37,17 @@ class EmoticonsRepository {
 
   Future<void> deleteEmoticon({required Emoticon emoticon}) async {
     await database.deleteEmoticon(emoticon: emoticon);
+  }
+
+  Future<List<String>> getTags() async {
+    return database.getTags();
+  }
+
+  Future<void> saveTag({required String tag}) async {
+    return database.saveTag(tag: tag);
+  }
+
+  Future<void> deleteTag({required String tag}) async {
+    return database.deleteTag(tag: tag);
   }
 }
