@@ -44,10 +44,20 @@ class EmoticApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               title: 'Emotic',
               theme: ThemeData(
+                fontFamily: "Noto Sans",
+                fontFamilyFallback: const [
+                  "sans-serif",
+                  "Roboto",
+                ],
                 colorScheme: lightDynamic,
                 useMaterial3: true,
               ),
               darkTheme: ThemeData(
+                fontFamily: "Noto Sans",
+                fontFamilyFallback: const [
+                  "sans-serif",
+                  "Roboto",
+                ],
                 colorScheme: darkDynamic,
                 brightness: Brightness.dark,
                 useMaterial3: true,

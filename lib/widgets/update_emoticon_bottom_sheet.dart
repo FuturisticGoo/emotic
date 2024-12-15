@@ -37,7 +37,7 @@ class UpdateEmoticonBottomSheet extends StatefulWidget {
   const UpdateEmoticonBottomSheet({
     super.key,
     required this.allTags,
-    this.isEditMode = false,
+    required this.isEditMode,
     this.emoticon = const Emoticon(
       id: null,
       text: "",
@@ -111,7 +111,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                 height: isSmallScreen ? 10 : 20,
               ),
               TextField(
-                readOnly: readOnlyMode,
+                readOnly: readOnlyMode && widget.isEditMode,
                 controller: emoticonTextController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
@@ -133,7 +133,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
               ),
               TagsSelection(
                 isSmallScreen: isSmallScreen,
-                tagsSelection: readOnlyMode
+                tagsSelection: readOnlyMode && widget.isEditMode
                     ? tagsSelection
                     : {
                         ...tagsSelection,
@@ -147,7 +147,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                         tagsSelection[newTag] = true;
                       });
                     }
-                  } else if (readOnlyMode) {
+                  } else if (readOnlyMode && widget.isEditMode) {
                     Navigator.pop<BottomSheetResult>(
                       context,
                       TagClicked(

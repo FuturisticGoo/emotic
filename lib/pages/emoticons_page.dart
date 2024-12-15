@@ -1,4 +1,3 @@
-import 'package:emotic/core/emoticon.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:emotic/core/settings.dart';
@@ -74,22 +73,28 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                     case EmoticonsListingLoaded(
                                       :final allTags
                                     )) {
-                                  final newEmoticon =
-                                      await showModalBottomSheet<Emoticon?>(
+                                  final result = await showModalBottomSheet<
+                                      BottomSheetResult?>(
                                     context: context,
                                     isScrollControlled: true,
                                     builder: (context) {
                                       return UpdateEmoticonBottomSheet(
                                         allTags: allTags,
+                                        isEditMode: false,
                                       );
                                     },
                                   );
-                                  if (newEmoticon != null && context.mounted) {
-                                    context
-                                        .read<EmoticonsListingCubit>()
-                                        .saveEmoticon(
-                                          emoticon: newEmoticon,
-                                        );
+                                  switch (result) {
+                                    case AddEmoticon(:final emoticon)
+                                        when context.mounted:
+                                      context
+                                          .read<EmoticonsListingCubit>()
+                                          .saveEmoticon(
+                                            emoticon: emoticon,
+                                          );
+
+                                    default:
+                                      break;
                                   }
                                 }
                               },
