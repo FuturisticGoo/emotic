@@ -18,15 +18,15 @@ class _TagEditorPageState extends State<TagEditorPage> {
   Map<String, bool> tagging = {};
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
+    return BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
       builder: (context, state) {
         switch (state) {
-          case SettingsInitial():
-          case SettingsLoading():
+          case GlobalSettingsInitial():
+          case GlobalSettingsLoading():
             return const Center(
               child: CircularProgressIndicator(),
             );
-          case SettingsLoaded(:final settings):
+          case GlobalSettingsLoaded(:final settings):
             return BlocProvider(
               create: (context) => TagEditorCubit(
                 emoticonsRepository: sl(),

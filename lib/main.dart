@@ -19,19 +19,19 @@ class EmoticApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SettingsCubit(
+      create: (context) => GlobalSettingsCubit(
         settingsSource: init.sl(),
       ),
-      child: BlocListener<SettingsCubit, SettingsState>(
+      child: BlocListener<GlobalSettingsCubit, GlobalSettingsState>(
         listener: (context, state) {
           if (state
-              case SettingsLoaded(
-                settings: Settings(
+              case GlobalSettingsLoaded(
+                settings: GlobalSettings(
                   isFirstTime: true,
                 ),
               )) {
-            context.read<SettingsCubit>().saveSettings(
-                  const Settings(
+            context.read<GlobalSettingsCubit>().saveSettings(
+                  const GlobalSettings(
                     isFirstTime: false,
                     lastUsedVersion: version,
                   ),

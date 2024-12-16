@@ -1,6 +1,6 @@
 const emoticonsSourceDbName = "emoticons_source.sqlite";
 const emoticonsSourceDbAsset = "assets/$emoticonsSourceDbName";
-const version = "0.1.2";
+const version = "0.1.3";
 const isFirstTimeKey = "isFirstTime";
 const emoticonsListKey = "emoticons";
 const sqldbName = "emoticons_sqlite";

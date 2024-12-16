@@ -26,15 +26,15 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SettingsCubit, SettingsState>(
+    return BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
       builder: (context, state) {
         switch (state) {
-          case SettingsInitial():
-          case SettingsLoading():
+          case GlobalSettingsInitial():
+          case GlobalSettingsLoading():
             return const Center(
               child: CircularProgressIndicator.adaptive(),
             );
-          case SettingsLoaded(:final settings):
+          case GlobalSettingsLoaded(:final settings):
             return BlocProvider(
               create: (context) => EmoticonsListingCubit(
                 emoticonsRepository: sl(),
@@ -51,7 +51,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                       listener: (context, state) {
                         if (state is EmoticonsListingLoaded &&
                             settings.isFirstTime) {
-                          context.read<SettingsCubit>().refreshSettings();
+                          context.read<GlobalSettingsCubit>().refreshSettings();
                         }
                       },
                       builder: (context, state) {

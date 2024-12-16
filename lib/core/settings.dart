@@ -8,20 +8,20 @@ import 'package:sqlite3/sqlite3.dart';
 part 'settings.g.dart';
 
 @JsonSerializable()
-class Settings extends Equatable {
+class GlobalSettings extends Equatable {
   final bool isFirstTime;
   final String lastUsedVersion;
   bool get isUpdated {
     return lastUsedVersion != version;
   }
 
-  const Settings({
+  const GlobalSettings({
     required this.isFirstTime,
     required this.lastUsedVersion,
   });
-  Map<String, dynamic> toJson() => _$SettingsToJson(this);
-  factory Settings.fromJson(Map<String, dynamic> json) =>
-      _$SettingsFromJson(json);
+  Map<String, dynamic> toJson() => _$GlobalSettingsToJson(this);
+  factory GlobalSettings.fromJson(Map<String, dynamic> json) =>
+      _$GlobalSettingsFromJson(json);
   @override
   List<Object?> get props => [
         isFirstTime,
@@ -30,8 +30,8 @@ class Settings extends Equatable {
 }
 
 abstract class SettingsSource {
-  Future<Settings> getSavedSettings();
-  Future<void> saveSettings(Settings newSettings);
+  Future<GlobalSettings> getSavedSettings();
+  Future<void> saveSettings(GlobalSettings newSettings);
 }
 
 class SettingsSourceDb implements SettingsSource {
@@ -48,14 +48,14 @@ CREATE TABLE IF NOT EXISTS $sqldbSettingsTableName
   }
 
   @override
-  Future<Settings> getSavedSettings() async {
+  Future<GlobalSettings> getSavedSettings() async {
     await _ensureTable();
     final settingsResult = db.select("""
 SELECT $sqldbSettingsJson FROM $sqldbSettingsTableName
 WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
 """);
     if (settingsResult.isEmpty) {
-      return const Settings(
+      return const GlobalSettings(
         isFirstTime: true,
         lastUsedVersion: version,
       );
@@ -65,12 +65,12 @@ WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
           settingsResult.first[sqldbSettingsJson],
         ),
       );
-      return Settings.fromJson(settingsJson);
+      return GlobalSettings.fromJson(settingsJson);
     }
   }
 
   @override
-  Future<void> saveSettings(Settings newSettings) async {
+  Future<void> saveSettings(GlobalSettings newSettings) async {
     await _ensureTable();
     db.execute("""
 DELETE FROM $sqldbSettingsTableName
@@ -91,38 +91,38 @@ VALUES
   }
 }
 
-sealed class SettingsState {
-  const SettingsState();
+sealed class GlobalSettingsState {
+  const GlobalSettingsState();
 }
 
-class SettingsInitial implements SettingsState {
-  const SettingsInitial();
+class GlobalSettingsInitial implements GlobalSettingsState {
+  const GlobalSettingsInitial();
 }
 
-class SettingsLoading implements SettingsState {
-  const SettingsLoading();
+class GlobalSettingsLoading implements GlobalSettingsState {
+  const GlobalSettingsLoading();
 }
 
-class SettingsLoaded implements SettingsState {
-  final Settings settings;
-  const SettingsLoaded({
+class GlobalSettingsLoaded implements GlobalSettingsState {
+  final GlobalSettings settings;
+  const GlobalSettingsLoaded({
     required this.settings,
   });
 }
 
-class SettingsCubit extends Cubit<SettingsState> {
+class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
   final SettingsSource settingsSource;
 
-  SettingsCubit({
+  GlobalSettingsCubit({
     required this.settingsSource,
-  }) : super(const SettingsInitial()) {
+  }) : super(const GlobalSettingsInitial()) {
     _loadSettings();
   }
 
   Future<void> _loadSettings() async {
-    emit(const SettingsLoading());
+    emit(const GlobalSettingsLoading());
     emit(
-      SettingsLoaded(
+      GlobalSettingsLoaded(
         settings: await settingsSource.getSavedSettings(),
       ),
     );
@@ -132,7 +132,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     await _loadSettings();
   }
 
-  Future<void> saveSettings(Settings newSettings) async {
+  Future<void> saveSettings(GlobalSettings newSettings) async {
     await settingsSource.saveSettings(newSettings);
   }
 }
