@@ -120,7 +120,7 @@ class _TagEditorPageState extends State<TagEditorPage> {
                                             selected: e == selectedEmoticon,
                                             selectedTileColor: Theme.of(context)
                                                 .colorScheme
-                                                .onPrimary,
+                                                .primaryContainer,
                                             title: Text(e.text),
                                             onTap: () {
                                               context
@@ -149,7 +149,7 @@ class _TagEditorPageState extends State<TagEditorPage> {
                                             selected: tagging[e] ?? false,
                                             selectedTileColor: Theme.of(context)
                                                 .colorScheme
-                                                .onPrimary,
+                                                .primaryContainer,
                                             title: Text(e),
                                             onTap: () {
                                               if (selectedEmoticon != null) {

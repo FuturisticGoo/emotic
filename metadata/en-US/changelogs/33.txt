@@ -1,0 +1,10 @@
+Lots of changes (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧
+• Add tag <-> emoticon link editor
+• Show tag suggestions under search bar
+• Remove redundant menu shown on long press on emoticon, instead use a unified bottom sheet for all operations
+• Add Material You themeing
+• Add Settings page
+• Add export/import of emoticons and tags
+• Add About page
+• Internal change: use SQLite db as initial emoticons source instead of CSV+JSON
+* Bundle Noto Sans ttf font explicitly to support more glyphs (WIP)
