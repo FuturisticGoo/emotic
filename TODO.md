@@ -11,3 +11,4 @@
 * ~I should probably use sqlite db as the initial asset instead of csv+json~
 * ML algorithm to generate an emoticon for a particular prompt, or joining multiple emoticons using ML
 * Emoticon ordering based on most recently copied
+* Improve listing performance, use async for reading the database.

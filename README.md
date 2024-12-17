@@ -26,11 +26,8 @@ Use `--flavor=<flavor>` along with the build command, where flavor is either `fd
 This app should also work on all platforms Flutter supports, so go wild with emoticons on your obscure IRC channel, running on an obscure Linux distro ( ಠ‿<)  
 
 ## Contributing
-You can fork and add new emoticons and tags in the asset file itself by running  
-``` bash
-dart run bin/asset_helper.dart
-```  
-Which should give you a terminal wizard for adding, removing emoticons and tags, and linking the tags with emoticons.  
+You can add new emoticons and tags in app using the emoticons page and tag editor page, then export it from the settings page.  
+Fork this repository, replace `assets/emoticons_source.sqlite` with your exported file.    
 You could then submit a pull request. I might accept it, or not.
 
 ## License
