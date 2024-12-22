@@ -17,6 +17,7 @@ class EmoticonsPage extends StatefulWidget {
 }
 
 class _EmoticonsPageState extends State<EmoticonsPage> {
+  final emoticonListingViewId = "SingleChildScrollViewForEmoticons";
   final TextEditingController controller = TextEditingController();
   @override
   void dispose() {
@@ -38,7 +39,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
             return BlocProvider(
               create: (context) => EmoticonsListingCubit(
                 emoticonsRepository: sl(),
-                shouldLoadFromAsset: settings.isFirstTime || settings.isUpdated,
+                shouldLoadFromAsset: settings.shouldReload,
               ),
               child: Scaffold(
                 appBar: AppBar(
@@ -48,24 +49,18 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                   ),
                   actions: [
                     BlocConsumer<EmoticonsListingCubit, EmoticonsListingState>(
-                      listener: (context, state) {
+                      listener: (context, state) async {
                         if (state is EmoticonsListingLoaded &&
-                            settings.isFirstTime) {
-                          context.read<GlobalSettingsCubit>().refreshSettings();
+                            settings.shouldReload) {
+                          await context
+                              .read<GlobalSettingsCubit>()
+                              .refreshSettings();
                         }
                       },
                       builder: (context, state) {
                         return PopupMenuButton(
                           enabled: state is EmoticonsListingLoaded,
                           itemBuilder: (context) => [
-                            PopupMenuItem(
-                              child: const Text("Refresh"),
-                              onTap: () {
-                                context
-                                    .read<EmoticonsListingCubit>()
-                                    .loadEmoticons(shouldLoadFromAsset: true);
-                              },
-                            ),
                             PopupMenuItem(
                               child: const Text("Add emoticon"),
                               onTap: () async {
@@ -141,6 +136,8 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                               ),
                               Expanded(
                                 child: SingleChildScrollView(
+                                  key: PageStorageKey(emoticonListingViewId),
+                                  restorationId: emoticonListingViewId,
                                   child: Column(
                                     children: [
                                       Wrap(

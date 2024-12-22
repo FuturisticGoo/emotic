@@ -6,8 +6,8 @@ import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqlite3/sqlite3.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:sqflite/sqflite.dart';
 
 enum ImportStrategy { merge, overwrite }
 
@@ -35,12 +35,12 @@ abstract class EmoticonsStore extends EmoticonsSource {
 
 Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
   List<Emoticon> emoticons = [];
-  final emoticonSet = db.select("""
+  final emoticonSet = await db.rawQuery("""
   SELECT $sqldbEmoticonsId, $sqldbEmoticonsText FROM $sqldbEmoticonsTableName
 """);
   for (final row in emoticonSet) {
-    final emoticonId = row[sqldbEmoticonsId];
-    final tagSet = db.select(
+    final emoticonId = int.parse(row[sqldbEmoticonsId].toString());
+    final tagSet = await db.rawQuery(
       """
   SELECT tags.$sqldbTagName 
     FROM $sqldbTagsTableName AS tags,
@@ -54,9 +54,9 @@ Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
     );
     final emoticon = Emoticon(
       id: emoticonId,
-      text: row[sqldbEmoticonsText],
+      text: row[sqldbEmoticonsText].toString(),
       emoticonTags: tagSet.map(
-        (Row row) {
+        (Map<String, Object?> row) {
           return row[sqldbTagName].toString();
         },
       ).toList(),
@@ -68,7 +68,7 @@ Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
 
 Future<List<String>> _getTagsFromDb({required Database db}) async {
   final tagResultSet =
-      db.select("""SELECT $sqldbTagName FROM $sqldbTagsTableName""");
+      await db.rawQuery("""SELECT $sqldbTagName FROM $sqldbTagsTableName""");
   List<String> tags = tagResultSet
       .map(
         (element) => element[sqldbTagName].toString(),
@@ -92,12 +92,12 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
       dbFile = io.File(p.join(appDataPath.path, emoticonsSourceDbName));
       await dbFile!
           .writeAsBytes(sourceDbFile.buffer.asUint8List(), flush: true);
-      sourceDb = sqlite3.open(dbFile!.path);
+      sourceDb = await openDatabase(dbFile!.path);
     }
   }
 
   Future<void> dispose() async {
-    sourceDb?.dispose();
+    await sourceDb?.close();
     await dbFile?.delete();
   }
 
@@ -114,133 +114,113 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
   }
 }
 
-class EmoticonsSqliteSource implements EmoticonsStore {
-  final Database db;
-  late final PreparedStatement createEmoticonTableStmt;
-  late final PreparedStatement createTagsTableStmt;
-  late final PreparedStatement createEmoticonTagMappingTableStmt;
+typedef PreparedStatement = String;
 
-  late final PreparedStatement emoticonExistsCheckStmt;
-  late final PreparedStatement emoticonInsertStmt;
-  late final PreparedStatement emoticonUpdateStmt;
-  late final PreparedStatement emoticonRemoveStmt;
-  late final PreparedStatement emoticonTagMapStmt;
-  late final PreparedStatement removeEmoticonFromJoinStmt;
-
-  late final PreparedStatement tagExistsCheckStmt;
-  late final PreparedStatement tagInsertStmt;
-  late final PreparedStatement tagDeleteStmt;
-  late final PreparedStatement removeTagFromJoinStmt;
-
-  EmoticonsSqliteSource({required this.db}) {
-    createEmoticonTableStmt = db.prepare("""
+class SQLStatements {
+  static const PreparedStatement createEmoticonTableStmt = """
 CREATE TABLE IF NOT EXISTS $sqldbEmoticonsTableName 
 (
   $sqldbEmoticonsId INTEGER PRIMARY KEY,
   $sqldbEmoticonsText VARCHAR
 )
-""");
+""";
 
-    createTagsTableStmt = db.prepare("""
+  static const PreparedStatement createTagsTableStmt = """
 CREATE TABLE IF NOT EXISTS $sqldbTagsTableName
 (
   $sqldbTagsId INTEGER PRIMARY KEY,
   $sqldbTagName VARCHAR
 )
-""");
+""";
 
-    createEmoticonTagMappingTableStmt = db.prepare("""
+  static const PreparedStatement createEmoticonTagMappingTableStmt = """
 CREATE TABLE IF NOT EXISTS $sqldbEmoticonsToTagsJoinTableName
 (
   $sqldbEmoticonsId INTEGER,
   $sqldbTagsId VARCHAR
 )
-""");
+""";
 
-    _ensureTables();
-
-    emoticonExistsCheckStmt = db.prepare("""
+  static const PreparedStatement emoticonExistsCheckStmt = """
 SELECT $sqldbEmoticonsId FROM $sqldbEmoticonsTableName
 WHERE $sqldbEmoticonsText==?
-""");
-    emoticonInsertStmt = db.prepare("""
+""";
+
+  static const PreparedStatement emoticonInsertStmt = """
 INSERT INTO $sqldbEmoticonsTableName
   ($sqldbEmoticonsText)
 VALUES
   (?)
-""");
-    emoticonUpdateStmt = db.prepare("""
+""";
+
+  static const PreparedStatement emoticonUpdateStmt = """
 UPDATE $sqldbEmoticonsTableName
 SET $sqldbEmoticonsText=?
 WHERE $sqldbEmoticonsId==?
-""");
-    emoticonRemoveStmt = db.prepare("""
+""";
+
+  static const PreparedStatement emoticonRemoveStmt = """
 DELETE FROM $sqldbEmoticonsTableName
 WHERE $sqldbEmoticonsId==?
-""");
-    emoticonTagMapStmt = db.prepare("""
+""";
+
+  static const PreparedStatement emoticonTagMapStmt = """
 INSERT INTO $sqldbEmoticonsToTagsJoinTableName
   ($sqldbEmoticonsId, $sqldbTagsId)
 VALUES
   (?, ?)
-""");
-    removeEmoticonFromJoinStmt = db.prepare("""
+""";
+
+  static const PreparedStatement removeEmoticonFromJoinStmt = """
 DELETE FROM $sqldbEmoticonsToTagsJoinTableName
 WHERE $sqldbEmoticonsId==?
-""");
+""";
 
-    tagExistsCheckStmt = db.prepare("""
+  static const PreparedStatement tagExistsCheckStmt = """
 SELECT $sqldbTagsId FROM $sqldbTagsTableName
 WHERE $sqldbTagName==?
-""");
-    tagInsertStmt = db.prepare("""
+""";
+
+  static const PreparedStatement tagInsertStmt = """
 INSERT INTO $sqldbTagsTableName
   ($sqldbTagName)
 VALUES
   (?)
-""");
-    tagDeleteStmt = db.prepare("""
+""";
+
+  static const PreparedStatement tagDeleteStmt = """
 DELETE FROM $sqldbTagsTableName
 WHERE $sqldbTagsId==?
-""");
-    removeTagFromJoinStmt = db.prepare("""
+""";
+
+  static const PreparedStatement removeTagFromJoinStmt = """
 DELETE FROM $sqldbEmoticonsToTagsJoinTableName
 WHERE $sqldbTagsId==?
-""");
+""";
+}
+
+class EmoticonsSqliteSource implements EmoticonsStore {
+  final Database db;
+
+  EmoticonsSqliteSource({required this.db}) {
+    _ensureTables();
   }
 
-  Future<void> dispose() async {
-    createEmoticonTableStmt.dispose();
-    createTagsTableStmt.dispose();
-    createEmoticonTagMappingTableStmt.dispose();
-
-    emoticonExistsCheckStmt.dispose();
-    emoticonInsertStmt.dispose();
-    emoticonUpdateStmt.dispose();
-    emoticonRemoveStmt.dispose();
-    emoticonTagMapStmt.dispose();
-    removeEmoticonFromJoinStmt.dispose();
-
-    tagExistsCheckStmt.dispose();
-    tagInsertStmt.dispose();
-    tagDeleteStmt.dispose();
-    removeTagFromJoinStmt.dispose();
-  }
-
-  void _ensureTables() {
-    createEmoticonTableStmt.execute();
-    createTagsTableStmt.execute();
-    createEmoticonTagMappingTableStmt.execute();
+  Future<void> _ensureTables() async {
+    await db.execute(SQLStatements.createEmoticonTableStmt);
+    await db.execute(SQLStatements.createTagsTableStmt);
+    await db.execute(SQLStatements.createEmoticonTagMappingTableStmt);
   }
 
   @override
   Future<List<String>> getTags() async {
+    await _ensureTables();
     return _getTagsFromDb(db: db);
   }
 
   @override
   Future<List<Emoticon>> getEmoticons() async {
-    _ensureTables();
+    await _ensureTables();
     return _getEmoticonsFromDb(db: db);
   }
 
@@ -251,77 +231,113 @@ WHERE $sqldbTagsId==?
   }) async {
     int emoticonId;
     if (oldEmoticon == null) {
-      final emoticonResultSet = emoticonExistsCheckStmt.select(
+      final emoticonResultSet = await db.rawQuery(
+        SQLStatements.emoticonExistsCheckStmt,
         [emoticon.text],
       );
       if (emoticonResultSet.isEmpty) {
         // Only inserting if its not there
-        emoticonInsertStmt.execute([emoticon.text]);
-        emoticonId = db.lastInsertRowId;
+        await db.execute(SQLStatements.emoticonInsertStmt, [emoticon.text]);
+        emoticonId = (await db.rawQuery('SELECT last_insert_rowid()'))
+            .first
+            .values
+            .first as int;
       } else {
-        emoticonId = emoticonResultSet.first[sqldbEmoticonsId];
+        emoticonId = int.parse(
+          emoticonResultSet.first[sqldbEmoticonsId].toString(),
+        );
       }
     } else {
-      final emoticonResultSet = emoticonExistsCheckStmt.select(
+      final emoticonResultSet = await db.rawQuery(
+        SQLStatements.emoticonExistsCheckStmt,
         [emoticon.text],
       );
       if (emoticonResultSet.length != 1) {
         log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in saveEmoticon");
       }
-      emoticonId = emoticonResultSet.first[sqldbEmoticonsId];
-      emoticonUpdateStmt.execute([emoticon.text, emoticonId]);
+      emoticonId =
+          int.parse(emoticonResultSet.first[sqldbEmoticonsId].toString());
+      await db.execute(
+          SQLStatements.emoticonUpdateStmt, [emoticon.text, emoticonId]);
     }
-    removeEmoticonFromJoinStmt.execute([emoticonId]);
+    await db.execute(SQLStatements.removeEmoticonFromJoinStmt, [emoticonId]);
+
     // Its easier this way
     for (final tag in emoticon.emoticonTags) {
       await saveTag(tag: tag);
-      final tagResultSet = tagExistsCheckStmt.select([tag]);
+      final tagResultSet = await db.rawQuery(
+        SQLStatements.tagExistsCheckStmt,
+        [tag],
+      );
       if (tagResultSet.length != 1) {
         log("Got ${tagResultSet.length} length result when checking tagExistsCheckStmt in saveEmoticon");
       }
-      int tagId = tagResultSet.first[sqldbTagsId];
-      emoticonTagMapStmt.execute([emoticonId, tagId]);
+      int tagId = int.parse(tagResultSet.first[sqldbTagsId].toString());
+      await db.execute(SQLStatements.emoticonTagMapStmt, [emoticonId, tagId]);
     }
   }
 
   @override
   Future<void> deleteEmoticon({required Emoticon emoticon}) async {
-    final emoticonResultSet = emoticonExistsCheckStmt.select(
+    final emoticonResultSet = await db.rawQuery(
+      SQLStatements.emoticonExistsCheckStmt,
       [emoticon.text],
     );
     if (emoticonResultSet.isNotEmpty) {
       if (emoticonResultSet.length != 1) {
         log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in deleteEmoticon");
       }
-      final emoticonIdToRemove = emoticonResultSet.first[sqldbEmoticonsId];
-      emoticonRemoveStmt.execute([emoticonIdToRemove]);
-      removeEmoticonFromJoinStmt.execute([emoticonIdToRemove]);
+      final emoticonIdToRemove =
+          int.parse(emoticonResultSet.first[sqldbEmoticonsId].toString());
+      await db.execute(
+        SQLStatements.emoticonRemoveStmt,
+        [emoticonIdToRemove],
+      );
+      await db.execute(
+        SQLStatements.removeEmoticonFromJoinStmt,
+        [emoticonIdToRemove],
+      );
     }
   }
 
   @override
   Future<void> saveTag({required String tag}) async {
-    final tagResultSet = tagExistsCheckStmt.select([tag]);
+    final tagResultSet = await db.rawQuery(
+      SQLStatements.tagExistsCheckStmt,
+      [tag],
+    );
     if (tagResultSet.isEmpty) {
-      tagInsertStmt.execute([tag]);
+      await db.execute(
+        SQLStatements.tagInsertStmt,
+        [tag],
+      );
     }
   }
 
   @override
   Future<void> deleteTag({required String tag}) async {
-    final tagResultSet = tagExistsCheckStmt.select([tag]);
+    final tagResultSet = await db.rawQuery(
+      SQLStatements.tagExistsCheckStmt,
+      [tag],
+    );
     if (tagResultSet.isNotEmpty) {
-      int tagId = tagResultSet.single[sqldbTagsId];
-      tagDeleteStmt.execute([tagId]);
-      removeTagFromJoinStmt.execute([tagId]);
+      int tagId = int.parse(tagResultSet.single[sqldbTagsId].toString());
+      await db.execute(
+        SQLStatements.tagDeleteStmt,
+        [tagId],
+      );
+      await db.execute(
+        SQLStatements.removeTagFromJoinStmt,
+        [tagId],
+      );
     }
   }
 
   @override
   Future<void> clearAllData() async {
-    db.execute("DELETE FROM $sqldbEmoticonsTableName");
-    db.execute("DELETE FROM $sqldbEmoticonsToTagsJoinTableName");
-    db.execute("DELETE FROM $sqldbTagsTableName");
+    await db.rawDelete("DELETE FROM $sqldbEmoticonsTableName");
+    await db.rawDelete("DELETE FROM $sqldbEmoticonsToTagsJoinTableName");
+    await db.rawDelete("DELETE FROM $sqldbTagsTableName");
   }
 
   Future<Result<void>> importFromDb({
@@ -337,8 +353,8 @@ WHERE $sqldbTagsId==?
         return Result.error(ArgumentError.notNull("Path not selected"));
       }
       String dbPath = inputFile!.paths.single!;
-      Database sourceDb = sqlite3.open(dbPath);
-      final emoticonSet = sourceDb.select("""
+      Database sourceDb = await openDatabase(dbPath);
+      final emoticonSet = await sourceDb.rawQuery("""
   SELECT $sqldbEmoticonsId, $sqldbEmoticonsText FROM $sqldbEmoticonsTableName
 """);
       switch (importStrategy) {
@@ -348,8 +364,8 @@ WHERE $sqldbTagsId==?
         merge:
         case ImportStrategy.merge:
           for (final row in emoticonSet) {
-            final emoticonId = row[sqldbEmoticonsId];
-            final tagSet = sourceDb.select(
+            final emoticonId = int.parse(row[sqldbEmoticonsId].toString());
+            final tagSet = await sourceDb.rawQuery(
               """
   SELECT tags.$sqldbTagName 
     FROM $sqldbTagsTableName AS tags,
@@ -363,9 +379,9 @@ WHERE $sqldbTagsId==?
             );
             final emoticon = Emoticon(
               id: emoticonId,
-              text: row[sqldbEmoticonsText],
+              text: row[sqldbEmoticonsText].toString(),
               emoticonTags: tagSet.map(
-                (Row row) {
+                (Map<String, Object?> row) {
                   return row[sqldbTagName].toString();
                 },
               ).toList(),
@@ -373,7 +389,7 @@ WHERE $sqldbTagsId==?
             await saveEmoticon(emoticon: emoticon);
           }
       }
-      sourceDb.dispose();
+      await sourceDb.close();
       return Result.value(null);
     } on Exception catch (error, stacktrace) {
       return Result.error(error, stacktrace);
@@ -387,11 +403,13 @@ WHERE $sqldbTagsId==?
       final fileName =
           "Emotic_${today.year}_${today.month}_${today.day}_${today.hour}_${today.minute}.sqlite";
       final cacheDir = await getApplicationCacheDirectory();
+
       final outputDbPath = p.join(cacheDir.path, fileName);
-      final outputDb = sqlite3.open(outputDbPath);
-      await db.backup(outputDb).drain();
-      outputDb.execute("""DROP TABLE $sqldbSettingsTableName""");
-      outputDb.dispose();
+      await db.execute("VACUUM");
+      await io.File(db.path).copy(outputDbPath);
+      final outputDb = await openDatabase(outputDbPath);
+      await outputDb.execute("""DROP TABLE $sqldbSettingsTableName""");
+      await outputDb.close();
       final dbFile = io.File(outputDbPath);
       outputFile = await FilePicker.platform.saveFile(
         dialogTitle: "Save data",

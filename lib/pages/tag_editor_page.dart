@@ -15,6 +15,8 @@ class TagEditorPage extends StatefulWidget {
 }
 
 class _TagEditorPageState extends State<TagEditorPage> {
+  final String emoticonsListKey = "emoticonsListKey";
+  final String tagsListKey = "tagsListKey";
   Map<String, bool> tagging = {};
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,7 @@ class _TagEditorPageState extends State<TagEditorPage> {
             return BlocProvider(
               create: (context) => TagEditorCubit(
                 emoticonsRepository: sl(),
-                shouldLoadFromAsset: settings.isFirstTime || settings.isUpdated,
+                shouldLoadFromAsset: settings.shouldReload,
               ),
               child: BlocBuilder<TagEditorCubit, TagEditorState>(
                 builder: (context, state) {
@@ -111,6 +113,7 @@ class _TagEditorPageState extends State<TagEditorPage> {
                             children: [
                               Expanded(
                                 child: ListView(
+                                  key: PageStorageKey(emoticonsListKey),
                                   // crossAxisAlignment: CrossAxisAlignment.start,
                                   children: allEmoticons
                                       .map(
@@ -140,6 +143,7 @@ class _TagEditorPageState extends State<TagEditorPage> {
                               ),
                               Expanded(
                                 child: ListView(
+                                  key: PageStorageKey(tagsListKey),
                                   // crossAxisAlignment: CrossAxisAlignment.start,
                                   children: tagging.keys
                                       .map(

@@ -1,0 +1,4 @@
+Minor improvements ^_^
+• Emoticons and tag editor page won't freeze the app anymore (by using async sqlite).
+• Moved the "Refresh" option from Emoticons page menu to Settings page.
+• Added 9 new emoticons.

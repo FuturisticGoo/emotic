@@ -52,6 +52,14 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                     ListTile(
+                      title: const Text("Restore all emoticons"),
+                      onTap: () async {
+                        await context
+                            .read<SettingsCubit>()
+                            .loadEmoticonsFromAsset();
+                      },
+                    ),
+                    ListTile(
                       title: const Text("Clear all data"),
                       onTap: () async {
                         final shouldClear = await showDialog<bool>(

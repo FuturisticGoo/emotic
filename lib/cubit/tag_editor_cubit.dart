@@ -9,6 +9,7 @@ class TagEditorCubit extends Cubit<TagEditorState> {
     required this.emoticonsRepository,
     required bool shouldLoadFromAsset,
   }) : super(TagEditorInitial()) {
+    emit(TagEditorLoading());
     loadEmoticons(shouldLoadFromAsset: shouldLoadFromAsset);
   }
 
@@ -20,7 +21,6 @@ class TagEditorCubit extends Cubit<TagEditorState> {
     required bool shouldLoadFromAsset,
     Emoticon? selectedEmoticon,
   }) async {
-    emit(TagEditorLoading());
     final allEmoticons = await emoticonsRepository.getEmoticons(
         shouldLoadFromAsset: shouldLoadFromAsset);
     emit(
@@ -60,7 +60,9 @@ class TagEditorCubit extends Cubit<TagEditorState> {
 
   void deleteEmoticon({required Emoticon emoticon}) async {
     await emoticonsRepository.deleteEmoticon(emoticon: emoticon);
-    await loadEmoticons(shouldLoadFromAsset: false);
+    await loadEmoticons(
+      shouldLoadFromAsset: false,
+    );
   }
 
   void addNewTag({required String tag}) async {

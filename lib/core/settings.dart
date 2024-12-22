@@ -4,7 +4,7 @@ import 'package:emotic/core/constants.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:sqlite3/sqlite3.dart';
+import 'package:sqflite/sqflite.dart';
 part 'settings.g.dart';
 
 @JsonSerializable()
@@ -13,6 +13,10 @@ class GlobalSettings extends Equatable {
   final String lastUsedVersion;
   bool get isUpdated {
     return lastUsedVersion != version;
+  }
+
+  bool get shouldReload {
+    return isFirstTime || isUpdated;
   }
 
   const GlobalSettings({
@@ -38,7 +42,7 @@ class SettingsSourceDb implements SettingsSource {
   final Database db;
   SettingsSourceDb({required this.db});
   Future<void> _ensureTable() async {
-    db.execute("""
+    await db.execute("""
 CREATE TABLE IF NOT EXISTS $sqldbSettingsTableName
   (
     $sqldbSettingsId INTEGER,
@@ -50,7 +54,7 @@ CREATE TABLE IF NOT EXISTS $sqldbSettingsTableName
   @override
   Future<GlobalSettings> getSavedSettings() async {
     await _ensureTable();
-    final settingsResult = db.select("""
+    final settingsResult = await db.rawQuery("""
 SELECT $sqldbSettingsJson FROM $sqldbSettingsTableName
 WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
 """);
@@ -62,7 +66,7 @@ WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
     } else {
       final settingsJson = Map<String, dynamic>.from(
         jsonDecode(
-          settingsResult.first[sqldbSettingsJson],
+          settingsResult.first[sqldbSettingsJson] as String,
         ),
       );
       return GlobalSettings.fromJson(settingsJson);
@@ -72,10 +76,10 @@ WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
   @override
   Future<void> saveSettings(GlobalSettings newSettings) async {
     await _ensureTable();
-    db.execute("""
+    await db.execute("""
 DELETE FROM $sqldbSettingsTableName
 """);
-    db.execute(
+    await db.execute(
       """
 INSERT INTO $sqldbSettingsTableName
   ($sqldbSettingsId, $sqldbSettingsJson)

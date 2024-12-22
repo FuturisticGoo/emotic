@@ -1,3 +1,4 @@
+import 'package:emotic/core/app_theme.dart';
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/routes.dart';
@@ -26,10 +27,8 @@ class EmoticApp extends StatelessWidget {
         listener: (context, state) {
           if (state
               case GlobalSettingsLoaded(
-                settings: GlobalSettings(
-                  isFirstTime: true,
-                ),
-              )) {
+                :final settings,
+              ) when settings.shouldReload) {
             context.read<GlobalSettingsCubit>().saveSettings(
                   const GlobalSettings(
                     isFirstTime: false,
@@ -43,24 +42,13 @@ class EmoticApp extends StatelessWidget {
             return MaterialApp.router(
               debugShowCheckedModeBanner: false,
               title: 'Emotic',
-              theme: ThemeData(
-                fontFamily: "Noto Sans",
-                fontFamilyFallback: const [
-                  "sans-serif",
-                  "Roboto",
-                ],
+              theme: getAppTheme(
                 colorScheme: lightDynamic,
-                useMaterial3: true,
+                brightness: Brightness.light,
               ),
-              darkTheme: ThemeData(
-                fontFamily: "Noto Sans",
-                fontFamilyFallback: const [
-                  "sans-serif",
-                  "Roboto",
-                ],
+              darkTheme: getAppTheme(
                 colorScheme: darkDynamic,
                 brightness: Brightness.dark,
-                useMaterial3: true,
               ),
               themeMode: ThemeMode.system,
               routerConfig: Routes.router,
