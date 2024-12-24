@@ -1,0 +1,5 @@
+Call of Emoticons: Batch Ops! (ಠ‿<)
+• Now its possible to add multiple emoticons or tags in a single step.
+• Similarly, you can now delete multiple emoticons or tags.
+• All of this is available in the Data Editor page (previously called Tag Editor).
+• Minor change: Add/Modify emoticon bottom sheet should now show all tags from the database, even those that aren't used by any emoticons
