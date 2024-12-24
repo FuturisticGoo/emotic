@@ -1,5 +1,6 @@
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/cubit/settings_cubit.dart';
+import 'package:emotic/widgets/show_snackbar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:flutter/material.dart';
@@ -19,12 +20,7 @@ class SettingsPage extends StatelessWidget {
             case SettingsLoaded(:final snackBarMessage)
                 when snackBarMessage != null:
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(snackBarMessage),
-                    duration: const Duration(milliseconds: 500),
-                  ),
-                );
+                showSnackBar(context, text: snackBarMessage);
               }
             default:
               break;

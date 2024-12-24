@@ -1,4 +1,5 @@
 import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/widgets/show_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,12 +27,7 @@ class _CopyableEmoticonState extends State<CopyableEmoticon> {
         onTap: () async {
           await Clipboard.setData(ClipboardData(text: widget.emoticon.text));
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Copied ${widget.emoticon.text}'),
-                duration: const Duration(milliseconds: 500),
-              ),
-            );
+            showSnackBar(context, text: "Copied ${widget.emoticon.text}");
           }
         },
         onLongPress: () {

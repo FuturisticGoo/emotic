@@ -1,24 +1,14 @@
 import 'package:flutter/material.dart';
 
-Future<String?> addNewTag(BuildContext context) {
-  return showAdaptiveDialog<String?>(
+Future<bool?> confirmDeletionDialog(BuildContext context,
+    {required String titleText}) {
+  return showAdaptiveDialog<bool?>(
     context: context,
     builder: (context) {
-      String newTagText = "";
       return SimpleDialog(
-        title: const Text("Add new tag"),
+        title: Text(titleText),
         contentPadding: const EdgeInsets.all(16.0),
         children: [
-          TextField(
-            autofocus: true,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              label: Text("Tag"),
-            ),
-            onChanged: (value) {
-              newTagText = value;
-            },
-          ),
           const SizedBox(
             height: 20,
           ),
@@ -28,9 +18,9 @@ Future<String?> addNewTag(BuildContext context) {
               children: [
                 OutlinedButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pop(context, false);
                   },
-                  child: const Text("Cancel"),
+                  child: const Text("No"),
                 ),
                 const SizedBox(
                   width: 10,
@@ -39,10 +29,10 @@ Future<String?> addNewTag(BuildContext context) {
                   onPressed: () {
                     Navigator.pop(
                       context,
-                      newTagText.trim().isEmpty ? null : newTagText.trim(),
+                      true,
                     );
                   },
-                  child: const Text("Add"),
+                  child: const Text("Yes"),
                 ),
               ],
             );

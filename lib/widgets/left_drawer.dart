@@ -29,10 +29,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: const Text("Tag Editor"),
+            title: const Text("Data Editor"),
             onTap: () {
               Navigator.of(context).pop();
-              context.go(Routes.tagEditorPage);
+              context.go(Routes.dataEditorPage);
             },
           ),
           ListTile(

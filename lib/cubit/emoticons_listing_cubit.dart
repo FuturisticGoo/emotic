@@ -13,14 +13,6 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
     loadEmoticons(shouldLoadFromAsset: shouldLoadFromAsset);
   }
 
-  List<String> _getAllTags(List<Emoticon> emoticons) {
-    Set<String> tags = {};
-    for (var emoticon in emoticons) {
-      tags.addAll(emoticon.emoticonTags);
-    }
-    return tags.toList();
-  }
-
   void loadEmoticons({required bool shouldLoadFromAsset}) async {
     emit(EmoticonsListingLoading());
     final allEmoticons = await emoticonsRepository.getEmoticons(
@@ -28,7 +20,7 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
     emit(
       EmoticonsListingLoaded(
         allEmoticons: allEmoticons,
-        allTags: _getAllTags(allEmoticons),
+        allTags: await emoticonsRepository.getTags(),
         emoticonsToShow: allEmoticons,
       ),
     );

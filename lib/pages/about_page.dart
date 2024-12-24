@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
+import 'package:emotic/widgets/show_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -110,12 +111,7 @@ class AboutForeground extends StatelessWidget {
                         await Clipboard.setData(
                             const ClipboardData(text: sourceLink));
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Copied link'),
-                              duration: Duration(milliseconds: 500),
-                            ),
-                          );
+                          showSnackBar(context, text: "Copied link");
                         }
                       },
                       title: const Text("Source Code"),

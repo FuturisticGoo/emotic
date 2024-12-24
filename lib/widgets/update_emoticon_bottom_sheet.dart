@@ -1,5 +1,6 @@
 import 'package:emotic/core/emoticon.dart';
-import 'package:emotic/widgets/add_tag_helper.dart';
+import 'package:emotic/widgets/delete_confirmation.dart';
+import 'package:emotic/widgets/read_list_of_string_from_user.dart';
 import 'package:flutter/material.dart';
 
 sealed class BottomSheetResult {
@@ -141,11 +142,22 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                       },
                 onSelect: (tag, selected) async {
                   if (tag == "+") {
-                    final newTag = await addNewTag(context);
-                    if (newTag != null) {
-                      setState(() {
-                        tagsSelection[newTag] = true;
-                      });
+                    final newTags = await readListOfStringFromUser(
+                      context,
+                      titleText: "Add new tags",
+                      textLabel: "Tags",
+                      textHint: "Type one tag per line",
+                    );
+                    if (newTags != null) {
+                      setState(
+                        () {
+                          tagsSelection.addEntries(
+                            newTags.map(
+                              (newTag) => MapEntry(newTag, true),
+                            ),
+                          );
+                        },
+                      );
                     }
                   } else if (readOnlyMode && widget.isEditMode) {
                     Navigator.pop<BottomSheetResult>(
@@ -187,7 +199,9 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                             padding: const EdgeInsets.only(),
                           ),
                           onPressed: () async {
-                            if (await confirmDeletionDialog(context) == true &&
+                            if (await confirmDeletionDialog(context,
+                                        titleText: "Delete emoticon?") ==
+                                    true &&
                                 context.mounted) {
                               Navigator.pop<BottomSheetResult>(
                                 context,
@@ -288,48 +302,6 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Future<bool?> confirmDeletionDialog(BuildContext context) {
-    return showAdaptiveDialog<bool?>(
-      context: context,
-      builder: (context) {
-        return SimpleDialog(
-          title: const Text("Delete emoticon?"),
-          contentPadding: const EdgeInsets.all(16.0),
-          children: [
-            const SizedBox(
-              height: 20,
-            ),
-            Builder(builder: (context) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.pop(context, false);
-                    },
-                    child: const Text("No"),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.pop(
-                        context,
-                        true,
-                      );
-                    },
-                    child: const Text("Yes"),
-                  ),
-                ],
-              );
-            })
-          ],
         );
       },
     );
