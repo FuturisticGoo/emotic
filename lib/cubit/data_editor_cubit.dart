@@ -28,21 +28,18 @@ class DataEditorCubit extends Cubit<DataEditorState> {
   final EmoticonsRepository emoticonsRepository;
   DataEditorCubit({
     required this.emoticonsRepository,
-    required bool shouldLoadFromAsset,
   }) : super(DataEditorInitial()) {
     emit(DataEditorLoading());
-    loadEmoticons(shouldLoadFromAsset: shouldLoadFromAsset);
+    loadEmoticons();
   }
 
   Future<List<String>> getAllTags() async {
     return emoticonsRepository.getTags();
   }
 
-  Future<void> loadEmoticons({
-    required bool shouldLoadFromAsset,
-  }) async {
+  Future<void> loadEmoticons() async {
     final allEmoticons = await emoticonsRepository.getEmoticons(
-      shouldLoadFromAsset: shouldLoadFromAsset,
+      shouldLoadFromAsset: false,
     );
     switch (state) {
       case DataEditorModifyLinks(:final selectedEmoticon):
@@ -62,6 +59,13 @@ class DataEditorCubit extends Cubit<DataEditorState> {
             allTags: await getAllTags(),
             selectedEmoticons: selectedEmoticons,
             selectedTags: selectedTags,
+          ),
+        );
+      case DataEditorModifyOrder():
+        emit(
+          DataEditorModifyOrder(
+            allEmoticons: allEmoticons,
+            allTags: await getAllTags(),
           ),
         );
       default:
@@ -144,14 +148,13 @@ class DataEditorCubit extends Cubit<DataEditorState> {
       case DataEditorModifyLinks(:final selectedEmoticon)
           when selectedEmoticon != null:
         await modifyEmoticon(
-          emoticon: Emoticon(
-            id: selectedEmoticon.id,
+          modifyEmoticon: NewOrModifyEmoticon(
             text: selectedEmoticon.text,
             emoticonTags: (selectedEmoticon.emoticonTags.contains(tag))
                 ? selectedEmoticon.emoticonTags.removeIfExists(tag)
                 : selectedEmoticon.emoticonTags.addIfNotExists(tag),
+            oldEmoticon: selectedEmoticon,
           ),
-          oldEmoticon: selectedEmoticon,
         );
       case DataEditorDeleteData(
           :final allEmoticons,
@@ -175,26 +178,22 @@ class DataEditorCubit extends Cubit<DataEditorState> {
   }
 
   Future<void> modifyEmoticon({
-    required Emoticon emoticon,
-    Emoticon? oldEmoticon,
+    required NewOrModifyEmoticon modifyEmoticon,
   }) async {
     await emoticonsRepository.saveEmoticon(
-      emoticon: emoticon,
-      oldEmoticon: oldEmoticon,
+      newOrModifyEmoticon: modifyEmoticon,
     );
-    await loadEmoticons(
-      shouldLoadFromAsset: false,
-    );
+    await loadEmoticons();
   }
 
   Future<void> addNewEmoticons({
-    required List<Emoticon> emoticons,
+    required List<NewOrModifyEmoticon> newEmoticons,
   }) async {
     emit(DataEditorLoading());
-    for (final emoticon in emoticons) {
-      await emoticonsRepository.saveEmoticon(emoticon: emoticon);
+    for (final newEmoticon in newEmoticons) {
+      await emoticonsRepository.saveEmoticon(newOrModifyEmoticon: newEmoticon);
     }
-    await loadEmoticons(shouldLoadFromAsset: false);
+    await loadEmoticons();
   }
 
   Future<void> deleteEmoticonsAndTags({
@@ -208,9 +207,76 @@ class DataEditorCubit extends Cubit<DataEditorState> {
     for (final tag in tags) {
       await emoticonsRepository.deleteTag(tag: tag);
     }
-    await loadEmoticons(
-      shouldLoadFromAsset: false,
-    );
+    await loadEmoticons();
+  }
+
+  Future<void> startReordering() async {
+    if (state case DataEditorLoaded(:final allEmoticons, :final allTags)) {
+      emit(
+        DataEditorModifyOrder(
+          allEmoticons: allEmoticons,
+          allTags: allTags,
+        ),
+      );
+    }
+  }
+
+  Future<void> reorderEmoticon({
+    required int oldIndex,
+    required int newIndex,
+  }) async {
+    switch (state) {
+      case DataEditorModifyOrder(
+          :final allEmoticons,
+          :final allTags,
+        ):
+        var newEmoticonsOrder = allEmoticons.sublist(0);
+        final emoticon = newEmoticonsOrder.removeAt(oldIndex);
+        newEmoticonsOrder.insert(newIndex, emoticon);
+        // For faster visual update
+        emit(
+          DataEditorModifyOrder(
+            allEmoticons: newEmoticonsOrder,
+            allTags: allTags,
+          ),
+        );
+        await emoticonsRepository.modifyEmoticonOrder(
+          emoticon: emoticon,
+          newOrder: newIndex,
+        );
+        await loadEmoticons();
+      default:
+        break;
+    }
+  }
+
+  Future<void> reorderTag({
+    required int oldIndex,
+    required int newIndex,
+  }) async {
+    switch (state) {
+      case DataEditorModifyOrder(
+          :final allEmoticons,
+          :final allTags,
+        ):
+        var newTagsOrder = allTags.sublist(0);
+        final tag = newTagsOrder.removeAt(oldIndex);
+        newTagsOrder.insert(newIndex, tag);
+        // For faster visual update
+        emit(
+          DataEditorModifyOrder(
+            allEmoticons: allEmoticons,
+            allTags: newTagsOrder,
+          ),
+        );
+        await emoticonsRepository.modifyTagOrder(
+          tag: tag,
+          newOrder: newIndex,
+        );
+        await loadEmoticons();
+      default:
+        break;
+    }
   }
 
   void addNewTags({required List<String> tags}) async {
@@ -218,9 +284,7 @@ class DataEditorCubit extends Cubit<DataEditorState> {
     for (final tag in tags) {
       await emoticonsRepository.saveTag(tag: tag);
     }
-    await loadEmoticons(
-      shouldLoadFromAsset: false,
-    );
+    await loadEmoticons();
   }
 }
 

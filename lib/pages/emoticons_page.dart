@@ -1,5 +1,8 @@
+import 'package:emotic/core/emoticon.dart';
 import 'package:emotic/core/init_setup.dart';
+import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
+import 'package:emotic/core/routes.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/emoticons_listing_cubit.dart';
 import 'package:emotic/cubit/emoticons_listing_state.dart';
@@ -8,6 +11,7 @@ import 'package:emotic/widgets/search_bar.dart';
 import 'package:emotic/widgets/update_emoticon_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class EmoticonsPage extends StatefulWidget {
   const EmoticonsPage({super.key});
@@ -27,7 +31,29 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
+    return BlocConsumer<GlobalSettingsCubit, GlobalSettingsState>(
+      listener: (context, state) {
+        if (state case GlobalSettingsLoaded(:final settings)) {
+          getLogger().config("Is Updated: ${settings.isUpdated}");
+          getLogger().config("Is First Time: ${settings.isFirstTime}");
+          if (settings.shouldReload) {
+            getLogger().config("Redirecting to app update page");
+            context.go(Routes.updatingPage);
+          }
+        }
+      },
+      buildWhen: (previous, current) {
+        if (current case GlobalSettingsLoaded(:final settings)
+            when settings.shouldReload) {
+          // If we need to reload the settings, we shouldn't trigger
+          // building EmoticonsListingCubit becuase it will try to load and emit
+          // emoticons, but the screen would have redirected to updating page,
+          // so it will be an error
+          return false;
+        } else {
+          return previous != current;
+        }
+      },
       builder: (context, state) {
         switch (state) {
           case GlobalSettingsInitial():
@@ -35,11 +61,10 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
             return const Center(
               child: CircularProgressIndicator.adaptive(),
             );
-          case GlobalSettingsLoaded(:final settings):
+          case GlobalSettingsLoaded():
             return BlocProvider(
               create: (context) => EmoticonsListingCubit(
                 emoticonsRepository: sl(),
-                shouldLoadFromAsset: settings.shouldReload,
               ),
               child: Scaffold(
                 appBar: AppBar(
@@ -48,15 +73,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                     onPressed: context.openRootScaffoldDrawer,
                   ),
                   actions: [
-                    BlocConsumer<EmoticonsListingCubit, EmoticonsListingState>(
-                      listener: (context, state) async {
-                        if (state is EmoticonsListingLoaded &&
-                            settings.shouldReload) {
-                          await context
-                              .read<GlobalSettingsCubit>()
-                              .refreshSettings();
-                        }
-                      },
+                    BlocBuilder<EmoticonsListingCubit, EmoticonsListingState>(
                       builder: (context, state) {
                         return PopupMenuButton(
                           enabled: state is EmoticonsListingLoaded,
@@ -76,17 +93,19 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                       return UpdateEmoticonBottomSheet(
                                         allTags: allTags,
                                         isEditMode: false,
+                                        newOrModifyEmoticon:
+                                            NewOrModifyEmoticon.newEmoticon(),
                                       );
                                     },
                                   );
                                   switch (result) {
-                                    case AddEmoticon(:final emoticon)
+                                    case AddEmoticon(:final newOrModifyEmoticon)
                                         when context.mounted:
                                       context
                                           .read<EmoticonsListingCubit>()
                                           .saveEmoticon(
-                                            emoticon: emoticon,
-                                          );
+                                              newOrModifyEmoticon:
+                                                  newOrModifyEmoticon);
 
                                     default:
                                       break;
@@ -128,9 +147,6 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                       );
                                 },
                               ),
-                              // TagFilter(
-                              //   allTags: allTags,
-                              // ),
                               const SizedBox(
                                 height: 20,
                               ),
@@ -156,7 +172,11 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                                   isScrollControlled: true,
                                                   builder: (context) {
                                                     return UpdateEmoticonBottomSheet(
-                                                      emoticon: emoticon,
+                                                      newOrModifyEmoticon:
+                                                          NewOrModifyEmoticon
+                                                              .fromExistingEmoticon(
+                                                        emoticon,
+                                                      ),
                                                       isEditMode: true,
                                                       allTags: allTags,
                                                     );
@@ -165,31 +185,35 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                                 if (context.mounted) {
                                                   switch (result) {
                                                     case DeleteEmoticon(
-                                                        :final emoticon
-                                                      ):
+                                                          newOrModifyEmoticon:
+                                                              NewOrModifyEmoticon(
+                                                            :final oldEmoticon
+                                                          )
+                                                        )
+                                                        when oldEmoticon !=
+                                                            null:
                                                       context
                                                           .read<
                                                               EmoticonsListingCubit>()
                                                           .deleteEmoticon(
-                                                            emoticon: emoticon,
+                                                            emoticon:
+                                                                oldEmoticon,
                                                           );
 
                                                     case UpdateEmoticon(
-                                                        :final emoticon,
-                                                        :final newEmoticon
+                                                        :final newOrModifyEmoticon
                                                       ):
                                                       context
                                                           .read<
                                                               EmoticonsListingCubit>()
                                                           .saveEmoticon(
-                                                            emoticon:
-                                                                newEmoticon,
-                                                            oldEmoticon:
-                                                                emoticon,
+                                                            newOrModifyEmoticon:
+                                                                newOrModifyEmoticon,
                                                           );
                                                     case TagClicked(:final tag):
                                                       controller.text = tag;
                                                     case AddEmoticon():
+                                                    case DeleteEmoticon():
                                                     case null:
                                                       break;
                                                   }

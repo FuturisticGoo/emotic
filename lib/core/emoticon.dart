@@ -1,15 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
 
-part 'emoticon.g.dart';
-
-@JsonSerializable()
 class Emoticon extends Equatable {
-  /// id is the unique identifier for an emoticon. If its null, it means
-  /// it hasn't been added to the database yet.
-  /// This id here is only used for uniqueness within the context of app logic,
-  /// it may/may not be same as the one used in the database
-  final int? id;
+  final int id;
   final String text;
   final List<String> emoticonTags;
   const Emoticon({
@@ -19,8 +11,33 @@ class Emoticon extends Equatable {
   });
   @override
   List<Object?> get props => [id, text, emoticonTags];
+}
 
-  Map<String, dynamic> toJson() => _$EmoticonToJson(this);
-  factory Emoticon.fromJson(Map<String, dynamic> json) =>
-      _$EmoticonFromJson(json);
+class NewOrModifyEmoticon extends Equatable {
+  final String text;
+  final List<String> emoticonTags;
+  final Emoticon? oldEmoticon;
+  const NewOrModifyEmoticon({
+    required this.text,
+    required this.emoticonTags,
+    required this.oldEmoticon,
+  });
+  const NewOrModifyEmoticon.newEmoticon()
+      : this(
+          text: "",
+          emoticonTags: const [],
+          oldEmoticon: null,
+        );
+  NewOrModifyEmoticon.fromExistingEmoticon(Emoticon emoticon)
+      : this(
+          text: emoticon.text,
+          emoticonTags: emoticon.emoticonTags,
+          oldEmoticon: emoticon,
+        );
+  @override
+  List<Object?> get props => [
+        text,
+        emoticonTags,
+        oldEmoticon,
+      ];
 }

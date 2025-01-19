@@ -1,18 +1,17 @@
 import 'dart:convert';
 
 import 'package:emotic/core/constants.dart';
+import 'package:emotic/core/logging.dart';
+import 'package:emotic/core/semver.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:sqflite/sqflite.dart';
-part 'settings.g.dart';
 
-@JsonSerializable()
 class GlobalSettings extends Equatable {
   final bool isFirstTime;
-  final String lastUsedVersion;
+  final SemVer lastUsedVersion;
   bool get isUpdated {
-    return lastUsedVersion != version;
+    return lastUsedVersion < version;
   }
 
   bool get shouldReload {
@@ -23,9 +22,7 @@ class GlobalSettings extends Equatable {
     required this.isFirstTime,
     required this.lastUsedVersion,
   });
-  Map<String, dynamic> toJson() => _$GlobalSettingsToJson(this);
-  factory GlobalSettings.fromJson(Map<String, dynamic> json) =>
-      _$GlobalSettingsFromJson(json);
+
   @override
   List<Object?> get props => [
         isFirstTime,
@@ -38,25 +35,42 @@ abstract class SettingsSource {
   Future<void> saveSettings(GlobalSettings newSettings);
 }
 
-class SettingsSourceDb implements SettingsSource {
+class SettingsSourceSQLite implements SettingsSource {
   final Database db;
-  SettingsSourceDb({required this.db});
+  SettingsSourceSQLite({required this.db});
   Future<void> _ensureTable() async {
     await db.execute("""
 CREATE TABLE IF NOT EXISTS $sqldbSettingsTableName
   (
-    $sqldbSettingsId INTEGER,
-    $sqldbSettingsJson VARCHAR
+    $sqldbSettingsKeyColName VARCHAR,
+    $sqldbSettingsValueColName VARCHAR
   )
 """);
   }
 
+  Map<String, String> _getSettingsKVFromResult(
+      List<Map<String, Object?>> result) {
+    return Map.fromEntries(
+      result.map(
+        (row) {
+          return MapEntry(
+            row[sqldbSettingsKeyColName] as String,
+            row[sqldbSettingsValueColName] as String,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Future<GlobalSettings> getSavedSettings() async {
+    await _performMigrationForPre0_1_6();
     await _ensureTable();
     final settingsResult = await db.rawQuery("""
-SELECT $sqldbSettingsJson FROM $sqldbSettingsTableName
-WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
+SELECT 
+  $sqldbSettingsKeyColName, $sqldbSettingsValueColName 
+FROM 
+  $sqldbSettingsTableName
 """);
     if (settingsResult.isEmpty) {
       return const GlobalSettings(
@@ -64,34 +78,118 @@ WHERE $sqldbSettingsId==$sqldbSettingsIdConstant
         lastUsedVersion: version,
       );
     } else {
-      final settingsJson = Map<String, dynamic>.from(
-        jsonDecode(
-          settingsResult.first[sqldbSettingsJson] as String,
-        ),
+      final settingsKV = _getSettingsKVFromResult(settingsResult);
+      final isFirstTime = bool.tryParse(
+        settingsKV[sqldbSettingsKeyIsFirstTime] ?? "",
       );
-      return GlobalSettings.fromJson(settingsJson);
+      SemVer lastUsedVersion;
+      try {
+        final lastUsedVersionString =
+            settingsKV[sqldbSettingsKeylastUsedVersion] ?? version.toString();
+        lastUsedVersion = SemVer.fromString(
+          lastUsedVersionString,
+        );
+      } on ArgumentError {
+        lastUsedVersion = version;
+      }
+      final globalSettings = GlobalSettings(
+        isFirstTime: isFirstTime ?? true,
+        lastUsedVersion: lastUsedVersion,
+      );
+      getLogger().fine("Got $globalSettings");
+      return globalSettings;
     }
   }
 
   @override
   Future<void> saveSettings(GlobalSettings newSettings) async {
     await _ensureTable();
+    getLogger().config("Going to save $newSettings");
     await db.execute("""
 DELETE FROM $sqldbSettingsTableName
 """);
-    await db.execute(
+
+    await db.rawInsert(
       """
-INSERT INTO $sqldbSettingsTableName
-  ($sqldbSettingsId, $sqldbSettingsJson)
+INSERT INTO 
+  $sqldbSettingsTableName
+    ($sqldbSettingsKeyColName, $sqldbSettingsValueColName)
 VALUES
-  ($sqldbSettingsIdConstant, ?)
+  (?, ?)
 """,
       [
-        jsonEncode(
-          newSettings.toJson(),
-        ),
+        sqldbSettingsKeyIsFirstTime,
+        newSettings.isFirstTime.toString(),
       ],
     );
+
+    await db.rawInsert(
+      """
+INSERT INTO 
+  $sqldbSettingsTableName
+    ($sqldbSettingsKeyColName, $sqldbSettingsValueColName)
+VALUES
+  (?, ?)
+""",
+      [
+        sqldbSettingsKeylastUsedVersion,
+        newSettings.lastUsedVersion.toString(),
+      ],
+    );
+  }
+
+  Future<void> _performMigrationForPre0_1_6() async {
+    final String? previousVersionString;
+
+    // First check if the old settings table exists, by trying to create one
+    await db.execute("""
+CREATE TABLE IF NOT EXISTS settings (placeholder INTEGER)
+""");
+    final tableAlreadyThereCheckResult = await db.rawQuery("""
+SELECT * FROM settings
+""");
+    if (tableAlreadyThereCheckResult.isNotEmpty) {
+      // This means the user is upgrading from 0.1.5 or below, because otherwise
+      // this should be empty
+      previousVersionString = jsonDecode(tableAlreadyThereCheckResult
+          .first["settings_json"] as String)["lastUsedVersion"] as String;
+      getLogger().config(
+          "Doing migration from version $previousVersionString settings table");
+    } else {
+      getLogger().config(
+        "No rows in settings(old) table, this means that either its a new user "
+        "or v0.1.6+ user",
+      );
+      previousVersionString = null;
+    }
+
+    // We're not using that table anymore
+    await db.execute("""
+DROP TABLE IF EXISTS settings
+""");
+
+    if (previousVersionString != null) {
+      await _ensureTable();
+      await db.rawInsert(
+        """
+INSERT INTO $sqldbSettingsTableName
+VALUES
+  (?, ?)
+      """,
+        [sqldbSettingsKeyIsFirstTime, false.toString()],
+      );
+      await db.rawInsert(
+        """
+INSERT INTO $sqldbSettingsTableName
+VALUES
+  (?, ?)
+      """,
+        [
+          sqldbSettingsKeylastUsedVersion,
+          "0.1.5"
+        ], // We'll assume it's this version, no change with older one anyway
+      );
+    }
   }
 }
 
@@ -107,11 +205,13 @@ class GlobalSettingsLoading implements GlobalSettingsState {
   const GlobalSettingsLoading();
 }
 
-class GlobalSettingsLoaded implements GlobalSettingsState {
+class GlobalSettingsLoaded extends Equatable implements GlobalSettingsState {
   final GlobalSettings settings;
   const GlobalSettingsLoaded({
     required this.settings,
   });
+  @override
+  List<Object?> get props => [settings];
 }
 
 class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
@@ -124,6 +224,7 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
   }
 
   Future<void> _loadSettings() async {
+    getLogger().fine("Loading saved settings");
     emit(const GlobalSettingsLoading());
     emit(
       GlobalSettingsLoaded(
@@ -133,10 +234,12 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
   }
 
   Future<void> refreshSettings() async {
+    getLogger().fine("Refreshing settings");
     await _loadSettings();
   }
 
   Future<void> saveSettings(GlobalSettings newSettings) async {
+    getLogger().fine("Saving settings");
     await settingsSource.saveSettings(newSettings);
   }
 }

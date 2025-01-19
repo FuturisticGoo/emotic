@@ -1,14 +1,19 @@
 import 'package:emotic/core/emoticon.dart';
 import 'package:emotic/core/init_setup.dart';
+import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
+import 'package:emotic/core/routes.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/data_editor_cubit.dart';
 import 'package:emotic/cubit/data_editor_state.dart';
 import 'package:emotic/widgets/delete_confirmation.dart';
+import 'package:emotic/widgets/emoticon_tile.dart';
 import 'package:emotic/widgets/read_list_of_string_from_user.dart';
 import 'package:emotic/widgets/show_snackbar.dart';
+import 'package:emotic/widgets/tag_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class DataEditorPage extends StatefulWidget {
   const DataEditorPage({super.key});
@@ -23,7 +28,29 @@ class _DataEditorPageState extends State<DataEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
+    return BlocConsumer<GlobalSettingsCubit, GlobalSettingsState>(
+      listener: (context, state) {
+        if (state case GlobalSettingsLoaded(:final settings)) {
+          getLogger().config("Is Updated: ${settings.isUpdated}");
+          getLogger().config("Is First Time: ${settings.isFirstTime}");
+          if (settings.shouldReload) {
+            getLogger().config("Redirecting to app update page");
+            context.go(Routes.updatingPage);
+          }
+        }
+      },
+      buildWhen: (previous, current) {
+        if (current case GlobalSettingsLoaded(:final settings)
+            when settings.shouldReload) {
+          // If we need to reload the settings, we shouldn't trigger
+          // building EmoticonsListingCubit becuase it will try to load and emit
+          // emoticons, but the screen would have redirected to updating page,
+          // so it will be an error
+          return false;
+        } else {
+          return previous != current;
+        }
+      },
       builder: (context, state) {
         switch (state) {
           case GlobalSettingsInitial():
@@ -31,11 +58,10 @@ class _DataEditorPageState extends State<DataEditorPage> {
             return const Center(
               child: CircularProgressIndicator(),
             );
-          case GlobalSettingsLoaded(:final settings):
+          case GlobalSettingsLoaded():
             return BlocProvider(
               create: (context) => DataEditorCubit(
                 emoticonsRepository: sl(),
-                shouldLoadFromAsset: settings.shouldReload,
               ),
               child: BlocBuilder<DataEditorCubit, DataEditorState>(
                 builder: (context, state) {
@@ -49,41 +75,6 @@ class _DataEditorPageState extends State<DataEditorPage> {
                         :final allEmoticons,
                         :final allTags,
                       ):
-                      // tagging = Map.fromIterables(
-                      //   allTags,
-                      //   List.filled(
-                      //     allTags.length,
-                      //     false,
-                      //   ),
-                      // );
-                      // if (selectedEmoticon != null) {
-                      //   for (final tag in selectedEmoticon.emoticonTags) {
-                      //     tagging[tag] = true;
-                      //   }
-                      // }
-                      //? Should I do sorting?
-                      // var selectedTags = tagging.keys
-                      //     .where(
-                      //       (element) => tagging[element] ?? false,
-                      //     )
-                      //     .toList();
-                      // var unselectedTags = tagging.keys
-                      //     .toSet()
-                      //     .difference(selectedTags.toSet())
-                      //     .toList();
-                      // selectedTags.sort();
-                      // unselectedTags.sort();
-
-                      // tagging = {
-                      //   ...Map.fromIterables(
-                      //     selectedTags,
-                      //     List.filled(selectedTags.length, true),
-                      //   ),
-                      //   ...Map.fromIterables(
-                      //     unselectedTags,
-                      //     List.filled(unselectedTags.length, false),
-                      //   ),
-                      // };
                       return Scaffold(
                         appBar: AppBar(
                           title: const Text("Data Editor"),
@@ -137,12 +128,12 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                       context
                                           .read<DataEditorCubit>()
                                           .addNewEmoticons(
-                                            emoticons: emoticonsStringList
+                                            newEmoticons: emoticonsStringList
                                                 .map(
-                                                  (e) => Emoticon(
-                                                    id: null,
+                                                  (e) => NewOrModifyEmoticon(
                                                     text: e,
                                                     emoticonTags: const [],
+                                                    oldEmoticon: null,
                                                   ),
                                                 )
                                                 .toList(),
@@ -191,6 +182,14 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                         .startDeleting();
                                   },
                                 ),
+                                PopupMenuItem(
+                                  child: const Text("Reorder emoticons/tags"),
+                                  onTap: () async {
+                                    await context
+                                        .read<DataEditorCubit>()
+                                        .startReordering();
+                                  },
+                                ),
                               ],
                             ),
                           ],
@@ -208,6 +207,8 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                         "Select an emoticon to modify its tags",
                                       DataEditorDeleteData() =>
                                         "Select the emoticons and tags you wish to delete",
+                                      DataEditorModifyOrder() =>
+                                        "Drag the handle to reorder emoticons or tags",
                                       DataEditorLoaded() =>
                                         "Choose an option from the menu"
                                     },
@@ -220,83 +221,141 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                       MainAxisAlignment.spaceAround,
                                   children: [
                                     Expanded(
-                                      child: ListView(
-                                        key: PageStorageKey(emoticonsListKey),
-                                        // crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: allEmoticons.map((e) {
-                                          final isSelected = switch (state) {
-                                            DataEditorModifyLinks(
-                                              :final selectedEmoticon
-                                            ) =>
-                                              e.text == selectedEmoticon?.text,
-                                            DataEditorDeleteData(
-                                              :final selectedEmoticons
-                                            ) =>
-                                              selectedEmoticons.contains(e),
-                                            _ => false,
-                                          };
-                                          return Card.outlined(
-                                            clipBehavior: Clip.hardEdge,
-                                            child: ListTile(
-                                              selected: isSelected,
-                                              selectedTileColor:
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .primaryContainer,
-                                              title: Text(e.text),
-                                              onTap: () {
-                                                context
+                                      child: state is DataEditorModifyOrder
+                                          ? ReorderableListView(
+                                              key: PageStorageKey(
+                                                  emoticonsListKey),
+                                              buildDefaultDragHandles: true,
+                                              onReorder:
+                                                  (oldIndex, newIndex) async {
+                                                if (oldIndex < newIndex) {
+                                                  // removing the item at oldIndex will shorten the list by 1.
+                                                  newIndex -= 1;
+                                                }
+                                                await context
                                                     .read<DataEditorCubit>()
-                                                    .selectEmoticon(
-                                                      emoticon: e,
+                                                    .reorderEmoticon(
+                                                      oldIndex: oldIndex,
+                                                      newIndex: newIndex,
                                                     );
                                               },
+                                              // crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: allEmoticons.map(
+                                                (e) {
+                                                  return EmoticonTile(
+                                                    key:
+                                                        Key("emoticon-${e.id}"),
+                                                    isSelected: false,
+                                                    emoticon: e,
+                                                    onTap: () {},
+                                                  );
+                                                },
+                                              ).toList(),
+                                            )
+                                          : ListView(
+                                              key: PageStorageKey(
+                                                  emoticonsListKey),
+                                              children: allEmoticons.map(
+                                                (e) {
+                                                  final isSelected =
+                                                      switch (state) {
+                                                    DataEditorModifyLinks(
+                                                      :final selectedEmoticon
+                                                    ) =>
+                                                      e.text ==
+                                                          selectedEmoticon
+                                                              ?.text,
+                                                    DataEditorDeleteData(
+                                                      :final selectedEmoticons
+                                                    ) =>
+                                                      selectedEmoticons
+                                                          .contains(e),
+                                                    _ => false,
+                                                  };
+                                                  return EmoticonTile(
+                                                    key:
+                                                        Key("emoticon-${e.id}"),
+                                                    isSelected: isSelected,
+                                                    emoticon: e,
+                                                    onTap: () async {
+                                                      await context
+                                                          .read<
+                                                              DataEditorCubit>()
+                                                          .selectEmoticon(
+                                                            emoticon: e,
+                                                          );
+                                                    },
+                                                  );
+                                                },
+                                              ).toList(),
                                             ),
-                                          );
-                                        }).toList(),
-                                      ),
                                     ),
                                     Expanded(
-                                      child: ListView(
-                                        key: PageStorageKey(tagsListKey),
-                                        // crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: allTags.map(
-                                          (e) {
-                                            final isSelected = switch (state) {
-                                              DataEditorModifyLinks(
-                                                :final selectedEmoticon
-                                              )
-                                                  when selectedEmoticon !=
-                                                      null =>
-                                                selectedEmoticon.emoticonTags
-                                                    .contains(e),
-                                              DataEditorDeleteData(
-                                                :final selectedTags
-                                              ) =>
-                                                selectedTags.contains(e),
-                                              _ => false,
-                                            };
-                                            return Card.outlined(
-                                              clipBehavior: Clip.hardEdge,
-                                              child: ListTile(
-                                                selected: isSelected,
-                                                selectedTileColor:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .primaryContainer,
-                                                title: Text(e),
-                                                onTap: () {
-                                                  context
-                                                      .read<DataEditorCubit>()
-                                                      .selectTag(
-                                                        tag: e,
-                                                      );
+                                      child: state is DataEditorModifyOrder
+                                          ? ReorderableListView(
+                                              key: PageStorageKey(tagsListKey),
+                                              buildDefaultDragHandles: true,
+                                              onReorder:
+                                                  (oldIndex, newIndex) async {
+                                                if (oldIndex < newIndex) {
+                                                  // removing the item at oldIndex will shorten the list by 1.
+                                                  newIndex -= 1;
+                                                }
+                                                await context
+                                                    .read<DataEditorCubit>()
+                                                    .reorderTag(
+                                                      oldIndex: oldIndex,
+                                                      newIndex: newIndex,
+                                                    );
+                                              },
+                                              // crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: allTags.map(
+                                                (e) {
+                                                  return TagTile(
+                                                    key: Key("tag-$e"),
+                                                    isSelected: false,
+                                                    tag: e,
+                                                    onTap: () {},
+                                                  );
                                                 },
-                                              ),
-                                            );
-                                          },
-                                        ).toList(),
-                                      ),
+                                              ).toList(),
+                                            )
+                                          : ListView(
+                                              key: PageStorageKey(tagsListKey),
+                                              // crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: allTags.map(
+                                                (e) {
+                                                  final isSelected =
+                                                      switch (state) {
+                                                    DataEditorModifyLinks(
+                                                      :final selectedEmoticon
+                                                    )
+                                                        when selectedEmoticon !=
+                                                            null =>
+                                                      selectedEmoticon
+                                                          .emoticonTags
+                                                          .contains(e),
+                                                    DataEditorDeleteData(
+                                                      :final selectedTags
+                                                    ) =>
+                                                      selectedTags.contains(e),
+                                                    _ => false,
+                                                  };
+                                                  return TagTile(
+                                                    isSelected: isSelected,
+                                                    tag: e,
+                                                    onTap: () async {
+                                                      await context
+                                                          .read<
+                                                              DataEditorCubit>()
+                                                          .selectTag(
+                                                            tag: e,
+                                                          );
+                                                    },
+                                                  );
+                                                },
+                                              ).toList(),
+                                            ),
                                     ),
                                   ],
                                 ),

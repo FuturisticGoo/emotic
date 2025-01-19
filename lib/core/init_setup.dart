@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/data/emoticons_repository.dart';
 import 'package:emotic/data/emoticons_source.dart';
@@ -13,6 +14,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 final sl = GetIt.instance;
 
 Future<void> initSetup() async {
+  await initLogger();
   if (Platform.isWindows || Platform.isLinux) {
     // Initialize FFI
     sqfliteFfiInit();
@@ -21,15 +23,16 @@ Future<void> initSetup() async {
   // this step, it will use the sqlite version available on the system.
   databaseFactory = databaseFactoryFfi;
   final docDir = await getApplicationDocumentsDirectory();
-
-  final db = await openDatabase(p.join(docDir.path, sqldbName));
+  final dbPath = p.join(docDir.path, sqldbName);
+  getLogger().fine("Opening database at $dbPath");
+  final db = await openDatabase(dbPath);
   sl.registerSingleton<Database>(
     db,
     dispose: (param) async {
       await param.close();
     },
   );
-  sl.registerSingleton<SettingsSource>(SettingsSourceDb(db: db));
+  sl.registerSingleton<SettingsSource>(SettingsSourceSQLite(db: db));
 
   const assetSource = "assetBundle";
   const dbSource = "dbSource";

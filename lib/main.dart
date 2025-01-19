@@ -1,5 +1,4 @@
 import 'package:emotic/core/app_theme.dart';
-import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/routes.dart';
 import 'package:emotic/core/settings.dart';
@@ -23,38 +22,23 @@ class EmoticApp extends StatelessWidget {
       create: (context) => GlobalSettingsCubit(
         settingsSource: init.sl(),
       ),
-      child: BlocListener<GlobalSettingsCubit, GlobalSettingsState>(
-        listener: (context, state) {
-          if (state
-              case GlobalSettingsLoaded(
-                :final settings,
-              ) when settings.shouldReload) {
-            context.read<GlobalSettingsCubit>().saveSettings(
-                  const GlobalSettings(
-                    isFirstTime: false,
-                    lastUsedVersion: version,
-                  ),
-                );
-          }
+      child: DynamicColorBuilder(
+        builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'Emotic',
+            theme: getAppTheme(
+              colorScheme: lightDynamic,
+              brightness: Brightness.light,
+            ),
+            darkTheme: getAppTheme(
+              colorScheme: darkDynamic,
+              brightness: Brightness.dark,
+            ),
+            themeMode: ThemeMode.system,
+            routerConfig: Routes.router,
+          );
         },
-        child: DynamicColorBuilder(
-          builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-            return MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              title: 'Emotic',
-              theme: getAppTheme(
-                colorScheme: lightDynamic,
-                brightness: Brightness.light,
-              ),
-              darkTheme: getAppTheme(
-                colorScheme: darkDynamic,
-                brightness: Brightness.dark,
-              ),
-              themeMode: ThemeMode.system,
-              routerConfig: Routes.router,
-            );
-          },
-        ),
       ),
     );
   }

@@ -4,32 +4,30 @@ import 'package:emotic/widgets/read_list_of_string_from_user.dart';
 import 'package:flutter/material.dart';
 
 sealed class BottomSheetResult {
-  final Emoticon emoticon;
+  final NewOrModifyEmoticon newOrModifyEmoticon;
   const BottomSheetResult({
-    required this.emoticon,
+    required this.newOrModifyEmoticon,
   });
 }
 
 class DeleteEmoticon extends BottomSheetResult {
-  const DeleteEmoticon({required super.emoticon});
+  const DeleteEmoticon({required super.newOrModifyEmoticon});
 }
 
 class UpdateEmoticon extends BottomSheetResult {
-  final Emoticon newEmoticon;
-  const UpdateEmoticon({
-    required super.emoticon,
-    required this.newEmoticon,
-  });
+  const UpdateEmoticon({required NewOrModifyEmoticon updatedEmoticon})
+      : super(newOrModifyEmoticon: updatedEmoticon);
 }
 
 class AddEmoticon extends BottomSheetResult {
-  const AddEmoticon({required super.emoticon});
+  const AddEmoticon({required NewOrModifyEmoticon newEmoticon})
+      : super(newOrModifyEmoticon: newEmoticon);
 }
 
 class TagClicked extends BottomSheetResult {
   final String tag;
   const TagClicked({
-    required super.emoticon,
+    required super.newOrModifyEmoticon,
     required this.tag,
   });
 }
@@ -39,14 +37,10 @@ class UpdateEmoticonBottomSheet extends StatefulWidget {
     super.key,
     required this.allTags,
     required this.isEditMode,
-    this.emoticon = const Emoticon(
-      id: null,
-      text: "",
-      emoticonTags: [],
-    ),
+    required this.newOrModifyEmoticon,
   });
   final bool isEditMode;
-  final Emoticon emoticon;
+  final NewOrModifyEmoticon newOrModifyEmoticon;
   final List<String> allTags;
 
   @override
@@ -64,14 +58,14 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
   void initState() {
     super.initState();
     emoticonTextController = TextEditingController(
-      text: widget.emoticon.text,
+      text: widget.newOrModifyEmoticon.text,
     );
     animationController = AnimationController(vsync: this);
     tagsSelection = Map.fromEntries(
       widget.allTags.map(
         (tag) => MapEntry(
           tag,
-          widget.emoticon.emoticonTags.contains(tag),
+          widget.newOrModifyEmoticon.emoticonTags.contains(tag),
         ),
       ),
     );
@@ -163,7 +157,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                     Navigator.pop<BottomSheetResult>(
                       context,
                       TagClicked(
-                        emoticon: widget.emoticon,
+                        newOrModifyEmoticon: widget.newOrModifyEmoticon,
                         tag: tag,
                       ),
                     );
@@ -206,7 +200,8 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                               Navigator.pop<BottomSheetResult>(
                                 context,
                                 DeleteEmoticon(
-                                  emoticon: widget.emoticon,
+                                  newOrModifyEmoticon:
+                                      widget.newOrModifyEmoticon,
                                 ),
                               );
                             }
@@ -233,8 +228,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                         ),
                         FilledButton(
                           onPressed: () {
-                            final newEmoticon = Emoticon(
-                              id: widget.emoticon.id,
+                            final updatedEmoticon = NewOrModifyEmoticon(
                               text: emoticonTextController.text,
                               emoticonTags: tagsSelection.entries
                                   .where(
@@ -244,14 +238,16 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                                     (e) => e.key,
                                   )
                                   .toList(),
+                              oldEmoticon:
+                                  widget.newOrModifyEmoticon.oldEmoticon,
                             );
 
                             Navigator.pop<BottomSheetResult>(
-                                context,
-                                UpdateEmoticon(
-                                  emoticon: widget.emoticon,
-                                  newEmoticon: newEmoticon,
-                                ));
+                              context,
+                              UpdateEmoticon(
+                                updatedEmoticon: updatedEmoticon,
+                              ),
+                            );
                           },
                           child: const Text("Save"),
                         )
@@ -274,8 +270,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                         ),
                         FilledButton(
                           onPressed: () {
-                            final newEmoticon = Emoticon(
-                              id: widget.emoticon.id,
+                            final newEmoticon = NewOrModifyEmoticon(
                               text: emoticonTextController.text,
                               emoticonTags: tagsSelection.entries
                                   .where(
@@ -285,12 +280,13 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                                     (e) => e.key,
                                   )
                                   .toList(),
+                              oldEmoticon: null,
                             );
 
                             Navigator.pop<BottomSheetResult>(
                               context,
                               AddEmoticon(
-                                emoticon: newEmoticon,
+                                newEmoticon: newEmoticon,
                               ),
                             );
                           },

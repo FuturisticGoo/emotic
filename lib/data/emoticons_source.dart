@@ -1,6 +1,7 @@
-import 'dart:developer';
 import 'dart:io' as io;
 import 'package:async/async.dart';
+import 'package:emotic/core/helper_functions.dart';
+import 'package:emotic/core/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
@@ -18,8 +19,7 @@ abstract class EmoticonsSource {
 
 abstract class EmoticonsStore extends EmoticonsSource {
   Future<void> saveEmoticon({
-    required Emoticon emoticon,
-    Emoticon? oldEmoticon,
+    required NewOrModifyEmoticon newOrModifyEmoticon,
   }); // In case of update
   Future<void> deleteEmoticon({
     required Emoticon emoticon,
@@ -31,12 +31,31 @@ abstract class EmoticonsStore extends EmoticonsSource {
     required String tag,
   });
   Future<void> clearAllData();
+  Future<void> modifyEmoticonOrder({
+    required Emoticon emoticon,
+    required int newOrder,
+  });
+  Future<void> modifyTagOrder({
+    required String tag,
+    required int newOrder,
+  });
 }
 
 Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
   List<Emoticon> emoticons = [];
   final emoticonSet = await db.rawQuery("""
-  SELECT $sqldbEmoticonsId, $sqldbEmoticonsText FROM $sqldbEmoticonsTableName
+SELECT 
+  em.$sqldbEmoticonsId,
+  em.$sqldbEmoticonsText 
+FROM 
+  $sqldbEmoticonsTableName em
+LEFT JOIN
+  $sqldbEmoticonsOrderingTableName ord
+ON
+  em.$sqldbEmoticonsId=ord.$sqldbEmoticonsOrderingEmoticonId
+ORDER BY
+  ord.$sqldbEmoticonsOrderingUserOrder ASC NULLS LAST,
+  em.$sqldbEmoticonsId ASC
 """);
   for (final row in emoticonSet) {
     final emoticonId = int.parse(row[sqldbEmoticonsId].toString());
@@ -46,7 +65,7 @@ Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
     FROM $sqldbTagsTableName AS tags,
          $sqldbEmoticonsToTagsJoinTableName AS tagjoin
     WHERE tagjoin.$sqldbEmoticonsId==?
-      AND tagjoin.$sqldbTagsId==tags.$sqldbTagsId
+      AND tagjoin.$sqldbTagId==tags.$sqldbTagId
 """,
       [
         emoticonId,
@@ -67,8 +86,19 @@ Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
 }
 
 Future<List<String>> _getTagsFromDb({required Database db}) async {
-  final tagResultSet =
-      await db.rawQuery("""SELECT $sqldbTagName FROM $sqldbTagsTableName""");
+  final tagResultSet = await db.rawQuery("""
+SELECT 
+  tg.$sqldbTagName 
+FROM 
+  $sqldbTagsTableName tg
+LEFT JOIN
+  $sqldbTagsOrderingTableName ord
+ON 
+  tg.$sqldbTagId=ord.$sqldbTagsOrderingTagId
+ORDER BY
+  ord.$sqldbTagsOrderingUserOrder ASC NULLS LAST,
+  tg.$sqldbTagId ASC
+      """);
   List<String> tags = tagResultSet
       .map(
         (element) => element[sqldbTagName].toString(),
@@ -114,91 +144,6 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
   }
 }
 
-typedef PreparedStatement = String;
-
-class SQLStatements {
-  static const PreparedStatement createEmoticonTableStmt = """
-CREATE TABLE IF NOT EXISTS $sqldbEmoticonsTableName 
-(
-  $sqldbEmoticonsId INTEGER PRIMARY KEY,
-  $sqldbEmoticonsText VARCHAR
-)
-""";
-
-  static const PreparedStatement createTagsTableStmt = """
-CREATE TABLE IF NOT EXISTS $sqldbTagsTableName
-(
-  $sqldbTagsId INTEGER PRIMARY KEY,
-  $sqldbTagName VARCHAR
-)
-""";
-
-  static const PreparedStatement createEmoticonTagMappingTableStmt = """
-CREATE TABLE IF NOT EXISTS $sqldbEmoticonsToTagsJoinTableName
-(
-  $sqldbEmoticonsId INTEGER,
-  $sqldbTagsId VARCHAR
-)
-""";
-
-  static const PreparedStatement emoticonExistsCheckStmt = """
-SELECT $sqldbEmoticonsId FROM $sqldbEmoticonsTableName
-WHERE $sqldbEmoticonsText==?
-""";
-
-  static const PreparedStatement emoticonInsertStmt = """
-INSERT INTO $sqldbEmoticonsTableName
-  ($sqldbEmoticonsText)
-VALUES
-  (?)
-""";
-
-  static const PreparedStatement emoticonUpdateStmt = """
-UPDATE $sqldbEmoticonsTableName
-SET $sqldbEmoticonsText=?
-WHERE $sqldbEmoticonsId==?
-""";
-
-  static const PreparedStatement emoticonRemoveStmt = """
-DELETE FROM $sqldbEmoticonsTableName
-WHERE $sqldbEmoticonsId==?
-""";
-
-  static const PreparedStatement emoticonTagMapStmt = """
-INSERT INTO $sqldbEmoticonsToTagsJoinTableName
-  ($sqldbEmoticonsId, $sqldbTagsId)
-VALUES
-  (?, ?)
-""";
-
-  static const PreparedStatement removeEmoticonFromJoinStmt = """
-DELETE FROM $sqldbEmoticonsToTagsJoinTableName
-WHERE $sqldbEmoticonsId==?
-""";
-
-  static const PreparedStatement tagExistsCheckStmt = """
-SELECT $sqldbTagsId FROM $sqldbTagsTableName
-WHERE $sqldbTagName==?
-""";
-
-  static const PreparedStatement tagInsertStmt = """
-INSERT INTO $sqldbTagsTableName
-  ($sqldbTagName)
-VALUES
-  (?)
-""";
-
-  static const PreparedStatement tagDeleteStmt = """
-DELETE FROM $sqldbTagsTableName
-WHERE $sqldbTagsId==?
-""";
-
-  static const PreparedStatement removeTagFromJoinStmt = """
-DELETE FROM $sqldbEmoticonsToTagsJoinTableName
-WHERE $sqldbTagsId==?
-""";
-}
-
 class EmoticonsSqliteSource implements EmoticonsStore {
   final Database db;
 
@@ -210,6 +155,56 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     await db.execute(SQLStatements.createEmoticonTableStmt);
     await db.execute(SQLStatements.createTagsTableStmt);
     await db.execute(SQLStatements.createEmoticonTagMappingTableStmt);
+    await db.execute(SQLStatements.createEmoticonsOrderingTableStmt);
+    await _prefillEmoticonsOrdering();
+    await db.execute(SQLStatements.createTagssOrderingTableStmt);
+    await _prefillTagsOrdering();
+  }
+
+  Future<void> _prefillEmoticonsOrdering() async {
+    final orderCount = "order_count";
+    final existing = await db.rawQuery("""
+SELECT 
+  COUNT(*) AS $orderCount 
+FROM
+  $sqldbEmoticonsOrderingTableName
+    """);
+    if (existing.single[orderCount] == 0) {
+      getLogger().config("Prefilling emoticons ordering");
+      await db.rawInsert("""
+INSERT INTO
+  $sqldbEmoticonsOrderingTableName
+  ($sqldbEmoticonsOrderingEmoticonId, $sqldbEmoticonsOrderingUserOrder)
+SELECT 
+  $sqldbEmoticonsId $sqldbEmoticonsOrderingEmoticonId, 
+  CAST($sqldbEmoticonsId AS REAL) $sqldbEmoticonsOrderingUserOrder
+FROM
+  $sqldbEmoticonsTableName
+      """);
+    }
+  }
+
+  Future<void> _prefillTagsOrdering() async {
+    final orderCount = "order_count";
+    final existing = await db.rawQuery("""
+SELECT 
+  COUNT(*) AS $orderCount 
+FROM
+  $sqldbTagsOrderingTableName
+    """);
+    if (existing.single[orderCount] == 0) {
+      getLogger().config("Prefilling tags ordering");
+      await db.rawInsert("""
+INSERT INTO
+  $sqldbTagsOrderingTableName
+  ($sqldbTagsOrderingTagId, $sqldbTagsOrderingUserOrder)
+SELECT 
+  $sqldbTagId $sqldbTagsOrderingTagId,
+  CAST($sqldbTagId AS REAL) $sqldbTagsOrderingUserOrder
+FROM
+  $sqldbTagsTableName
+      """);
+    }
   }
 
   @override
@@ -226,54 +221,52 @@ class EmoticonsSqliteSource implements EmoticonsStore {
 
   @override
   Future<void> saveEmoticon({
-    required Emoticon emoticon,
-    Emoticon? oldEmoticon,
+    required NewOrModifyEmoticon newOrModifyEmoticon,
   }) async {
     int emoticonId;
-    if (oldEmoticon == null) {
+    if (newOrModifyEmoticon.oldEmoticon == null) {
       final emoticonResultSet = await db.rawQuery(
         SQLStatements.emoticonExistsCheckStmt,
-        [emoticon.text],
+        [newOrModifyEmoticon.text],
       );
       if (emoticonResultSet.isEmpty) {
         // Only inserting if its not there
-        await db.execute(SQLStatements.emoticonInsertStmt, [emoticon.text]);
-        emoticonId = (await db.rawQuery('SELECT last_insert_rowid()'))
-            .first
-            .values
-            .first as int;
-      } else {
-        emoticonId = int.parse(
-          emoticonResultSet.first[sqldbEmoticonsId].toString(),
+        emoticonId = await db.rawInsert(
+          SQLStatements.emoticonInsertStmt,
+          [newOrModifyEmoticon.text],
         );
+        await _appendToEmoticonsOrder(emoticonId: emoticonId);
+      } else {
+        emoticonId = emoticonResultSet.first[sqldbEmoticonsId] as int;
       }
     } else {
       final emoticonResultSet = await db.rawQuery(
         SQLStatements.emoticonExistsCheckStmt,
-        [emoticon.text],
+        [newOrModifyEmoticon.oldEmoticon!.text],
       );
       if (emoticonResultSet.length != 1) {
-        log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in saveEmoticon");
+        getLogger().warning(
+          "Got ${emoticonResultSet.length} length result when checking"
+          " emoticonExistsCheckStmt in saveEmoticon",
+        );
       }
-      emoticonId =
-          int.parse(emoticonResultSet.first[sqldbEmoticonsId].toString());
-      await db.execute(
-          SQLStatements.emoticonUpdateStmt, [emoticon.text, emoticonId]);
+      emoticonId = emoticonResultSet.first[sqldbEmoticonsId] as int;
+      await db.execute(SQLStatements.emoticonUpdateStmt,
+          [newOrModifyEmoticon.text, emoticonId]);
     }
     await db.execute(SQLStatements.removeEmoticonFromJoinStmt, [emoticonId]);
 
     // Its easier this way
-    for (final tag in emoticon.emoticonTags) {
+    for (final tag in newOrModifyEmoticon.emoticonTags) {
       await saveTag(tag: tag);
-      final tagResultSet = await db.rawQuery(
-        SQLStatements.tagExistsCheckStmt,
-        [tag],
-      );
-      if (tagResultSet.length != 1) {
-        log("Got ${tagResultSet.length} length result when checking tagExistsCheckStmt in saveEmoticon");
+      final tagId = await _getTagId(tag: tag);
+      if (tagId != null) {
+        await db.execute(SQLStatements.emoticonTagMapStmt, [emoticonId, tagId]);
+      } else {
+        throw Error.safeToString(
+          "Couldnt get tagId of $tag, unable to save emoticon-tag linking",
+        );
       }
-      int tagId = int.parse(tagResultSet.first[sqldbTagsId].toString());
-      await db.execute(SQLStatements.emoticonTagMapStmt, [emoticonId, tagId]);
     }
   }
 
@@ -285,7 +278,10 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     );
     if (emoticonResultSet.isNotEmpty) {
       if (emoticonResultSet.length != 1) {
-        log("Got ${emoticonResultSet.length} length result when checking emoticonExistsCheckStmt in deleteEmoticon");
+        getLogger().warning(
+          "Got ${emoticonResultSet.length} length result when checking"
+          " emoticonExistsCheckStmt in deleteEmoticon",
+        );
       }
       final emoticonIdToRemove =
           int.parse(emoticonResultSet.first[sqldbEmoticonsId].toString());
@@ -297,37 +293,49 @@ class EmoticonsSqliteSource implements EmoticonsStore {
         SQLStatements.removeEmoticonFromJoinStmt,
         [emoticonIdToRemove],
       );
-    }
-  }
-
-  @override
-  Future<void> saveTag({required String tag}) async {
-    final tagResultSet = await db.rawQuery(
-      SQLStatements.tagExistsCheckStmt,
-      [tag],
-    );
-    if (tagResultSet.isEmpty) {
-      await db.execute(
-        SQLStatements.tagInsertStmt,
-        [tag],
+      await db.rawDelete(
+        """
+DELETE FROM 
+  $sqldbEmoticonsOrderingTableName
+WHERE
+  $sqldbEmoticonsOrderingEmoticonId=?
+      """,
+        [emoticonIdToRemove],
       );
     }
   }
 
   @override
+  Future<void> saveTag({required String tag}) async {
+    final tagId = await _getTagId(tag: tag);
+    if (tagId == null) {
+      final tagId = await db.rawInsert(
+        SQLStatements.tagInsertStmt,
+        [tag],
+      );
+      await _appendToTagsOrder(tagId: tagId);
+    }
+  }
+
+  @override
   Future<void> deleteTag({required String tag}) async {
-    final tagResultSet = await db.rawQuery(
-      SQLStatements.tagExistsCheckStmt,
-      [tag],
-    );
-    if (tagResultSet.isNotEmpty) {
-      int tagId = int.parse(tagResultSet.single[sqldbTagsId].toString());
+    final tagId = await _getTagId(tag: tag);
+    if (tagId != null) {
       await db.execute(
         SQLStatements.tagDeleteStmt,
         [tagId],
       );
       await db.execute(
         SQLStatements.removeTagFromJoinStmt,
+        [tagId],
+      );
+      await db.rawDelete(
+        """
+DELETE FROM 
+  $sqldbTagsOrderingTableName
+WHERE
+  $sqldbTagsOrderingTagId=?
+      """,
         [tagId],
       );
     }
@@ -338,6 +346,238 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     await db.rawDelete("DELETE FROM $sqldbEmoticonsTableName");
     await db.rawDelete("DELETE FROM $sqldbEmoticonsToTagsJoinTableName");
     await db.rawDelete("DELETE FROM $sqldbTagsTableName");
+    await db.rawDelete("DELETE FROM $sqldbEmoticonsOrderingTableName");
+    await db.rawDelete("DELETE FROM $sqldbTagsOrderingTableName");
+  }
+
+  Future<(double, double)?> _getCurrentMinAndMaxOrder({
+    required String tableName,
+    required String orderColumnName,
+  }) async {
+    final lowest = "lowest";
+    final higest = "highest";
+    final result = (await db.rawQuery("""
+SELECT 
+  MIN($orderColumnName) as $lowest,
+  MAX($orderColumnName) as $higest
+FROM 
+  $tableName
+    """)).single;
+    if (result[lowest] != null) {
+      return (result[lowest] as double, result[higest] as double);
+    } else {
+      return null;
+    }
+  }
+
+  Future<(double?, double?)> _getNMinus1thAndNthOrderValue({
+    required String tableName,
+    required String orderColumnName,
+    required int n,
+  }) async {
+    if (n < 0) {
+      throw ArgumentError.value(n, "n cannot be < 0");
+    }
+    final double? nMinus1th;
+    if (n == 0) {
+      nMinus1th = null;
+    } else {
+      final result = (await db.rawQuery(
+        """
+SELECT 
+ $orderColumnName
+FROM 
+  $tableName
+ORDER BY
+  $orderColumnName 
+LIMIT 1
+OFFSET ?
+    """,
+        [n - 1],
+      ))
+          .singleOrNull;
+      nMinus1th = result?[orderColumnName] as double?;
+    }
+    final result = (await db.rawQuery(
+      """
+SELECT 
+ $orderColumnName
+FROM 
+  $tableName
+ORDER BY
+  $orderColumnName 
+LIMIT 1
+OFFSET ?
+    """,
+      [n],
+    ))
+        .singleOrNull;
+    final double? nth = result?[orderColumnName] as double?;
+    return (nMinus1th, nth);
+  }
+
+  Future<void> _appendToEmoticonsOrder({
+    required int emoticonId,
+  }) async {
+    final currentHighestOrder = (await _getCurrentMinAndMaxOrder(
+      tableName: sqldbEmoticonsOrderingTableName,
+      orderColumnName: sqldbEmoticonsOrderingUserOrder,
+    ))
+        ?.$2;
+    await db.rawInsert(
+      """
+INSERT INTO
+  $sqldbEmoticonsOrderingTableName
+  ($sqldbEmoticonsOrderingEmoticonId, $sqldbEmoticonsOrderingUserOrder)
+VALUES
+  (?, ?)
+    """,
+      [
+        emoticonId,
+        (currentHighestOrder ?? 0.0) + 1,
+      ],
+    );
+  }
+
+  Future<void> _appendToTagsOrder({
+    required int tagId,
+  }) async {
+    final currentHighestOrder = (await _getCurrentMinAndMaxOrder(
+      tableName: sqldbTagsOrderingTableName,
+      orderColumnName: sqldbTagsOrderingUserOrder,
+    ))
+        ?.$2;
+    await db.rawInsert(
+      """
+INSERT INTO
+  $sqldbTagsOrderingTableName
+  ($sqldbTagsOrderingTagId, $sqldbTagsOrderingUserOrder)
+VALUES
+  (?, ?)
+    """,
+      [
+        tagId,
+        (currentHighestOrder ?? 0.0) + 1,
+      ],
+    );
+  }
+
+  @override
+  Future<void> modifyEmoticonOrder({
+    required Emoticon emoticon,
+    required int newOrder,
+  }) async {
+    getLogger().config("Changing order of $emoticon to $newOrder index");
+    await db.rawDelete(
+      """
+DELETE FROM
+  $sqldbEmoticonsOrderingTableName
+WHERE
+  $sqldbEmoticonsOrderingEmoticonId=?
+      """,
+      [emoticon.id],
+    );
+
+    final nMinus1AndNthOrder = await _getNMinus1thAndNthOrderValue(
+      tableName: sqldbEmoticonsOrderingTableName,
+      orderColumnName: sqldbEmoticonsOrderingUserOrder,
+      n: newOrder,
+    );
+    getLogger().config("N-1th and Nth order values $nMinus1AndNthOrder");
+
+    final newOrderValue = getNumBetweenTwoNums(
+      firstOrder: nMinus1AndNthOrder.$1 ?? 0,
+      secondOrder: nMinus1AndNthOrder.$2 ?? (nMinus1AndNthOrder.$1 ?? 0) + 1,
+      // If secondOrder is null, then it means newOrder is the last index,
+      // so it should be just n-1th + 1
+    );
+
+    getLogger().config("New order value between is $newOrderValue");
+    // Insert the emoticon with its order
+    await db.rawInsert(
+      """
+INSERT INTO
+  $sqldbEmoticonsOrderingTableName
+VALUES
+  (?, ?)
+    """,
+      [
+        emoticon.id,
+        newOrderValue,
+      ],
+    );
+  }
+
+  Future<int?> _getTagId({required String tag}) async {
+    final tagResult = await db.rawQuery(
+      SQLStatements.tagExistsCheckStmt,
+      [tag],
+    );
+    if (tagResult.length != 1) {
+      if (tagResult.length > 1) {
+        getLogger().warning(
+          "Got ${tagResult.length} length result when getting tagId",
+        );
+      }
+      return tagResult.firstOrNull?[sqldbTagId] as int?;
+    } else {
+      return tagResult.first[sqldbTagId] as int;
+    }
+  }
+
+  @override
+  Future<void> modifyTagOrder({
+    required String tag,
+    required int newOrder,
+  }) async {
+    // Checking if the tag has an order position already
+    final tagId = await _getTagId(tag: tag);
+    if (tagId == null) {
+      throw ArgumentError.value(
+        tag,
+        "Invalid tag",
+        "Tag does not exist in the database",
+      );
+    }
+    getLogger().config("Changing order of $tag to $newOrder index");
+    await db.rawDelete(
+      """
+DELETE FROM
+  $sqldbTagsOrderingTableName
+WHERE
+  $sqldbTagsOrderingTagId=?
+      """,
+      [tagId],
+    );
+
+    final nMinus1AndNthOrder = await _getNMinus1thAndNthOrderValue(
+      tableName: sqldbTagsOrderingTableName,
+      orderColumnName: sqldbTagsOrderingUserOrder,
+      n: newOrder,
+    );
+    getLogger().config("N-1th and Nth order values $nMinus1AndNthOrder");
+    final newOrderValue = getNumBetweenTwoNums(
+      firstOrder: nMinus1AndNthOrder.$1 ?? (nMinus1AndNthOrder.$2 ?? 0) - 1,
+      secondOrder: nMinus1AndNthOrder.$2 ?? (nMinus1AndNthOrder.$1 ?? 0) + 1,
+      // If firstOrder is null, then it means newOrder is the the beginning,
+      // so it should just be nth - 1
+      // If secondOrder is null, then it means newOrder is the last index,
+      // so it should be just n-1th + 1
+    );
+    getLogger().config("New order value between is $newOrderValue");
+    // Insert the emoticon with its order
+    await db.rawInsert(
+      """
+INSERT INTO
+  $sqldbTagsOrderingTableName
+VALUES
+  (?, ?)
+    """,
+      [
+        tagId,
+        newOrderValue,
+      ],
+    );
   }
 
   Future<Result<void>> importFromDb({
@@ -371,7 +611,7 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     FROM $sqldbTagsTableName AS tags,
          $sqldbEmoticonsToTagsJoinTableName AS tagjoin
     WHERE tagjoin.$sqldbEmoticonsId==?
-      AND tagjoin.$sqldbTagsId==tags.$sqldbTagsId
+      AND tagjoin.$sqldbTagId==tags.$sqldbTagId
 """,
               [
                 emoticonId,
@@ -386,7 +626,11 @@ class EmoticonsSqliteSource implements EmoticonsStore {
                 },
               ).toList(),
             );
-            await saveEmoticon(emoticon: emoticon);
+            await saveEmoticon(
+              newOrModifyEmoticon: NewOrModifyEmoticon.fromExistingEmoticon(
+                emoticon,
+              ),
+            );
           }
       }
       await sourceDb.close();
@@ -431,4 +675,107 @@ class EmoticonsSqliteSource implements EmoticonsStore {
       return Result.error(error, stacktrace);
     }
   }
+}
+
+typedef PreparedStatement = String;
+
+class SQLStatements {
+  static const PreparedStatement createEmoticonTableStmt = """
+CREATE TABLE IF NOT EXISTS $sqldbEmoticonsTableName 
+(
+  $sqldbEmoticonsId INTEGER PRIMARY KEY,
+  $sqldbEmoticonsText VARCHAR
+)
+""";
+
+  static const PreparedStatement createTagsTableStmt = """
+CREATE TABLE IF NOT EXISTS $sqldbTagsTableName
+(
+  $sqldbTagId INTEGER PRIMARY KEY,
+  $sqldbTagName VARCHAR
+)
+""";
+
+  static const PreparedStatement createEmoticonTagMappingTableStmt = """
+CREATE TABLE IF NOT EXISTS $sqldbEmoticonsToTagsJoinTableName
+(
+  $sqldbEmoticonsId INTEGER,
+  $sqldbTagId VARCHAR
+)
+""";
+  static const PreparedStatement createEmoticonsOrderingTableStmt = """
+CREATE TABLE IF NOT EXISTS $sqldbEmoticonsOrderingTableName
+(
+  $sqldbEmoticonsOrderingEmoticonId INTEGER,
+  $sqldbEmoticonsOrderingUserOrder REAL
+)
+""";
+  static const PreparedStatement createTagssOrderingTableStmt = """
+CREATE TABLE IF NOT EXISTS $sqldbTagsOrderingTableName
+(
+  $sqldbTagsOrderingTagId INTEGER,
+  $sqldbTagsOrderingUserOrder REAL
+)
+""";
+
+  static const PreparedStatement emoticonExistsCheckStmt = """
+SELECT $sqldbEmoticonsId FROM $sqldbEmoticonsTableName
+WHERE $sqldbEmoticonsText=?
+""";
+
+  static const PreparedStatement emoticonInsertStmt = """
+INSERT INTO $sqldbEmoticonsTableName
+  ($sqldbEmoticonsText)
+VALUES
+  (?)
+""";
+
+  static const PreparedStatement emoticonUpdateStmt = """
+UPDATE $sqldbEmoticonsTableName
+SET $sqldbEmoticonsText=?
+WHERE $sqldbEmoticonsId=?
+""";
+
+  static const PreparedStatement emoticonRemoveStmt = """
+DELETE FROM $sqldbEmoticonsTableName
+WHERE $sqldbEmoticonsId=?
+""";
+
+  static const PreparedStatement emoticonTagMapStmt = """
+INSERT INTO $sqldbEmoticonsToTagsJoinTableName
+  ($sqldbEmoticonsId, $sqldbTagId)
+VALUES
+  (?, ?)
+""";
+
+  static const PreparedStatement removeEmoticonFromJoinStmt = """
+DELETE FROM $sqldbEmoticonsToTagsJoinTableName
+WHERE $sqldbEmoticonsId=?
+""";
+
+  static const PreparedStatement tagExistsCheckStmt = """
+SELECT 
+  $sqldbTagId 
+FROM 
+  $sqldbTagsTableName
+WHERE 
+  $sqldbTagName=?
+""";
+
+  static const PreparedStatement tagInsertStmt = """
+INSERT INTO $sqldbTagsTableName
+  ($sqldbTagName)
+VALUES
+  (?)
+""";
+
+  static const PreparedStatement tagDeleteStmt = """
+DELETE FROM $sqldbTagsTableName
+WHERE $sqldbTagId=?
+""";
+
+  static const PreparedStatement removeTagFromJoinStmt = """
+DELETE FROM $sqldbEmoticonsToTagsJoinTableName
+WHERE $sqldbTagId=?
+""";
 }

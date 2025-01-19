@@ -1,4 +1,6 @@
+import 'package:emotic/core/logging.dart';
 import 'package:emotic/pages/about_page.dart';
+import 'package:emotic/pages/app_update_process_page.dart';
 import 'package:emotic/pages/emoticons_page.dart';
 import 'package:emotic/pages/settings_page.dart';
 import 'package:emotic/pages/data_editor_page.dart';
@@ -11,7 +13,7 @@ class Routes {
   static const dataEditorPage = "/dataEditor";
   static const settingsPage = "/settings";
   static const aboutPage = "/about";
-
+  static const updatingPage = "/updating";
   static final _rootNavKey = GlobalKey<NavigatorState>();
   static final _shellNavKey = GlobalKey<NavigatorState>();
 
@@ -36,25 +38,36 @@ class Routes {
               GoRoute(
                 path: emoticonsPage,
                 builder: (context, state) {
-                  return const EmoticonsPage();
+                  getLogger().fine("Going to EmoticonsPage");
+                  return EmoticonsPage();
                 },
               ),
               GoRoute(
                 path: dataEditorPage,
                 builder: (context, state) {
+                  getLogger().fine("Going to DataEditorPage");
                   return const DataEditorPage();
                 },
               ),
               GoRoute(
                 path: settingsPage,
                 builder: (context, state) {
+                  getLogger().fine("Going to SettingsPage");
                   return const SettingsPage();
                 },
               ),
               GoRoute(
                 path: aboutPage,
                 builder: (context, state) {
+                  getLogger().fine("Going to AboutPage");
                   return const AboutPage();
+                },
+              ),
+              GoRoute(
+                path: updatingPage,
+                builder: (context, state) {
+                  getLogger().fine("Going to AppUpdateProcessPage");
+                  return const AppUpdateProcessPage();
                 },
               ),
             ],

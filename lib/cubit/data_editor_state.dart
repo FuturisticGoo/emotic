@@ -42,6 +42,18 @@ class DataEditorModifyLinks extends DataEditorLoaded {
       ];
 }
 
+class DataEditorModifyOrder extends DataEditorLoaded {
+  DataEditorModifyOrder({
+    required super.allEmoticons,
+    required super.allTags,
+  });
+  @override
+  List<Object?> get props => [
+        allEmoticons,
+        allTags,
+      ];
+}
+
 class DataEditorDeleteData extends DataEditorLoaded {
   final List<Emoticon> selectedEmoticons;
   final List<String> selectedTags;

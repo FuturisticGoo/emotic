@@ -8,15 +8,13 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
   final EmoticonsRepository emoticonsRepository;
   EmoticonsListingCubit({
     required this.emoticonsRepository,
-    required bool shouldLoadFromAsset,
   }) : super(EmoticonsListingInitial()) {
-    loadEmoticons(shouldLoadFromAsset: shouldLoadFromAsset);
+    loadEmoticons();
   }
-
-  void loadEmoticons({required bool shouldLoadFromAsset}) async {
+  Future<void> loadEmoticons() async {
     emit(EmoticonsListingLoading());
-    final allEmoticons = await emoticonsRepository.getEmoticons(
-        shouldLoadFromAsset: shouldLoadFromAsset);
+    final allEmoticons =
+        await emoticonsRepository.getEmoticons(shouldLoadFromAsset: false);
     emit(
       EmoticonsListingLoaded(
         allEmoticons: allEmoticons,
@@ -27,19 +25,17 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
   }
 
   void saveEmoticon({
-    required Emoticon emoticon,
-    Emoticon? oldEmoticon,
+    required NewOrModifyEmoticon newOrModifyEmoticon,
   }) async {
     await emoticonsRepository.saveEmoticon(
-      emoticon: emoticon,
-      oldEmoticon: oldEmoticon,
+      newOrModifyEmoticon: newOrModifyEmoticon,
     );
-    loadEmoticons(shouldLoadFromAsset: false);
+    loadEmoticons();
   }
 
   void deleteEmoticon({required Emoticon emoticon}) async {
     await emoticonsRepository.deleteEmoticon(emoticon: emoticon);
-    loadEmoticons(shouldLoadFromAsset: false);
+    loadEmoticons();
   }
 
   void searchEmoticons({required String searchTerm}) async {

@@ -122,6 +122,11 @@ class AboutForeground extends StatelessWidget {
                       title: const Text("License"),
                       subtitle: const Text("GPL-3.0"),
                     ),
+                    ListTile(
+                      onTap: () {},
+                      title: const Text("Version"),
+                      subtitle: Text(version.toString()),
+                    ),
                   ],
                 ),
               )
