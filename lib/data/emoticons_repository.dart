@@ -14,7 +14,7 @@ class EmoticonsRepository {
     final emoticons = await assetSource.getEmoticons();
     for (final emoticon in emoticons) {
       await database.saveEmoticon(
-        newOrModifyEmoticon: NewOrModifyEmoticon.fromExistingEmoticon(
+        newOrModifyEmoticon: NewOrModifyEmoticon.copyFromEmoticon(
           emoticon,
         ),
       );

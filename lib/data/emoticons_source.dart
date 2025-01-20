@@ -2,6 +2,7 @@ import 'dart:io' as io;
 import 'package:async/async.dart';
 import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
+import 'package:emotic/core/semver.dart';
 import 'package:path/path.dart' as p;
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
@@ -107,6 +108,34 @@ ORDER BY
   return tags;
 }
 
+Future<SemVer> _getMetadataVersion({required Database db}) async {
+  await db.execute(SQLStatements.createMetadataTable);
+  final versionResult = await db.rawQuery(
+    """
+SELECT
+  $sqldbMetadataValueName
+FROM
+  $sqldbMetadataTableName
+WHERE
+  $sqldbMetadataKeyName=?
+    """,
+    [sqldbMetadataKeyVersion],
+  );
+  if (versionResult.length == 1) {
+    final version = SemVer.fromString(
+        versionResult.single[sqldbMetadataValueName] as String);
+    getLogger().config("Source database version $version");
+    return version;
+  } else {
+    // If it doesn't exist, assume that its pre 0.1.6 version
+    getLogger().config(
+      "Source database doesn't have version information,"
+      " assuming pre-v0.1.6",
+    );
+    return SemVer.fromString("0.1.5");
+  }
+}
+
 class EmoticonsSourceAssetDB implements EmoticonsSource {
   final AssetBundle assetBundle;
   EmoticonsSourceAssetDB({
@@ -157,8 +186,63 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     await db.execute(SQLStatements.createEmoticonTagMappingTableStmt);
     await db.execute(SQLStatements.createEmoticonsOrderingTableStmt);
     await _prefillEmoticonsOrdering();
-    await db.execute(SQLStatements.createTagssOrderingTableStmt);
+    await db.execute(SQLStatements.createTagsOrderingTableStmt);
     await _prefillTagsOrdering();
+    await db.execute(SQLStatements.createMetadataTable);
+    await _prefillMetadata();
+  }
+
+  Future<void> _prefillMetadata() async {
+    final existingVersionRows = await db.rawQuery(
+      """
+SELECT 
+  $sqldbMetadataValueName 
+FROM
+  $sqldbMetadataTableName
+WHERE
+  $sqldbMetadataKeyName=?
+    """,
+      [sqldbMetadataKeyVersion],
+    );
+    if (existingVersionRows.isNotEmpty) {
+      if (existingVersionRows.length > 1) {
+        getLogger()
+            .warning("Existing version rows: ${existingVersionRows.length}");
+      }
+      final updatedRows = await db.rawDelete(
+        """
+UPDATE 
+  $sqldbMetadataTableName
+SET
+  $sqldbMetadataValueName=?
+WHERE
+  $sqldbMetadataKeyName=? AND
+  $sqldbMetadataValueName!=?
+      """,
+        [
+          version.toString(),
+          sqldbMetadataKeyVersion,
+          version.toString(),
+        ],
+      );
+      if (updatedRows > 0) {
+        getLogger().config("Updated $updatedRows rows of version metadata");
+      }
+    } else {
+      await db.rawInsert(
+        """
+INSERT INTO 
+  $sqldbMetadataTableName
+  ($sqldbMetadataKeyName, $sqldbMetadataValueName)
+VALUES
+  (?, ?)
+      """,
+        [
+          sqldbMetadataKeyVersion,
+          version.toString(),
+        ],
+      );
+    }
   }
 
   Future<void> _prefillEmoticonsOrdering() async {
@@ -223,6 +307,7 @@ FROM
   Future<void> saveEmoticon({
     required NewOrModifyEmoticon newOrModifyEmoticon,
   }) async {
+    getLogger().config("Saving $newOrModifyEmoticon");
     int emoticonId;
     if (newOrModifyEmoticon.oldEmoticon == null) {
       final emoticonResultSet = await db.rawQuery(
@@ -370,6 +455,9 @@ FROM
     }
   }
 
+  /// Get the order value at nth ordered position from beginning, and n-1th
+  /// order value as well, if its the first position, result will be (null, b).
+  /// If its the last position, result will be (a, null)
   Future<(double?, double?)> _getNMinus1thAndNthOrderValue({
     required String tableName,
     required String orderColumnName,
@@ -462,6 +550,19 @@ VALUES
     );
   }
 
+  (double, double) _getFirstAndSecondOrder({
+    required (double?, double?) nMinus1thAndNthValue,
+  }) {
+    // If n-1th value is null, then it means it is the the beginning,
+    // so it should just be nth value - 1
+    // If nth value is null, then it means it is at the end,
+    // so it should be just n-1th value + 1
+    return (
+      nMinus1thAndNthValue.$1 ?? (nMinus1thAndNthValue.$2 ?? 0) - 1,
+      nMinus1thAndNthValue.$2 ?? (nMinus1thAndNthValue.$1 ?? 0) + 1
+    );
+  }
+
   @override
   Future<void> modifyEmoticonOrder({
     required Emoticon emoticon,
@@ -478,18 +579,19 @@ WHERE
       [emoticon.id],
     );
 
-    final nMinus1AndNthOrder = await _getNMinus1thAndNthOrderValue(
+    final nMinus1AndNthValue = await _getNMinus1thAndNthOrderValue(
       tableName: sqldbEmoticonsOrderingTableName,
       orderColumnName: sqldbEmoticonsOrderingUserOrder,
       n: newOrder,
     );
-    getLogger().config("N-1th and Nth order values $nMinus1AndNthOrder");
-
+    getLogger().config("N-1th and Nth order values $nMinus1AndNthValue");
+    final (firstOrder, secondOrder) = _getFirstAndSecondOrder(
+      nMinus1thAndNthValue: nMinus1AndNthValue,
+    );
+    getLogger().config("firstOrder: $firstOrder and secondOrder: $secondOrder");
     final newOrderValue = getNumBetweenTwoNums(
-      firstOrder: nMinus1AndNthOrder.$1 ?? 0,
-      secondOrder: nMinus1AndNthOrder.$2 ?? (nMinus1AndNthOrder.$1 ?? 0) + 1,
-      // If secondOrder is null, then it means newOrder is the last index,
-      // so it should be just n-1th + 1
+      firstOrder: firstOrder,
+      secondOrder: secondOrder,
     );
 
     getLogger().config("New order value between is $newOrderValue");
@@ -550,19 +652,20 @@ WHERE
       [tagId],
     );
 
-    final nMinus1AndNthOrder = await _getNMinus1thAndNthOrderValue(
+    final nMinus1AndNthValue = await _getNMinus1thAndNthOrderValue(
       tableName: sqldbTagsOrderingTableName,
       orderColumnName: sqldbTagsOrderingUserOrder,
       n: newOrder,
     );
-    getLogger().config("N-1th and Nth order values $nMinus1AndNthOrder");
+    getLogger().config("N-1th and Nth order values $nMinus1AndNthValue");
+    final (firstOrder, secondOrder) = _getFirstAndSecondOrder(
+      nMinus1thAndNthValue: nMinus1AndNthValue,
+    );
+    getLogger().config("firstOrder: $firstOrder and secondOrder: $secondOrder");
+
     final newOrderValue = getNumBetweenTwoNums(
-      firstOrder: nMinus1AndNthOrder.$1 ?? (nMinus1AndNthOrder.$2 ?? 0) - 1,
-      secondOrder: nMinus1AndNthOrder.$2 ?? (nMinus1AndNthOrder.$1 ?? 0) + 1,
-      // If firstOrder is null, then it means newOrder is the the beginning,
-      // so it should just be nth - 1
-      // If secondOrder is null, then it means newOrder is the last index,
-      // so it should be just n-1th + 1
+      firstOrder: firstOrder,
+      secondOrder: secondOrder,
     );
     getLogger().config("New order value between is $newOrderValue");
     // Insert the emoticon with its order
@@ -594,45 +697,31 @@ VALUES
       }
       String dbPath = inputFile!.paths.single!;
       Database sourceDb = await openDatabase(dbPath);
-      final emoticonSet = await sourceDb.rawQuery("""
-  SELECT $sqldbEmoticonsId, $sqldbEmoticonsText FROM $sqldbEmoticonsTableName
-""");
+      final dbVersion = await _getMetadataVersion(db: sourceDb);
+      if (dbVersion < SemVer.fromString("0.1.6")) {
+        await sourceDb.execute(SQLStatements.createEmoticonsOrderingTableStmt);
+        await sourceDb.execute(SQLStatements.createTagsOrderingTableStmt);
+      }
+      final emoticons = await _getEmoticonsFromDb(db: sourceDb);
+      final tags = await _getTagsFromDb(db: sourceDb);
       switch (importStrategy) {
         case ImportStrategy.overwrite:
           await clearAllData();
           continue merge;
         merge:
         case ImportStrategy.merge:
-          for (final row in emoticonSet) {
-            final emoticonId = int.parse(row[sqldbEmoticonsId].toString());
-            final tagSet = await sourceDb.rawQuery(
-              """
-  SELECT tags.$sqldbTagName 
-    FROM $sqldbTagsTableName AS tags,
-         $sqldbEmoticonsToTagsJoinTableName AS tagjoin
-    WHERE tagjoin.$sqldbEmoticonsId==?
-      AND tagjoin.$sqldbTagId==tags.$sqldbTagId
-""",
-              [
-                emoticonId,
-              ],
-            );
-            final emoticon = Emoticon(
-              id: emoticonId,
-              text: row[sqldbEmoticonsText].toString(),
-              emoticonTags: tagSet.map(
-                (Map<String, Object?> row) {
-                  return row[sqldbTagName].toString();
-                },
-              ).toList(),
-            );
+          for (final tag in tags) {
+            await saveTag(tag: tag);
+          }
+          for (final emoticon in emoticons) {
             await saveEmoticon(
-              newOrModifyEmoticon: NewOrModifyEmoticon.fromExistingEmoticon(
+              newOrModifyEmoticon: NewOrModifyEmoticon.copyFromEmoticon(
                 emoticon,
               ),
             );
           }
       }
+
       await sourceDb.close();
       return Result.value(null);
     } on Exception catch (error, stacktrace) {
@@ -710,7 +799,7 @@ CREATE TABLE IF NOT EXISTS $sqldbEmoticonsOrderingTableName
   $sqldbEmoticonsOrderingUserOrder REAL
 )
 """;
-  static const PreparedStatement createTagssOrderingTableStmt = """
+  static const PreparedStatement createTagsOrderingTableStmt = """
 CREATE TABLE IF NOT EXISTS $sqldbTagsOrderingTableName
 (
   $sqldbTagsOrderingTagId INTEGER,
@@ -778,4 +867,13 @@ WHERE $sqldbTagId=?
 DELETE FROM $sqldbEmoticonsToTagsJoinTableName
 WHERE $sqldbTagId=?
 """;
+
+  static const PreparedStatement createMetadataTable = """
+CREATE TABLE IF NOT EXISTS
+  $sqldbMetadataTableName
+    (
+      $sqldbMetadataKeyName VARCHAR,
+      $sqldbMetadataValueName VARCHAR
+    )
+    """;
 }

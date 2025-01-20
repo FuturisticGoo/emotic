@@ -22,17 +22,29 @@ class NewOrModifyEmoticon extends Equatable {
     required this.emoticonTags,
     required this.oldEmoticon,
   });
+
+  /// New emoticon with everything blank
   const NewOrModifyEmoticon.newEmoticon()
       : this(
           text: "",
           emoticonTags: const [],
           oldEmoticon: null,
         );
-  NewOrModifyEmoticon.fromExistingEmoticon(Emoticon emoticon)
+
+  /// Modify and existing emoticon
+  NewOrModifyEmoticon.editExistingEmoticon(Emoticon emoticon)
       : this(
           text: emoticon.text,
           emoticonTags: emoticon.emoticonTags,
           oldEmoticon: emoticon,
+        );
+
+  // Copy from another emoticon, but not for modifying that emoticon
+  NewOrModifyEmoticon.copyFromEmoticon(Emoticon emoticon)
+      : this(
+          text: emoticon.text,
+          emoticonTags: emoticon.emoticonTags,
+          oldEmoticon: null,
         );
   @override
   List<Object?> get props => [

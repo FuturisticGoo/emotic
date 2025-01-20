@@ -174,7 +174,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                                     return UpdateEmoticonBottomSheet(
                                                       newOrModifyEmoticon:
                                                           NewOrModifyEmoticon
-                                                              .fromExistingEmoticon(
+                                                              .editExistingEmoticon(
                                                         emoticon,
                                                       ),
                                                       isEditMode: true,
