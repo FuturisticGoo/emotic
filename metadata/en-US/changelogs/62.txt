@@ -1,0 +1,5 @@
+Order to Chaos! ┬─┬ノ( º _ ºノ)
+• Now you can reorder emoticons or tags in the Data Editor page
+• Added version to about page
+• App updates will be handled cleanly now
+• You can still import from old version's export file

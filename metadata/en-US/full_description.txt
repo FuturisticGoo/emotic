@@ -5,6 +5,7 @@ Features:
 <li>Browse through a list of emoticons which you can copy to clipboard without using internet or any websites.</li>
 <li>Add or modify your own emoticons.</li>
 <li>Search using related tags.</li>
+<li>Reorder them to your liking</li>
 <li>Import and export the database.</li>
 </ul>
 
