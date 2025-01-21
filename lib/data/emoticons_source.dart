@@ -144,7 +144,7 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
   Database? sourceDb;
   io.File? dbFile;
 
-  Future<void> copyDbFromAsset() async {
+  Future<void> _copyDbFromAsset() async {
     if (sourceDb == null) {
       final sourceDbFile = await assetBundle.load(emoticonsSourceDbAsset);
       final appDataPath = await getApplicationDocumentsDirectory();
@@ -162,13 +162,13 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
 
   @override
   Future<List<Emoticon>> getEmoticons() async {
-    await copyDbFromAsset();
+    await _copyDbFromAsset();
     return _getEmoticonsFromDb(db: sourceDb!);
   }
 
   @override
   Future<List<String>> getTags() async {
-    await copyDbFromAsset();
+    await _copyDbFromAsset();
     return _getTagsFromDb(db: sourceDb!);
   }
 }
@@ -338,8 +338,12 @@ FROM
       emoticonId = emoticonResultSet.first[sqldbEmoticonsId] as int;
       await db.execute(SQLStatements.emoticonUpdateStmt,
           [newOrModifyEmoticon.text, emoticonId]);
+
+      // Only do this if we're updating an old emoticon, not when a new
+      // (albeit duplicate) one is added, as in the case of app update, when its
+      // loaded from assets db
+      await db.execute(SQLStatements.removeEmoticonFromJoinStmt, [emoticonId]);
     }
-    await db.execute(SQLStatements.removeEmoticonFromJoinStmt, [emoticonId]);
 
     // Its easier this way
     for (final tag in newOrModifyEmoticon.emoticonTags) {
