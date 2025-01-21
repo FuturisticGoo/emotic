@@ -15,12 +15,11 @@ class AppUpdateProcessPage extends StatelessWidget {
     getLogger().config("Got settings state $state");
     switch (state) {
       case GlobalSettingsLoaded(:final settings) when settings.shouldReload:
-        if (settings.isUpdated) {
-          await performAppUpdateOperations(
-            lastUsedVersion: settings.lastUsedVersion,
-            currentRunningVersion: version,
-          );
-        }
+        await performAppUpdateOperations(
+          lastUsedVersion: settings.lastUsedVersion,
+          currentRunningVersion: version,
+        );
+
         if (context.mounted) {
           getLogger().config("Going to save and reload settings");
           await context.read<GlobalSettingsCubit>().saveSettings(

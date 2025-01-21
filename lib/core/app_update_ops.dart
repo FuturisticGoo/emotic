@@ -4,7 +4,7 @@ import 'package:emotic/data/emoticons_repository.dart';
 import 'init_setup.dart';
 
 Future<void> performAppUpdateOperations({
-  required SemVer lastUsedVersion,
+  required SemVer? lastUsedVersion,
   required SemVer currentRunningVersion,
 }) async {
   getLogger().config(

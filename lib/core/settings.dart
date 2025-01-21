@@ -9,9 +9,9 @@ import 'package:sqflite/sqflite.dart';
 
 class GlobalSettings extends Equatable {
   final bool isFirstTime;
-  final SemVer lastUsedVersion;
+  final SemVer? lastUsedVersion;
   bool get isUpdated {
-    return lastUsedVersion < version;
+    return (lastUsedVersion == null) ? true : lastUsedVersion! < version;
   }
 
   bool get shouldReload {
@@ -75,22 +75,26 @@ FROM
     if (settingsResult.isEmpty) {
       return const GlobalSettings(
         isFirstTime: true,
-        lastUsedVersion: version,
+        lastUsedVersion: null,
       );
     } else {
       final settingsKV = _getSettingsKVFromResult(settingsResult);
       final isFirstTime = bool.tryParse(
         settingsKV[sqldbSettingsKeyIsFirstTime] ?? "",
       );
-      SemVer lastUsedVersion;
+      SemVer? lastUsedVersion;
       try {
         final lastUsedVersionString =
-            settingsKV[sqldbSettingsKeylastUsedVersion] ?? version.toString();
-        lastUsedVersion = SemVer.fromString(
-          lastUsedVersionString,
-        );
+            settingsKV[sqldbSettingsKeylastUsedVersion];
+        if (lastUsedVersionString != null) {
+          lastUsedVersion = SemVer.fromString(
+            lastUsedVersionString,
+          );
+        } else {
+          lastUsedVersion = null;
+        }
       } on ArgumentError {
-        lastUsedVersion = version;
+        lastUsedVersion = null;
       }
       final globalSettings = GlobalSettings(
         isFirstTime: isFirstTime ?? true,
@@ -133,7 +137,7 @@ VALUES
 """,
       [
         sqldbSettingsKeylastUsedVersion,
-        newSettings.lastUsedVersion.toString(),
+        (newSettings.lastUsedVersion ?? version).toString(),
       ],
     );
   }
