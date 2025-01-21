@@ -225,7 +225,7 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                           ? ReorderableListView(
                                               key: PageStorageKey(
                                                   emoticonsListKey),
-                                              buildDefaultDragHandles: true,
+                                              buildDefaultDragHandles: false,
                                               onReorder:
                                                   (oldIndex, newIndex) async {
                                                 if (oldIndex < newIndex) {
@@ -240,14 +240,27 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                                     );
                                               },
                                               // crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: allEmoticons.map(
+                                              children: allEmoticons
+                                                  .asMap()
+                                                  .entries
+                                                  .map(
                                                 (e) {
                                                   return EmoticonTile(
-                                                    key:
-                                                        Key("emoticon-${e.id}"),
+                                                    key: Key(
+                                                        "emoticon-${e.value.id}"),
                                                     isSelected: false,
-                                                    emoticon: e,
+                                                    emoticon: e.value,
                                                     onTap: () {},
+                                                    trailing:
+                                                        ReorderableDragStartListener(
+                                                      key: ValueKey(
+                                                        e.key,
+                                                      ),
+                                                      index: e.key,
+                                                      child: const Icon(
+                                                        Icons.drag_handle,
+                                                      ),
+                                                    ),
                                                   );
                                                 },
                                               ).toList(),
@@ -285,6 +298,7 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                                             emoticon: e,
                                                           );
                                                     },
+                                                    trailing: null,
                                                   );
                                                 },
                                               ).toList(),
@@ -294,7 +308,7 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                       child: state is DataEditorModifyOrder
                                           ? ReorderableListView(
                                               key: PageStorageKey(tagsListKey),
-                                              buildDefaultDragHandles: true,
+                                              buildDefaultDragHandles: false,
                                               onReorder:
                                                   (oldIndex, newIndex) async {
                                                 if (oldIndex < newIndex) {
@@ -309,13 +323,22 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                                     );
                                               },
                                               // crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: allTags.map(
+                                              children:
+                                                  allTags.asMap().entries.map(
                                                 (e) {
                                                   return TagTile(
-                                                    key: Key("tag-$e"),
+                                                    key: Key("tag-${e.value}"),
                                                     isSelected: false,
-                                                    tag: e,
+                                                    tag: e.value,
                                                     onTap: () {},
+                                                    trailing:
+                                                        ReorderableDragStartListener(
+                                                      key: ValueKey(e.key),
+                                                      index: e.key,
+                                                      child: const Icon(
+                                                        Icons.drag_handle,
+                                                      ),
+                                                    ),
                                                   );
                                                 },
                                               ).toList(),
@@ -352,6 +375,7 @@ class _DataEditorPageState extends State<DataEditorPage> {
                                                             tag: e,
                                                           );
                                                     },
+                                                    trailing: null,
                                                   );
                                                 },
                                               ).toList(),
