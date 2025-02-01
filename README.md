@@ -12,6 +12,8 @@ Or download the latest APK from the [Releases Section](https://github.com/Futuri
 * A whole bunch of emoticons for your perusal (I'll try to add more)
 * Add or modify emoticons
 * Search using related tags
+* Reorder them to your liking
+* Import and export the database
 * That's pretty much it :D
 
 ## Building
@@ -31,7 +33,7 @@ Fork this repository, replace `assets/emoticons_source.sqlite` with your exporte
 You could then submit a pull request. I might accept it, or not.
 
 ## License
-The assets used in this app, ie the emoticons csv, tags, icon, are CC0 licensed.
+The assets used in this app, ie the emoticons, tags, are CC0 licensed.
 
 ## What does OwO mean?
 UwU

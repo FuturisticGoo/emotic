@@ -5,7 +5,7 @@ const emoticonsSourceDbAsset = "assets/$emoticonsSourceDbName";
 const version = SemVer(
   major: 0,
   minor: 1,
-  patch: 6,
+  patch: 7,
 );
 
 const sqldbName = "emoticons_sqlite";
@@ -15,6 +15,7 @@ const sqldbSettingsKeyColName = "key";
 const sqldbSettingsValueColName = "value";
 const sqldbSettingsKeyIsFirstTime = "is_first_time";
 const sqldbSettingsKeylastUsedVersion = "last_used_version";
+const sqldbSettingsKeyThemeMode = "theme_mode";
 
 const sqldbEmoticonsTableName = "emoticons";
 const sqldbEmoticonsId = "id";

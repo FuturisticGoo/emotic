@@ -23,7 +23,7 @@ class AppUpdateProcessPage extends StatelessWidget {
         if (context.mounted) {
           getLogger().config("Going to save and reload settings");
           await context.read<GlobalSettingsCubit>().saveSettings(
-                const GlobalSettings(
+                settings.copyWith(
                   isFirstTime: false,
                   lastUsedVersion: version,
                 ),

@@ -22,21 +22,30 @@ class EmoticApp extends StatelessWidget {
       create: (context) => GlobalSettingsCubit(
         settingsSource: init.sl(),
       ),
-      child: DynamicColorBuilder(
-        builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-          return MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            title: 'Emotic',
-            theme: getAppTheme(
-              colorScheme: lightDynamic,
-              brightness: Brightness.light,
-            ),
-            darkTheme: getAppTheme(
-              colorScheme: darkDynamic,
-              brightness: Brightness.dark,
-            ),
-            themeMode: ThemeMode.system,
-            routerConfig: Routes.router,
+      child: BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
+        builder: (context, state) {
+          return DynamicColorBuilder(
+            builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+              return MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                title: 'Emotic',
+                theme: getAppTheme(
+                  colorScheme: lightDynamic,
+                  brightness: Brightness.light,
+                ),
+                darkTheme: getAppTheme(
+                  colorScheme: darkDynamic,
+                  brightness: Brightness.dark,
+                  isPureBlack: (state is GlobalSettingsLoaded)
+                      ? state.settings.emoticThemeMode.isPureBlack
+                      : false,
+                ),
+                themeMode: (state is GlobalSettingsLoaded)
+                    ? state.settings.emoticThemeMode.toThemeMode()
+                    : ThemeMode.system,
+                routerConfig: Routes.router,
+              );
+            },
           );
         },
       ),

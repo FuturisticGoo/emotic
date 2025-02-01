@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:emotic/core/app_theme.dart';
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/semver.dart';
@@ -10,6 +11,7 @@ import 'package:sqflite/sqflite.dart';
 class GlobalSettings extends Equatable {
   final bool isFirstTime;
   final SemVer? lastUsedVersion;
+  final EmoticThemeMode emoticThemeMode;
   bool get isUpdated {
     return (lastUsedVersion == null) ? true : lastUsedVersion! < version;
   }
@@ -21,13 +23,26 @@ class GlobalSettings extends Equatable {
   const GlobalSettings({
     required this.isFirstTime,
     required this.lastUsedVersion,
+    required this.emoticThemeMode,
   });
 
   @override
   List<Object?> get props => [
         isFirstTime,
         lastUsedVersion,
+        emoticThemeMode,
       ];
+  GlobalSettings copyWith({
+    bool? isFirstTime,
+    SemVer? lastUsedVersion,
+    EmoticThemeMode? emoticThemeMode,
+  }) {
+    return GlobalSettings(
+      isFirstTime: isFirstTime ?? this.isFirstTime,
+      lastUsedVersion: lastUsedVersion ?? this.lastUsedVersion,
+      emoticThemeMode: emoticThemeMode ?? this.emoticThemeMode,
+    );
+  }
 }
 
 abstract class SettingsSource {
@@ -76,6 +91,7 @@ FROM
       return const GlobalSettings(
         isFirstTime: true,
         lastUsedVersion: null,
+        emoticThemeMode: EmoticThemeMode.system,
       );
     } else {
       final settingsKV = _getSettingsKVFromResult(settingsResult);
@@ -96,9 +112,16 @@ FROM
       } on ArgumentError {
         lastUsedVersion = null;
       }
+
+      final emoticThemeMode = EmoticThemeMode.values.byName(
+        settingsKV[sqldbSettingsKeyThemeMode]?.toString() ??
+            EmoticThemeMode.system.name,
+      );
+
       final globalSettings = GlobalSettings(
         isFirstTime: isFirstTime ?? true,
         lastUsedVersion: lastUsedVersion,
+        emoticThemeMode: emoticThemeMode,
       );
       getLogger().fine("Got $globalSettings");
       return globalSettings;
@@ -138,6 +161,19 @@ VALUES
       [
         sqldbSettingsKeylastUsedVersion,
         (newSettings.lastUsedVersion ?? version).toString(),
+      ],
+    );
+    await db.rawInsert(
+      """
+INSERT INTO
+  $sqldbSettingsTableName
+    ($sqldbSettingsKeyColName, $sqldbSettingsValueColName)
+VALUES
+  (?, ?)
+""",
+      [
+        sqldbSettingsKeyThemeMode,
+        newSettings.emoticThemeMode.name,
       ],
     );
   }
