@@ -30,13 +30,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(SettingsLoading());
     final result = await emoticonsRepository.exportToFile();
     if (result.isError) {
-      emit(SettingsLoaded(
-        snackBarMessage: "Error exporting: ${result.asError!.error}",
-      ));
+      emit(SettingsLoaded(alertMessage: "Error exporting: ${result.asError!.error}"));
     } else {
-      emit(SettingsLoaded(
-        snackBarMessage: "Export successful",
-      ));
+      emit(SettingsLoaded(snackBarMessage: "Export successful"));
     }
   }
 
@@ -44,13 +40,9 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(SettingsLoading());
     final result = await emoticonsRepository.importFromFile();
     if (result.isError) {
-      emit(SettingsLoaded(
-        snackBarMessage: "Error reading data: ${result.asError!.error}",
-      ));
+      emit(SettingsLoaded(alertMessage: "Error reading data: ${result.asError!.error}"));
     } else {
-      emit(SettingsLoaded(
-        snackBarMessage: "Import successful",
-      ));
+      emit(SettingsLoaded(snackBarMessage: "Import successful"));
     }
   }
 }

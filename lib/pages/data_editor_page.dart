@@ -9,7 +9,7 @@ import 'package:emotic/cubit/data_editor_state.dart';
 import 'package:emotic/widgets/delete_confirmation.dart';
 import 'package:emotic/widgets/emoticon_tile.dart';
 import 'package:emotic/widgets/read_list_of_string_from_user.dart';
-import 'package:emotic/widgets/show_snackbar.dart';
+import 'package:emotic/widgets/show_message.dart';
 import 'package:emotic/widgets/tag_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
