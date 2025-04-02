@@ -3,7 +3,7 @@ import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/settings_cubit.dart';
 import 'package:emotic/widgets/list_tile_heading.dart';
-import 'package:emotic/widgets/show_snackbar.dart';
+import 'package:emotic/widgets/show_message.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:flutter/material.dart';
@@ -24,10 +24,18 @@ class SettingsPage extends StatelessWidget {
               return BlocConsumer<SettingsCubit, SettingsState>(
                 listener: (context, state) async {
                   switch (state) {
-                    case SettingsLoaded(:final snackBarMessage)
-                        when snackBarMessage != null:
+                    case SettingsLoaded(:final snackBarMessage) when snackBarMessage != null:
                       if (context.mounted) {
                         showSnackBar(context, text: snackBarMessage);
+                      }
+                    case SettingsLoaded(:final alertMessage) when alertMessage != null:
+                      if (context.mounted) {
+                        showAlertDialog(
+                          context,
+                          title: "Error",
+                          content: alertMessage,
+                          onPressed: () {},
+                        );
                       }
                     default:
                       break;

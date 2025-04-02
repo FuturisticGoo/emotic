@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
-import 'package:emotic/widgets/show_snackbar.dart';
+import 'package:emotic/widgets/show_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
