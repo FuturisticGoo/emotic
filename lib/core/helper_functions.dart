@@ -4,14 +4,16 @@ bool _isBetween(double a, double n, double b) {
   return (a < n) && (n < b);
 }
 
+/// Assuming that firstOrder is less than secondOrder, get another
+/// double which is in between those two.
 double getNumBetweenTwoNums({
   required double firstOrder,
   required double secondOrder,
 }) {
-  assert(
-    firstOrder <= secondOrder,
-    "Cannot find number between $firstOrder and $secondOrder",
-  );
+  if (firstOrder >= secondOrder) {
+    throw AssertionError(
+        "Cannot find number between $firstOrder and $secondOrder");
+  }
   final longestPrecision = max(
     firstOrder.toString().length,
     secondOrder.toString().length,

@@ -23,10 +23,18 @@ class SemVer extends Equatable {
         (patch < other.patch);
   }
 
+  operator >(SemVer other) {
+    return !(this <= other);
+  }
+
   operator <=(SemVer other) {
     return (major <= other.major) &&
         (minor <= other.minor) &&
         (patch <= other.patch);
+  }
+
+  operator >=(SemVer other) {
+    return !(this < other);
   }
 
   @override

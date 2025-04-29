@@ -13,3 +13,5 @@
 * ~Emoticon ordering based on most recently copied~ User preference ordering added
 * ~Improve listing performance, use async for reading the database.~
 * Add fancy text generator, because I use it a lot along with emoticons
+* Image/GIF copy paste sharing page for image reactions
+* Text size settings
