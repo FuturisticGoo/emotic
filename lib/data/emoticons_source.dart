@@ -7,7 +7,6 @@ import 'package:path/path.dart' as p;
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -138,8 +137,10 @@ WHERE
 
 class EmoticonsSourceAssetDB implements EmoticonsSource {
   final AssetBundle assetBundle;
+  final EmoticAppDataDirectory emoticAppDataDirectory;
   EmoticonsSourceAssetDB({
     required this.assetBundle,
+    required this.emoticAppDataDirectory,
   });
   Database? sourceDb;
   io.File? dbFile;
@@ -147,8 +148,8 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
   Future<void> _copyDbFromAsset() async {
     if (sourceDb == null) {
       final sourceDbFile = await assetBundle.load(emoticonsSourceDbAsset);
-      final appDataPath = await getApplicationDocumentsDirectory();
-      dbFile = io.File(p.join(appDataPath.path, emoticonsSourceDbName));
+      final appDataPath = await emoticAppDataDirectory.getAppDataDir();
+      dbFile = io.File(p.join(appDataPath, emoticonsSourceDbName));
       await dbFile!
           .writeAsBytes(sourceDbFile.buffer.asUint8List(), flush: true);
       sourceDb = await openDatabase(dbFile!.path);
@@ -175,8 +176,11 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
 
 class EmoticonsSqliteSource implements EmoticonsStore {
   final Database db;
-
-  EmoticonsSqliteSource({required this.db}) {
+  final EmoticAppDataDirectory emoticAppDataDirectory;
+  EmoticonsSqliteSource({
+    required this.db,
+    required this.emoticAppDataDirectory,
+  }) {
     _ensureTables();
   }
 
@@ -739,9 +743,9 @@ VALUES
       String? outputFile;
       final fileName =
           "Emotic_${today.year}_${today.month}_${today.day}_${today.hour}_${today.minute}.sqlite";
-      final cacheDir = await getApplicationCacheDirectory();
+      final cacheDir = await emoticAppDataDirectory.getAppCacheDir();
 
-      final outputDbPath = p.join(cacheDir.path, fileName);
+      final outputDbPath = p.join(cacheDir, fileName);
       await db.execute("VACUUM");
       await io.File(db.path).copy(outputDbPath);
       final outputDb = await openDatabase(outputDbPath);

@@ -8,10 +8,13 @@
 
 #include <dynamic_color/dynamic_color_plugin_c_api.h>
 #include <sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.h>
+#include <uri_content/uri_content_plugin_c_api.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   DynamicColorPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DynamicColorPluginCApi"));
   Sqlite3FlutterLibsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("Sqlite3FlutterLibsPlugin"));
+  UriContentPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("UriContentPluginCApi"));
 }

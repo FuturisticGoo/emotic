@@ -5,10 +5,14 @@ const emoticonsSourceDbAsset = "assets/$emoticonsSourceDbName";
 const version = SemVer(
   major: 0,
   minor: 1,
-  patch: 7,
+  patch: 8,
 );
 
 const sqldbName = "emoticons_sqlite";
+
+const appId = "futuristicgoo.emotic";
+const appName = "Emotic";
+const sourceLink = "https://github.com/FuturisticGoo/emotic";
 
 const sqldbSettingsTableName = "settings_data";
 const sqldbSettingsKeyColName = "key";
@@ -39,5 +43,3 @@ const sqldbMetadataTableName = "emotic_metadata";
 const sqldbMetadataKeyName = "key";
 const sqldbMetadataValueName = "value";
 const sqldbMetadataKeyVersion = "version";
-
-const sourceLink = "https://github.com/FuturisticGoo/emotic";

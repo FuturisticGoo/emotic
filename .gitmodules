@@ -2,3 +2,6 @@
 	path = submodules/flutter
 	url = https://github.com/flutter/flutter
 	branch = stable
+[submodule "submodules/pick_or_save"]
+	path = submodules/pick_or_save
+	url = https://github.com/umidshox99/pick_or_save.git
