@@ -79,7 +79,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
           await imageRepository.getImageBytes(imageUri: emoticImage.imageUri);
       switch (bytesResult) {
         case Right(value: final imageBytes):
-          final copyResult = hf.copyImageToClipboard(
+          final copyResult = await hf.copyImageToClipboard(
             emoticImage: emoticImage,
             imageBytes: imageBytes,
           );
