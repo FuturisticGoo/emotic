@@ -21,7 +21,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     emit(EmotipicsListingLoading());
     final imagesResult = await imageRepository.getImages();
     switch (imagesResult) {
-      case Left(value: final error):
+      case Left():
         emit(EmotipicsListingError());
       case Right(value: final images):
         emit(
@@ -83,9 +83,39 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
             emoticImage: emoticImage,
             imageBytes: imageBytes,
           );
-        // TODO: snackbar
+          switch (copyResult) {
+            case Right():
+              if (state
+                  case EmotipicsListingLoaded(
+                    :final images,
+                    :final visibleImageData
+                  )) {
+                emit(
+                  EmotipicsListingLoaded(
+                    images: images,
+                    visibleImageData: visibleImageData,
+                    snackBarMessage: "Image copied!",
+                  ),
+                );
+              }
+            case Left():
+              continue errorSnackBar;
+          }
+        errorSnackBar:
         case Left():
-          break;
+          if (state
+              case EmotipicsListingLoaded(
+                :final images,
+                :final visibleImageData
+              )) {
+            emit(
+              EmotipicsListingLoaded(
+                images: images,
+                visibleImageData: visibleImageData,
+                snackBarMessage: "Unable to copy image",
+              ),
+            );
+          }
       }
     }
   }
