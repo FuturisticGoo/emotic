@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 
-class EmoticonsSearchBar extends StatefulWidget {
+class GenericSearchBar extends StatefulWidget {
   final List<String> allTags;
   final TextEditingController controller;
   final void Function(String) onChange;
-  const EmoticonsSearchBar({
+  final String hintText;
+  const GenericSearchBar({
     super.key,
     required this.allTags,
     required this.controller,
     required this.onChange,
+    required this.hintText,
   });
 
   @override
-  State<EmoticonsSearchBar> createState() => _EmoticonsSearchBarState();
+  State<GenericSearchBar> createState() => _GenericSearchBarState();
 }
 
-class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
+class _GenericSearchBarState extends State<GenericSearchBar> {
   bool showTagsSuggestion = false;
   @override
   void initState() {
@@ -41,7 +43,7 @@ class _EmoticonsSearchBarState extends State<EmoticonsSearchBar> {
             controller: widget.controller,
             autofocus: false,
             decoration: InputDecoration(
-              hintText: "Search by tag",
+              hintText: widget.hintText,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(32),
               ),

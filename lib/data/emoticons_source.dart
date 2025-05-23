@@ -107,34 +107,6 @@ ORDER BY
   return tags;
 }
 
-Future<SemVer> _getMetadataVersion({required Database db}) async {
-  await db.execute(SQLStatements.createMetadataTable);
-  final versionResult = await db.rawQuery(
-    """
-SELECT
-  $sqldbMetadataValueName
-FROM
-  $sqldbMetadataTableName
-WHERE
-  $sqldbMetadataKeyName=?
-    """,
-    [sqldbMetadataKeyVersion],
-  );
-  if (versionResult.length == 1) {
-    final version = SemVer.fromString(
-        versionResult.single[sqldbMetadataValueName] as String);
-    getLogger().config("Source database version $version");
-    return version;
-  } else {
-    // If it doesn't exist, assume that its pre 0.1.6 version
-    getLogger().config(
-      "Source database doesn't have version information,"
-      " assuming pre-v0.1.6",
-    );
-    return SemVer.fromString("0.1.5");
-  }
-}
-
 class EmoticonsSourceAssetDB implements EmoticonsSource {
   final AssetBundle assetBundle;
   final EmoticAppDataDirectory emoticAppDataDirectory;
@@ -192,61 +164,6 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     await _prefillEmoticonsOrdering();
     await db.execute(SQLStatements.createTagsOrderingTableStmt);
     await _prefillTagsOrdering();
-    await db.execute(SQLStatements.createMetadataTable);
-    await _prefillMetadata();
-  }
-
-  Future<void> _prefillMetadata() async {
-    final existingVersionRows = await db.rawQuery(
-      """
-SELECT 
-  $sqldbMetadataValueName 
-FROM
-  $sqldbMetadataTableName
-WHERE
-  $sqldbMetadataKeyName=?
-    """,
-      [sqldbMetadataKeyVersion],
-    );
-    if (existingVersionRows.isNotEmpty) {
-      if (existingVersionRows.length > 1) {
-        getLogger()
-            .warning("Existing version rows: ${existingVersionRows.length}");
-      }
-      final updatedRows = await db.rawDelete(
-        """
-UPDATE 
-  $sqldbMetadataTableName
-SET
-  $sqldbMetadataValueName=?
-WHERE
-  $sqldbMetadataKeyName=? AND
-  $sqldbMetadataValueName!=?
-      """,
-        [
-          version.toString(),
-          sqldbMetadataKeyVersion,
-          version.toString(),
-        ],
-      );
-      if (updatedRows > 0) {
-        getLogger().config("Updated $updatedRows rows of version metadata");
-      }
-    } else {
-      await db.rawInsert(
-        """
-INSERT INTO 
-  $sqldbMetadataTableName
-  ($sqldbMetadataKeyName, $sqldbMetadataValueName)
-VALUES
-  (?, ?)
-      """,
-        [
-          sqldbMetadataKeyVersion,
-          version.toString(),
-        ],
-      );
-    }
   }
 
   Future<void> _prefillEmoticonsOrdering() async {
@@ -443,79 +360,11 @@ WHERE
     await db.rawDelete("DELETE FROM $sqldbTagsOrderingTableName");
   }
 
-  Future<(double, double)?> _getCurrentMinAndMaxOrder({
-    required String tableName,
-    required String orderColumnName,
-  }) async {
-    final lowest = "lowest";
-    final higest = "highest";
-    final result = (await db.rawQuery("""
-SELECT 
-  MIN($orderColumnName) as $lowest,
-  MAX($orderColumnName) as $higest
-FROM 
-  $tableName
-    """)).single;
-    if (result[lowest] != null) {
-      return (result[lowest] as double, result[higest] as double);
-    } else {
-      return null;
-    }
-  }
-
-  /// Get the order value at nth ordered position from beginning, and n-1th
-  /// order value as well, if its the first position, result will be (null, b).
-  /// If its the last position, result will be (a, null)
-  Future<(double?, double?)> _getNMinus1thAndNthOrderValue({
-    required String tableName,
-    required String orderColumnName,
-    required int n,
-  }) async {
-    if (n < 0) {
-      throw ArgumentError.value(n, "n cannot be < 0");
-    }
-    final double? nMinus1th;
-    if (n == 0) {
-      nMinus1th = null;
-    } else {
-      final result = (await db.rawQuery(
-        """
-SELECT 
- $orderColumnName
-FROM 
-  $tableName
-ORDER BY
-  $orderColumnName 
-LIMIT 1
-OFFSET ?
-    """,
-        [n - 1],
-      ))
-          .singleOrNull;
-      nMinus1th = result?[orderColumnName] as double?;
-    }
-    final result = (await db.rawQuery(
-      """
-SELECT 
- $orderColumnName
-FROM 
-  $tableName
-ORDER BY
-  $orderColumnName 
-LIMIT 1
-OFFSET ?
-    """,
-      [n],
-    ))
-        .singleOrNull;
-    final double? nth = result?[orderColumnName] as double?;
-    return (nMinus1th, nth);
-  }
-
   Future<void> _appendToEmoticonsOrder({
     required int emoticonId,
   }) async {
-    final currentHighestOrder = (await _getCurrentMinAndMaxOrder(
+    final currentHighestOrder = (await getCurrentMinAndMaxOrder(
+      db: db,
       tableName: sqldbEmoticonsOrderingTableName,
       orderColumnName: sqldbEmoticonsOrderingUserOrder,
     ))
@@ -538,7 +387,8 @@ VALUES
   Future<void> _appendToTagsOrder({
     required int tagId,
   }) async {
-    final currentHighestOrder = (await _getCurrentMinAndMaxOrder(
+    final currentHighestOrder = (await getCurrentMinAndMaxOrder(
+      db: db,
       tableName: sqldbTagsOrderingTableName,
       orderColumnName: sqldbTagsOrderingUserOrder,
     ))
@@ -558,19 +408,6 @@ VALUES
     );
   }
 
-  (double, double) _getFirstAndSecondOrder({
-    required (double?, double?) nMinus1thAndNthValue,
-  }) {
-    // If n-1th value is null, then it means it is the the beginning,
-    // so it should just be nth value - 1
-    // If nth value is null, then it means it is at the end,
-    // so it should be just n-1th value + 1
-    return (
-      nMinus1thAndNthValue.$1 ?? (nMinus1thAndNthValue.$2 ?? 0) - 1,
-      nMinus1thAndNthValue.$2 ?? (nMinus1thAndNthValue.$1 ?? 0) + 1
-    );
-  }
-
   @override
   Future<void> modifyEmoticonOrder({
     required Emoticon emoticon,
@@ -587,13 +424,14 @@ WHERE
       [emoticon.id],
     );
 
-    final nMinus1AndNthValue = await _getNMinus1thAndNthOrderValue(
+    final nMinus1AndNthValue = await getNMinus1thAndNthOrderValue(
+      db: db,
       tableName: sqldbEmoticonsOrderingTableName,
       orderColumnName: sqldbEmoticonsOrderingUserOrder,
       n: newOrder,
     );
     getLogger().config("N-1th and Nth order values $nMinus1AndNthValue");
-    final (firstOrder, secondOrder) = _getFirstAndSecondOrder(
+    final (firstOrder, secondOrder) = getFirstAndSecondOrder(
       nMinus1thAndNthValue: nMinus1AndNthValue,
     );
     getLogger().config("firstOrder: $firstOrder and secondOrder: $secondOrder");
@@ -660,13 +498,14 @@ WHERE
       [tagId],
     );
 
-    final nMinus1AndNthValue = await _getNMinus1thAndNthOrderValue(
+    final nMinus1AndNthValue = await getNMinus1thAndNthOrderValue(
+      db: db,
       tableName: sqldbTagsOrderingTableName,
       orderColumnName: sqldbTagsOrderingUserOrder,
       n: newOrder,
     );
     getLogger().config("N-1th and Nth order values $nMinus1AndNthValue");
-    final (firstOrder, secondOrder) = _getFirstAndSecondOrder(
+    final (firstOrder, secondOrder) = getFirstAndSecondOrder(
       nMinus1thAndNthValue: nMinus1AndNthValue,
     );
     getLogger().config("firstOrder: $firstOrder and secondOrder: $secondOrder");
@@ -705,7 +544,7 @@ VALUES
       }
       String dbPath = inputFile!.paths.single!;
       Database sourceDb = await openDatabase(dbPath);
-      final dbVersion = await _getMetadataVersion(db: sourceDb);
+      final dbVersion = await getMetadataVersion(db: sourceDb);
       if (dbVersion < SemVer.fromString("0.1.6")) {
         await sourceDb.execute(SQLStatements.createEmoticonsOrderingTableStmt);
         await sourceDb.execute(SQLStatements.createTagsOrderingTableStmt);
@@ -875,13 +714,4 @@ WHERE $sqldbTagId=?
 DELETE FROM $sqldbEmoticonsToTagsJoinTableName
 WHERE $sqldbTagId=?
 """;
-
-  static const PreparedStatement createMetadataTable = """
-CREATE TABLE IF NOT EXISTS
-  $sqldbMetadataTableName
-    (
-      $sqldbMetadataKeyName VARCHAR,
-      $sqldbMetadataValueName VARCHAR
-    )
-    """;
 }

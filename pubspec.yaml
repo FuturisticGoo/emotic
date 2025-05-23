@@ -55,6 +55,10 @@ dependencies:
   uri_content: ^3.0.0
   visibility_detector: ^0.4.0+2
   xdg_directories: ^1.1.0
+  tar: ^2.0.0
+  uuid: ^4.5.1
+  fpdart: ^1.1.1
+  pasteboard: ^0.4.0
   
 dev_dependencies:
   flutter_test:

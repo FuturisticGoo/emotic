@@ -10,10 +10,10 @@ const version = SemVer(
 
 const sqldbName = "emoticons_sqlite";
 
-const appId = "futuristicgoo.emotic";
 const appName = "Emotic";
 const sourceLink = "https://github.com/FuturisticGoo/emotic";
 
+// TODO: Move these sqldb constants to the emoticon_source file
 const sqldbSettingsTableName = "settings_data";
 const sqldbSettingsKeyColName = "key";
 const sqldbSettingsValueColName = "value";
@@ -38,8 +38,3 @@ const sqldbEmoticonsOrderingUserOrder = "emoticon_user_order";
 const sqldbTagsOrderingTableName = "tags_ordering";
 const sqldbTagsOrderingTagId = "tag_id";
 const sqldbTagsOrderingUserOrder = "tag_user_order";
-
-const sqldbMetadataTableName = "emotic_metadata";
-const sqldbMetadataKeyName = "key";
-const sqldbMetadataValueName = "value";
-const sqldbMetadataKeyVersion = "version";

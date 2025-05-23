@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 const _loggerName = "EmoticLogger";
@@ -39,7 +38,7 @@ Future<void> initLogger() async {
         outputString.write("\nStacktrace: ${record.stackTrace}");
       }
       outputString.write("\x1B[0m");
-      stdout.writeln(outputString);
+      debugPrint(outputString.toString());
     },
   );
 }

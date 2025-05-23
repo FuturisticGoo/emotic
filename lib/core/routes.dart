@@ -2,6 +2,7 @@ import 'package:emotic/core/logging.dart';
 import 'package:emotic/pages/about_page.dart';
 import 'package:emotic/pages/app_update_process_page.dart';
 import 'package:emotic/pages/emoticons_page.dart';
+import 'package:emotic/pages/emotipics_page.dart';
 import 'package:emotic/pages/settings_page.dart';
 import 'package:emotic/pages/data_editor_page.dart';
 import 'package:emotic/widgets/left_drawer.dart';
@@ -11,6 +12,7 @@ import 'package:go_router/go_router.dart';
 class Routes {
   static const emoticonsPage = "/emoticons";
   static const dataEditorPage = "/dataEditor";
+  static const emotipics = "/emotipics";
   static const settingsPage = "/settings";
   static const aboutPage = "/about";
   static const updatingPage = "/updating";
@@ -54,6 +56,13 @@ class Routes {
                 builder: (context, state) {
                   getLogger().fine("Going to SettingsPage");
                   return const SettingsPage();
+                },
+              ),
+              GoRoute(
+                path: emotipics,
+                builder: (context, state) {
+                  getLogger().fine("Going to EmotiPicsPage");
+                  return const EmotiPicsPage();
                 },
               ),
               GoRoute(

@@ -36,6 +36,13 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
+            title: const Text("EmotiPics"),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.go(Routes.emotipics);
+            },
+          ),
+          ListTile(
             title: const Text("Settings"),
             onTap: () {
               Navigator.of(context).pop();

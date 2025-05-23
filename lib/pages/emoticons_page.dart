@@ -136,9 +136,10 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              EmoticonsSearchBar(
+                              GenericSearchBar(
                                 allTags: allTags,
                                 controller: controller,
+                                hintText: "Search by tag",
                                 onChange: (String text) {
                                   context
                                       .read<EmoticonsListingCubit>()

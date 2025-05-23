@@ -4,6 +4,8 @@ import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/data/emoticons_repository.dart';
 import 'package:emotic/data/emoticons_source.dart';
+import 'package:emotic/data/image_repository.dart';
+import 'package:emotic/data/image_source.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart' as pp;
 import 'constants.dart';
@@ -33,7 +35,7 @@ Future<void> initSetup() async {
   final dbPath = p.join(appDir, sqldbName);
   getLogger().fine("Opening database at $dbPath");
   final db = await openDatabase(dbPath);
-
+  await commonEnsureTables(db: db);
   sl.registerSingleton<Database>(
     db,
     dispose: (param) async {
@@ -76,6 +78,19 @@ Future<void> initSetup() async {
       database: sl(
         instanceName: dbSource,
       ),
+    ),
+  );
+
+  sl.registerSingleton<ImageSource>(
+    ImageSourceSQLiteAndFS(
+      db: db,
+      emoticAppDataDirectory: sl(),
+    ),
+  );
+
+  sl.registerSingleton<ImageRepository>(
+    ImageRepository(
+      imageSource: sl(),
     ),
   );
 }
