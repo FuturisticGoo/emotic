@@ -10,7 +10,7 @@ class EmotipicsListingLoading extends EmotipicsListingState {}
 
 class EmotipicsListingLoaded extends EmotipicsListingState with EquatableMixin {
   final List<EmoticImage> images;
-  final Map<Uri, Uint8List> visibleImageData;
+  final Map<Uri, ImageRepr> visibleImageData;
   final String? snackBarMessage;
   const EmotipicsListingLoaded({
     required this.images,

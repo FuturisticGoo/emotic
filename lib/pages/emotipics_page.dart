@@ -1,3 +1,4 @@
+import 'package:emotic/core/image_data.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:emotic/cubit/emotipics_cubit.dart';
@@ -97,6 +98,18 @@ class ImageGridView extends StatefulWidget {
   State<ImageGridView> createState() => _ImageGridViewState();
 }
 
+int getCrossAxisCount(BuildContext context) {
+  final dPR = MediaQuery.devicePixelRatioOf(context);
+
+  final size = MediaQuery.sizeOf(context);
+  // An image should have width of 240 pixels in a 1 dpr screen
+  // So that means, 3 horizontal images in a 720 width screen
+  // The below equation gets the number of horizontal images that should fit
+  // neatly in a screen with width=size.width
+  final crossAxisCount = (dPR * size.width) / 240;
+  return crossAxisCount.ceil();
+}
+
 class _ImageGridViewState extends State<ImageGridView> {
   final Map<Uri, Image> cachedImage = {};
   @override
@@ -106,45 +119,35 @@ class _ImageGridViewState extends State<ImageGridView> {
         switch (state) {
           case EmotipicsListingInitial():
           case EmotipicsListingLoading():
-            return Center(
-              child: CircularProgressIndicator(),
+            return Expanded(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
             );
           case EmotipicsListingError():
             return Center(
               child: Text("Error loading images"),
             );
           case EmotipicsListingLoaded(:final images, :final visibleImageData):
-            final aspectRatioCount =
-                (MediaQuery.sizeOf(context).aspectRatio * 5).floor();
             return Expanded(
               child: GridView.builder(
                 shrinkWrap: true,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: aspectRatioCount > 8 ? 8 : aspectRatioCount,
+                  crossAxisCount: getCrossAxisCount(context),
                 ),
                 itemCount: images.length,
                 restorationId: "imagesListThing",
                 itemBuilder: (context, index) {
                   final currentImage = images[index];
-                  final width = (MediaQuery.sizeOf(context).width *
-                          1 /
-                          ((MediaQuery.sizeOf(context).aspectRatio * 5)
-                              .floor()))
-                      .toInt();
-                  final imageBytes = visibleImageData[currentImage.imageUri];
-                  if (cachedImage[currentImage.imageUri] == null &&
-                      imageBytes != null) {
-                    cachedImage[currentImage.imageUri] = Image.memory(
-                      imageBytes,
-                      cacheWidth: width,
-                    );
+                  final imageRepr = visibleImageData[currentImage.imageUri];
+                  if (imageRepr
+                      case FlutterImageWidgetImageRepr(:final imageWidget)) {
+                    cachedImage[currentImage.imageUri] = imageWidget;
                   }
                   final currentCachedImage = cachedImage[currentImage.imageUri];
                   return VisibilityDetector(
                     key: Key(images[index].toString()),
-                    child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: currentCachedImage != null
+                    child: currentCachedImage != null
                           ? CopyableImage(
                               imageWidget: currentCachedImage,
                               emoticImage: currentImage,
@@ -158,8 +161,13 @@ class _ImageGridViewState extends State<ImageGridView> {
                               onSecondaryPress: (emoticImage) {},
                             )
                           : Center(
+                            child: SizedBox.square(
+                              dimension:
+                                  MediaQuery.sizeOf(context).shortestSide *
+                                      0.05,
                               child: CircularProgressIndicator(),
                             ),
+                            
                     ),
                     onVisibilityChanged: (info) async {
                       if (info.visibleFraction > 0) {

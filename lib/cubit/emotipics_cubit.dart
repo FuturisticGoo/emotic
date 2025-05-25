@@ -1,7 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:emotic/core/emotic_image.dart';
+import 'package:emotic/core/image_data.dart';
 import 'package:emotic/core/logging.dart';
+import 'package:emotic/core/status_entities.dart';
 import 'package:emotic/data/image_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,8 +48,11 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
 
   Future<void> loadImageBytes({required Uri imageToLoad}) async {
     if (state case EmotipicsListingLoaded(:final images)) {
-      final bytesResult =
-          await imageRepository.getImageBytes(imageUri: imageToLoad);
+      final Either<Failure, ImageRepr> bytesResult =
+          await imageRepository.getImageData(
+        imageUri: imageToLoad,
+        imageReprConfig: FlutterImageWidgetReprConfig.thumbnail(),
+      );
       // TODO: handle errors, maybe the map
       switch (bytesResult) {
         case Left():
@@ -75,10 +78,12 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
 
   Future<void> copyImageToClipboard({required EmoticImage emoticImage}) async {
     if (state case EmotipicsListingLoaded()) {
-      final bytesResult =
-          await imageRepository.getImageBytes(imageUri: emoticImage.imageUri);
+      final bytesResult = await imageRepository.getImageData(
+        imageUri: emoticImage.imageUri,
+        imageReprConfig: Uint8ListReprConfig(),
+      );
       switch (bytesResult) {
-        case Right(value: final imageBytes):
+        case Right(value: Uint8ListImageRepr(:final imageBytes)):
           final copyResult = await hf.copyImageToClipboard(
             emoticImage: emoticImage,
             imageBytes: imageBytes,
@@ -101,6 +106,9 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
             case Left():
               continue errorSnackBar;
           }
+        case Right():
+          // Should not happen because we specifically requested for image bytes
+          continue errorSnackBar;
         errorSnackBar:
         case Left():
           if (state
@@ -124,7 +132,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     final pickResult = await imageRepository.pickImagesAndSave();
     switch (pickResult) {
       case Left(value: final error):
-        getLogger().warning(
+        getLogger().severe(
           "pick image failed",
           error,
         );
@@ -138,6 +146,10 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     final pickResult = await imageRepository.pickDirectoryAndSaveImages();
     switch (pickResult) {
       case Left(value: final error):
+        getLogger().severe(
+          "pick directory failed",
+          error,
+        );
         break; // TODO: maybe a toast message?
       case Right():
         await loadSavedImages();

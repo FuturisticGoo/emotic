@@ -1,5 +1,5 @@
 import 'package:emotic/core/emotic_image.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 class CopyableImage extends StatelessWidget {
   final Image imageWidget;
@@ -16,8 +16,11 @@ class CopyableImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      child: imageWidget,
+    return InkWell(
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: imageWidget,
+      ),
       onTap: () => onTap(emoticImage),
       onLongPress: () => onSecondaryPress(emoticImage),
       onSecondaryTap: () => onSecondaryPress(emoticImage),

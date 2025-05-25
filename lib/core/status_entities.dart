@@ -27,7 +27,7 @@ class NoDirectoryPickedException implements Exception {}
 
 class NoImageInDirectoryException implements Exception {}
 
-class FileDoesNotExistException implements Exception {}
+class CannotReadFromFileException implements Exception {}
 
 class CannotReadFromContentUriException implements Exception {}
 

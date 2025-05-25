@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:emotic/core/emotic_image.dart';
+import 'package:emotic/core/image_data.dart';
 import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/status_entities.dart';
 import 'package:emotic/data/image_source.dart';
@@ -26,17 +25,25 @@ class ImageRepository {
     }
   }
 
-  Future<Either<Failure, Uint8List>> getImageBytes({
+  Future<Either<Failure, ImageRepr>> getImageData({
     required Uri imageUri,
+    required ImageReprConfig imageReprConfig,
   }) async {
     try {
-      final result = await imageSource.getImageBytes(imageUri: imageUri);
+      final result = await imageSource.getImageData(
+        imageUri: imageUri,
+        imageReprConfig: imageReprConfig,
+      );
       return Either.right(result);
-    } on FileDoesNotExistException {
+    } on CannotReadFromFileException catch (error, stackTrace) {
+      getLogger().severe("Can't read bytes from file", error, stackTrace);
       return Either.left(CannotReadFileFailure());
-    } on CannotReadFromContentUriException {
+    } on CannotReadFromContentUriException catch (error, stackTrace) {
+      getLogger()
+          .severe("Can't read bytes from content uri", error, stackTrace);
       return Either.left(CannotReadFileFailure());
-    } on UnknownUriSchemeException {
+    } on UnknownUriSchemeException catch (error, stackTrace) {
+      getLogger().severe("Unknown uri scheme supplied", error, stackTrace);
       return Either.left(CannotReadFileFailure());
     } catch (error, stackTrace) {
       return Either.left(GenericFailure(error, stackTrace));

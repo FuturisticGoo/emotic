@@ -1,10 +1,13 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:emotic/core/emotic_image.dart';
 import 'package:emotic/core/helper_functions.dart';
+import 'package:emotic/core/image_data.dart';
 import 'package:emotic/core/logging.dart';
+import 'package:emotic/core/mutex.dart';
 import 'package:emotic/core/status_entities.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:emotic/core/helper_functions.dart' as hf;
 import 'package:uri_content/uri_content.dart';
@@ -13,7 +16,10 @@ import 'package:path/path.dart' as p;
 
 abstract class ImageSourceReadOnly {
   Future<List<EmoticImage>> getImages();
-  Future<Uint8List> getImageBytes({required Uri imageUri});
+  Future<ImageRepr> getImageData({
+    required Uri imageUri,
+    required ImageReprConfig imageReprConfig,
+  });
 }
 
 abstract class ImageSource extends ImageSourceReadOnly {
@@ -480,17 +486,71 @@ class ImageSourceSQLiteAndFS implements ImageSource {
   }
 
   @override
-  Future<Uint8List> getImageBytes({required Uri imageUri}) async {
+  Future<ImageRepr> getImageData({
+    required Uri imageUri,
+    required ImageReprConfig imageReprConfig,
+  }) async {
     if (imageUri.isScheme("file")) {
       final file = File.fromUri(imageUri);
       if (await file.exists()) {
-        return file.readAsBytes();
+        switch (imageReprConfig) {
+          case FlutterImageWidgetReprConfig(:final width, :final filterQuality):
+            return FlutterImageWidgetImageRepr(
+              imageUri: imageUri,
+              imageWidget: Image.file(
+                file,
+                cacheWidth: width,
+                fit: BoxFit.fitWidth,
+                filterQuality: filterQuality,
+              ),
+            );
+          case Uint8ListReprConfig():
+            return Uint8ListImageRepr(
+              imageUri: imageUri,
+              imageBytes: await file.readAsBytes(),
+            );
+        }
       } else {
-        throw FileDoesNotExistException();
+        throw CannotReadFromFileException();
       }
     } else if (imageUri.isScheme("content")) {
       try {
-        return imageUri.getContent();
+        // When using content uri, its very likely to OOM and crash when dealing
+        // with many images simultaneously, so using a mutex for one at a time
+        // processing. Might find a better solution later, but at least it
+        // doesn't crash now B)
+        final mutex = Mutex(limit: 1);
+        await mutex.acquire();
+        final uriContent = UriContent();
+        final stream = uriContent.getContentStream(
+          imageUri,
+        );
+        // Using WriteBuffer might seem redundant, but it reduces memory usage
+        // considerably
+        final buffer = WriteBuffer();
+        await stream.forEach(buffer.putUint8List);
+        final data = buffer.done();
+
+        switch (imageReprConfig) {
+          case FlutterImageWidgetReprConfig(:final width, :final filterQuality):
+            final imageWidget = Image.memory(
+              Uint8List.view(data.buffer),
+              cacheWidth: width,
+              fit: BoxFit.fitWidth,
+              filterQuality: filterQuality,
+            );
+            await mutex.release();
+            return FlutterImageWidgetImageRepr(
+              imageUri: imageUri,
+              imageWidget: imageWidget,
+            );
+          case Uint8ListReprConfig():
+            await mutex.release();
+            return Uint8ListImageRepr(
+              imageUri: imageUri,
+              imageBytes: Uint8List.view(data.buffer),
+            );
+        }
       } catch (error, stackTrace) {
         getLogger().warning(
           "Can't read from content uri",
