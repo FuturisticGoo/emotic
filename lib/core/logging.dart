@@ -16,7 +16,7 @@ Future<void> initLogger() async {
         case Level.WARNING:
           outputString.write("\x1B[33m"); // Yellow foreground
         case Level.INFO:
-          outputString.write("\x1B[45m"); // Magenta background
+          outputString.write("\x1B[35m"); // Magenta background
         case Level.CONFIG:
           outputString.write("\x1B[36m"); // Cyan foreground
         case Level.FINE:
