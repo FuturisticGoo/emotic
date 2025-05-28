@@ -136,12 +136,7 @@ class _UpdateEmoticonBottomSheetState extends State<UpdateEmoticonBottomSheet>
                       },
                 onSelect: (tag, selected) async {
                   if (tag == "+") {
-                    final newTags = await readListOfStringFromUser(
-                      context,
-                      titleText: "Add new tags",
-                      textLabel: "Tags",
-                      textHint: "Type one tag per line",
-                    );
+                    final newTags = await readTags(context);
                     if (newTags != null) {
                       setState(
                         () {

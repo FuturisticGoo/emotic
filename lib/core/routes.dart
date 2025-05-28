@@ -62,7 +62,7 @@ class Routes {
                 path: emotipics,
                 builder: (context, state) {
                   getLogger().fine("Going to EmotiPicsPage");
-                  return const EmotiPicsPage();
+                  return const EmotipicsPage();
                 },
               ),
               GoRoute(

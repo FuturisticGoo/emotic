@@ -69,3 +69,12 @@ Future<List<String>?> readListOfStringFromUser(
     },
   );
 }
+
+Future<List<String>?> readTags(BuildContext context) async {
+  return readListOfStringFromUser(
+    context,
+    titleText: "Add new tags",
+    textLabel: "Tags",
+    textHint: "Type one tag per line",
+  );
+}

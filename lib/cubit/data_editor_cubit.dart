@@ -1,28 +1,8 @@
 import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/core/functional_list_methods.dart';
 import 'data_editor_state.dart';
 import 'package:emotic/data/emoticons_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-extension FunctionalAdditions<E> on List<E> {
-  List<E> addIfNotExists(E itemToAdd) {
-    return {
-      ...this,
-      itemToAdd,
-    }.toList();
-  }
-
-  List<E> removeIfExists(E itemToRemove) {
-    return where((element) => element != itemToRemove).toList();
-  }
-
-  E? singleWhereOrNull(bool Function(E) test) {
-    try {
-      return singleWhere(test);
-    } on StateError {
-      return null;
-    }
-  }
-}
 
 class DataEditorCubit extends Cubit<DataEditorState> {
   final EmoticonsRepository emoticonsRepository;

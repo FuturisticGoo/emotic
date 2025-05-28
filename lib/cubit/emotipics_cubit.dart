@@ -20,34 +20,45 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
   Future<void> loadSavedImages() async {
     emit(EmotipicsListingLoading());
     final imagesResult = await imageRepository.getImages();
-    switch (imagesResult) {
-      case Left():
-        emit(EmotipicsListingError());
-      case Right(value: final images):
+    final tagsResult = await imageRepository.getTags();
+    switch ((imagesResult, tagsResult)) {
+      case (Right(value: final images), Right(value: final allTag)):
         emit(
           EmotipicsListingLoaded(
             images: images,
             visibleImageData: {},
+            allTags: allTag,
           ),
         );
+      default:
+        emit(EmotipicsListingError());
     }
   }
 
   Future<void> unloadImageBytes({required Uri imageToUnload}) async {
     if (state
-        case EmotipicsListingLoaded(:final images, :var visibleImageData)) {
+        case EmotipicsListingLoaded(
+          :final images,
+          :var visibleImageData,
+          :final allTags
+        )) {
       visibleImageData.remove(imageToUnload);
       emit(
         EmotipicsListingLoaded(
           images: images,
           visibleImageData: visibleImageData,
+          allTags: allTags,
         ),
       );
     }
   }
 
   Future<void> loadImageBytes({required Uri imageToLoad}) async {
-    if (state case EmotipicsListingLoaded(:final images)) {
+    if (state
+        case EmotipicsListingLoaded(
+          :final images,
+          :final allTags,
+        )) {
       final Either<Failure, ImageRepr> bytesResult =
           await imageRepository.getImageData(
         imageUri: imageToLoad,
@@ -65,6 +76,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
             emit(
               EmotipicsListingLoaded(
                 images: images,
+                allTags: allTags,
                 visibleImageData: {
                   ...visibleImageData,
                   imageToLoad: bytes,
@@ -93,12 +105,14 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
               if (state
                   case EmotipicsListingLoaded(
                     :final images,
-                    :final visibleImageData
+                    :final visibleImageData,
+                    :final allTags,
                   )) {
                 emit(
                   EmotipicsListingLoaded(
                     images: images,
                     visibleImageData: visibleImageData,
+                    allTags: allTags,
                     snackBarMessage: "Image copied!",
                   ),
                 );
@@ -114,12 +128,14 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
           if (state
               case EmotipicsListingLoaded(
                 :final images,
-                :final visibleImageData
+                :final visibleImageData,
+                :final allTags
               )) {
             emit(
               EmotipicsListingLoaded(
                 images: images,
                 visibleImageData: visibleImageData,
+                allTags: allTags,
                 snackBarMessage: "Unable to copy image",
               ),
             );
@@ -127,6 +143,8 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
       }
     }
   }
+
+  Future<void> searchWithText({required String searchText}) async {}
 
   Future<void> pickImages() async {
     final pickResult = await imageRepository.pickImagesAndSave();

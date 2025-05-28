@@ -625,7 +625,7 @@ class ImageSourceSQLiteAndFS implements ImageSource {
       }
       bool isExcluded =
           (row[_SQLNames.emotipicExcluded] as int) == 0 ? false : true;
-      if (!isExcluded) {
+
         final image = EmoticImage(
           id: imageId,
           imageUri: Uri.parse(row[_SQLNames.emotipicUri] as String),
@@ -636,9 +636,10 @@ class ImageSourceSQLiteAndFS implements ImageSource {
             },
           ).toList(),
           note: row[_SQLNames.emotipicNote] as String,
+        isExcluded: isExcluded,
         );
         images.add(image);
-      }
+     
     }
     return images;
   }

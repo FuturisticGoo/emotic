@@ -6,12 +6,14 @@ class EmoticImage extends Equatable {
   final Uri imageUri;
   final List<String> tags;
   final String note;
+  final bool isExcluded;
   const EmoticImage({
     required this.id,
     required this.imageUri,
     required this.parentDirectoryUri,
     required this.tags,
     required this.note,
+    required this.isExcluded,
   });
   @override
   List<Object?> get props => [
@@ -20,6 +22,7 @@ class EmoticImage extends Equatable {
         parentDirectoryUri,
         tags,
         note,
+        isExcluded,
       ];
 }
 
@@ -50,4 +53,18 @@ class NewOrModifyEmoticImage extends Equatable {
         note,
         oldImage,
       ];
+  NewOrModifyEmoticImage.newImage({
+    required this.imageUri,
+    required this.parentDirectoryUri,
+  })  : tags = [],
+        note = "",
+        isExcluded = false,
+        oldImage = null;
+  NewOrModifyEmoticImage.modify({
+    required EmoticImage this.oldImage,
+    required this.tags,
+    required this.note,
+    required this.isExcluded,
+  })  : imageUri = oldImage.imageUri,
+        parentDirectoryUri = oldImage.parentDirectoryUri;
 }

@@ -43,7 +43,7 @@ class _DataEditorPageState extends State<DataEditorPage> {
         if (current case GlobalSettingsLoaded(:final settings)
             when settings.shouldReload) {
           // If we need to reload the settings, we shouldn't trigger
-          // building EmoticonsListingCubit becuase it will try to load and emit
+          // building EmoticonsListingCubit because it will try to load and emit
           // emoticons, but the screen would have redirected to updating page,
           // so it will be an error
           return false;
@@ -82,35 +82,31 @@ class _DataEditorPageState extends State<DataEditorPage> {
                             onPressed: context.openRootScaffoldDrawer,
                           ),
                           actions: [
-                            ...(state is DataEditorDeleteData)
-                                ? [
-                                    IconButton(
-                                      onPressed: () async {
-                                        if (state
-                                            case DataEditorDeleteData(
-                                              :final selectedEmoticons,
-                                              :final selectedTags
-                                            )) {
-                                          final choice =
-                                              await confirmDeletionDialog(
-                                                  context,
-                                                  titleText:
-                                                      "Delete ${selectedEmoticons.length} emoticons and ${selectedTags.length} tags?");
-                                          if (choice == true &&
-                                              context.mounted) {
-                                            await context
-                                                .read<DataEditorCubit>()
-                                                .deleteEmoticonsAndTags(
-                                                  emoticons: selectedEmoticons,
-                                                  tags: selectedTags,
-                                                );
-                                          }
-                                        }
-                                      },
-                                      icon: const Icon(Icons.delete),
-                                    ),
-                                  ]
-                                : [],
+                            if (state is DataEditorDeleteData)
+                              IconButton(
+                                onPressed: () async {
+                                  if (state
+                                      case DataEditorDeleteData(
+                                        :final selectedEmoticons,
+                                        :final selectedTags
+                                      )) {
+                                    final choice = await confirmDeletionDialog(
+                                        context,
+                                        titleText:
+                                            "Delete ${selectedEmoticons.length} emoticons and ${selectedTags.length} tags?");
+                                    if (choice == true && context.mounted) {
+                                      await context
+                                          .read<DataEditorCubit>()
+                                          .deleteEmoticonsAndTags(
+                                            emoticons: selectedEmoticons,
+                                            tags: selectedTags,
+                                          );
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.delete),
+                              ),
+                              
                             PopupMenuButton(
                               itemBuilder: (context) => [
                                 PopupMenuItem(
