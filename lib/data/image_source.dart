@@ -123,6 +123,8 @@ class ImageSourceSQLiteAndFS implements ImageSource {
     )
     """);
 
+    await _prefillEmotipicsOrdering();
+
     batch.execute("""
     CREATE TABLE IF NOT EXISTS ${_SQLNames.tagOrderingTableName}
     (
@@ -133,14 +135,153 @@ class ImageSourceSQLiteAndFS implements ImageSource {
     )
     """);
 
+    await _prefillTagsOrdering();
+
     batch.commit(noResult: true);
+  }
+
+  Future<void> _prefillEmotipicsOrdering() async {
+    final orderCount = "order_count";
+    final existing = await db.rawQuery("""
+      SELECT 
+        COUNT(*) AS $orderCount 
+      FROM
+        ${_SQLNames.emotipicsOrderingTableName}
+          """);
+    if (existing.single[orderCount] == 0) {
+      getLogger().config("Prefilling emotipics ordering");
+      await db.rawInsert("""
+        INSERT INTO
+          ${_SQLNames.emotipicsOrderingTableName}
+          (${_SQLNames.emotipicId}, ${_SQLNames.emotipicOrderingUserOrder})
+        SELECT 
+          main.${_SQLNames.emotipicId}, 
+          CAST(main.${_SQLNames.emotipicId} AS REAL)
+        FROM
+          ${_SQLNames.emotipicsTableName} main
+      """);
+    }
+  }
+
+  Future<void> _prefillTagsOrdering() async {
+    final orderCount = "order_count";
+    final existing = await db.rawQuery("""
+      SELECT 
+        COUNT(*) AS $orderCount 
+      FROM
+        ${_SQLNames.tagOrderingTableName}
+          """);
+    if (existing.single[orderCount] == 0) {
+      getLogger().config("Prefilling emotipic tag ordering");
+      await db.rawInsert("""
+        INSERT INTO
+          ${_SQLNames.tagOrderingTableName}
+          (${_SQLNames.tagId}, ${_SQLNames.tagOrderingUserOrder})
+        SELECT 
+          main.${_SQLNames.tagId}, 
+          CAST(main.${_SQLNames.tagId} AS REAL)
+        FROM
+          ${_SQLNames.tagsTableName} main
+      """);
+    }
+  }
+
+  Future<void> _appendToEmotipicsOrder({
+    required int emotipicId,
+  }) async {
+    final currentHighestOrder = (await getCurrentMinAndMaxOrder(
+      db: db,
+      tableName: _SQLNames.emotipicsOrderingTableName,
+      orderColumnName: _SQLNames.emotipicOrderingUserOrder,
+    ))
+        ?.$2;
+    await _insertImageWithOrder(
+      imageId: emotipicId,
+      newOrder: (currentHighestOrder ?? 0.0) + 1,
+    );
+  }
+
+  Future<void> _appendToTagsOrder({
+    required int tagId,
+  }) async {
+    final currentHighestOrder = (await getCurrentMinAndMaxOrder(
+      db: db,
+      tableName: _SQLNames.tagOrderingTableName,
+      orderColumnName: _SQLNames.tagOrderingUserOrder,
+    ))
+        ?.$2;
+    await _insertTagWithOrder(
+      tagId: tagId,
+      newOrder: (currentHighestOrder ?? 0.0) + 1,
+    );
+  }
+
+  Future<void> _insertImageWithOrder({
+    required int imageId,
+    required double newOrder,
+  }) async {
+    await db.rawInsert(
+      """
+INSERT INTO
+  ${_SQLNames.emotipicsOrderingTableName}
+  (${_SQLNames.emotipicId}, ${_SQLNames.emotipicOrderingUserOrder})
+VALUES
+  (?, ?)
+    """,
+      [
+        imageId,
+        newOrder,
+      ],
+    );
+  }
+
+  Future<void> _insertTagWithOrder({
+    required int tagId,
+    required double newOrder,
+  }) async {
+    await db.rawInsert(
+      """
+INSERT INTO
+  ${_SQLNames.tagOrderingTableName}
+  (${_SQLNames.tagId}, ${_SQLNames.tagOrderingUserOrder})
+VALUES
+  (?, ?)
+    """,
+      [
+        tagId,
+        newOrder,
+      ],
+    );
+  }
+
+  Future<void> _deleteImageFromOrder({required int imageId}) async {
+    await db.rawDelete(
+      """
+      DELETE FROM
+        ${_SQLNames.emotipicsOrderingTableName}
+      WHERE
+        ${_SQLNames.emotipicId}=?
+      """,
+      [imageId],
+    );
+  }
+
+  Future<void> _deleteTagFromOrder({required int tagId}) async {
+    await db.rawDelete(
+      """
+      DELETE FROM
+        ${_SQLNames.tagOrderingTableName}
+      WHERE
+        ${_SQLNames.tagId}=?
+            """,
+      [tagId],
+    );
   }
 
   @override
   Future<int> saveImage({
     required NewOrModifyEmoticImage image,
   }) async {
-    // TODO: ordering
     int emotipicId;
     if (image.oldImage == null) {
       emotipicId = await db.rawInsert(
@@ -170,6 +311,7 @@ class ImageSourceSQLiteAndFS implements ImageSource {
           parentDirUri: image.parentDirectoryUri!,
         );
       }
+      await _appendToEmotipicsOrder(emotipicId: emotipicId);
     } else {
       emotipicId = image.oldImage!.id;
       // Updating notes, if there's any change
@@ -318,6 +460,7 @@ class ImageSourceSQLiteAndFS implements ImageSource {
         tag,
       ],
     );
+    await _appendToTagsOrder(tagId: tagId);
     return tagId;
   }
 
@@ -332,6 +475,7 @@ class ImageSourceSQLiteAndFS implements ImageSource {
       """,
         [tagId],
       );
+      await _deleteTagFromOrder(tagId: tagId);
       await db.rawDelete(
         """
       DELETE FROM ${_SQLNames.tagsTableName}
@@ -374,22 +518,6 @@ class ImageSourceSQLiteAndFS implements ImageSource {
     }
   }
 
-  Future<int?> _getIdOfImageWithUri({required Uri uri}) async {
-    final result = await db.rawQuery(
-      """
-    SELECT ${_SQLNames.emotipicId}
-    FROM ${_SQLNames.emotipicsTableName}
-    WHERE ${_SQLNames.emotipicUri}=?
-    """,
-      [uri.toString()],
-    );
-    if (result.isEmpty) {
-      return null;
-    } else {
-      return result.single[_SQLNames.emotipicId] as int;
-    }
-  }
-
   @override
   Future<void> pickImagesAndSave() async {
     final xFileImageList = await hf.pickImages();
@@ -426,9 +554,20 @@ class ImageSourceSQLiteAndFS implements ImageSource {
   }
 
   @override
-  Future<void> clearAllData() {
-    // TODO: implement clearAllData
-    throw UnimplementedError();
+  Future<void> clearAllData() async {
+    // In this order cuz of references
+    final allTables = [
+      _SQLNames.emotipicsToDirectoryJoinTableName,
+      _SQLNames.directoriesTableName,
+      _SQLNames.emotipicsToTagsJoinTableName,
+      _SQLNames.tagOrderingTableName,
+      _SQLNames.tagsTableName,
+      _SQLNames.emotipicsOrderingTableName,
+      _SQLNames.tagsTableName,
+    ];
+    for (final tableName in allTables) {
+      await db.rawDelete("""DELETE FROM $tableName""");
+    }
   }
 
   @override
@@ -471,9 +610,11 @@ class ImageSourceSQLiteAndFS implements ImageSource {
 
   @override
   Future<void> deleteImage({required int imageId}) async {
-    // TODO: delete image from storage if its stored in app data
+    // TODO: do as a batch perhaps?
+    await _deleteImageFromStorage(imageId: imageId);
     await _unlinkImageWithAllTags(emotipicId: imageId);
     await _unlinkImageWithDirectory(emotipicId: imageId);
+    await _deleteImageFromOrder(imageId: imageId);
     await db.rawDelete(
       """
     DELETE FROM ${_SQLNames.emotipicsTableName}
@@ -481,8 +622,34 @@ class ImageSourceSQLiteAndFS implements ImageSource {
     """,
       [imageId],
     );
+  }
 
-    //TODO: deleting from ordering
+  /// Will only delete those images which are in the app data directory
+  Future<void> _deleteImageFromStorage({required int imageId}) async {
+    final uriCol = "uri_col";
+    final dirCol = "dir_col";
+    final result = await db.rawQuery(
+      """
+      SELECT 
+        img.${_SQLNames.emotipicUri} AS $uriCol,
+        dirjoin.${_SQLNames.dirId} AS $dirCol
+      FROM
+        ${_SQLNames.emotipicsTableName} img
+        LEFT JOIN
+        ${_SQLNames.emotipicsToDirectoryJoinTableName} dirjoin
+      ON 
+        img.${_SQLNames.emotipicId}=dirjoin.${_SQLNames.emotipicId}
+      WHERE
+        img.${_SQLNames.emotipicId}=?
+    """,
+      [imageId],
+    );
+    final uri = Uri.parse(result.first[uriCol] as String);
+    final parentDirId = result.first[dirCol] as int?;
+    if (uri.isScheme("file") && parentDirId == null) {
+      // We can only delete those image that are stored in our app data folder
+      await File.fromUri(uri).delete();
+    }
   }
 
   @override
@@ -626,20 +793,19 @@ class ImageSourceSQLiteAndFS implements ImageSource {
       bool isExcluded =
           (row[_SQLNames.emotipicExcluded] as int) == 0 ? false : true;
 
-        final image = EmoticImage(
-          id: imageId,
-          imageUri: Uri.parse(row[_SQLNames.emotipicUri] as String),
-          parentDirectoryUri: parentDirUri,
-          tags: tagSet.map(
-            (row) {
-              return row[_SQLNames.tagName].toString();
-            },
-          ).toList(),
-          note: row[_SQLNames.emotipicNote] as String,
+      final image = EmoticImage(
+        id: imageId,
+        imageUri: Uri.parse(row[_SQLNames.emotipicUri] as String),
+        parentDirectoryUri: parentDirUri,
+        tags: tagSet.map(
+          (row) {
+            return row[_SQLNames.tagName].toString();
+          },
+        ).toList(),
+        note: row[_SQLNames.emotipicNote] as String,
         isExcluded: isExcluded,
-        );
-        images.add(image);
-     
+      );
+      images.add(image);
     }
     return images;
   }
@@ -672,17 +838,71 @@ ORDER BY
     required EmoticImage image,
     required int newOrder,
   }) async {
-    // TODO: implement modifyImageOrder
-    throw UnimplementedError();
+    getLogger().config("Changing order of $image to $newOrder index");
+    await _deleteImageFromOrder(imageId: image.id);
+
+    final nMinus1AndNthValue = await getNMinus1thAndNthOrderValue(
+      db: db,
+      tableName: _SQLNames.emotipicsOrderingTableName,
+      orderColumnName: _SQLNames.emotipicOrderingUserOrder,
+      n: newOrder,
+    );
+    getLogger().config("N-1th and Nth order values $nMinus1AndNthValue");
+    final (firstOrder, secondOrder) = getFirstAndSecondOrder(
+      nMinus1thAndNthValue: nMinus1AndNthValue,
+    );
+    getLogger().config("firstOrder: $firstOrder and secondOrder: $secondOrder");
+    final newOrderValue = getNumBetweenTwoNums(
+      firstOrder: firstOrder,
+      secondOrder: secondOrder,
+    );
+
+    getLogger().config("New order value between is $newOrderValue");
+    // Insert the emotipic with its order
+    await _insertImageWithOrder(
+      imageId: image.id,
+      newOrder: newOrderValue,
+    );
   }
 
   @override
   Future<void> modifyTagOrder({
     required String tag,
     required int newOrder,
-  }) {
-    // TODO: implement modifyTagOrder
-    throw UnimplementedError();
+  }) async {
+    getLogger().config("Changing order of $tag to $newOrder index");
+    final tagId = await _getTagId(tag: tag);
+    if (tagId == null) {
+      throw ArgumentError.value(
+        tag,
+        "Invalid tag",
+        "Tag does not exist in the database",
+      );
+    }
+    await _deleteTagFromOrder(tagId: tagId);
+
+    final nMinus1AndNthValue = await getNMinus1thAndNthOrderValue(
+      db: db,
+      tableName: _SQLNames.tagOrderingTableName,
+      orderColumnName: _SQLNames.tagOrderingUserOrder,
+      n: newOrder,
+    );
+    getLogger().config("N-1th and Nth order values $nMinus1AndNthValue");
+    final (firstOrder, secondOrder) = getFirstAndSecondOrder(
+      nMinus1thAndNthValue: nMinus1AndNthValue,
+    );
+    getLogger().config("firstOrder: $firstOrder and secondOrder: $secondOrder");
+    final newOrderValue = getNumBetweenTwoNums(
+      firstOrder: firstOrder,
+      secondOrder: secondOrder,
+    );
+
+    getLogger().config("New order value between is $newOrderValue");
+    // Insert the emotipic with its order
+    await _insertTagWithOrder(
+      tagId: tagId,
+      newOrder: newOrderValue,
+    );
   }
 
   /// Saves the uri of all images and the directory uri. Does not

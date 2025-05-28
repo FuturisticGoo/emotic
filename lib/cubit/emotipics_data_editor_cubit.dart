@@ -189,6 +189,10 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     }
   }
 
+  Future<void> deleteImage({required EmoticImage image}) async {
+    final result = await imageRepository.deleteImage(image: image);
+  }
+
   Future<void> deleteImagesAndTags({
     List<EmoticImage>? emoticImages,
     List<String>? tags,
@@ -215,5 +219,9 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     final result = await imageRepository.saveImage(
       image: newOrModifyEmoticImage,
     );
+  }
+
+  Future<void> finishEditing() async {
+    emit(EmotipicsDataEditorNotEditing());
   }
 }

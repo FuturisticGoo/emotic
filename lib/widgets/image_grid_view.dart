@@ -89,8 +89,9 @@ class _ImageGridViewState extends State<ImageGridView> {
                           case DeleteEmotipic(:final emoticImage):
                             await context
                                 .read<EmotipicsDataEditorCubit>()
-                                .deleteImagesAndTags(
-                                    emoticImages: [emoticImage]);
+                                .deleteImage(
+                                  image: emoticImage,
+                                );
                           case UpdateEmotipic(:final modifyEmotipic):
                             await context
                                 .read<EmotipicsDataEditorCubit>()

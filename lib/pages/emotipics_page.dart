@@ -4,6 +4,7 @@ import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:emotic/cubit/emotipics_cubit.dart';
 import 'package:emotic/cubit/emotipics_data_editor_cubit.dart';
 import 'package:emotic/widgets/blank_icon_space.dart';
+import 'package:emotic/widgets/delete_confirmation.dart';
 import 'package:emotic/widgets/image_editing_list_view.dart';
 import 'package:emotic/widgets/image_grid_view.dart';
 import 'package:emotic/widgets/read_list_of_string_from_user.dart';
@@ -56,6 +57,22 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
             actions: [
               BlocBuilder<EmotipicsDataEditorCubit, EmotipicsDataEditorState>(
                 builder: (context, state) {
+                  if (state case EmotipicsDataEditorEditing()) {
+                    return IconButton(
+                      onPressed: () async {
+                        context
+                            .read<EmotipicsDataEditorCubit>()
+                            .finishEditing();
+                      },
+                      icon: Icon(Icons.check),
+                    );
+                  } else {
+                    return SizedBox.shrink();
+                  }
+                },
+              ),
+              BlocBuilder<EmotipicsDataEditorCubit, EmotipicsDataEditorState>(
+                builder: (context, state) {
                   if (state
                       case EmotipicsDataEditorDelete(
                         :final selectedImages,
@@ -63,12 +80,17 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                       )) {
                     return IconButton(
                       onPressed: () async {
+                        final choice = await confirmDeletionDialog(context,
+                            titleText: "Delete ${selectedImages.length} images"
+                                " and ${selectedTags.length} tags?");
+                        if (choice == true && context.mounted) {
                         await context
                             .read<EmotipicsDataEditorCubit>()
                             .deleteImagesAndTags(
                               emoticImages: selectedImages,
                               tags: selectedTags,
                             );
+                        }
                       },
                       icon: Icon(Icons.delete),
                     );
