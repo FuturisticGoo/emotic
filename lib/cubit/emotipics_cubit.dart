@@ -7,6 +7,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:emotic/core/helper_functions.dart' as hf;
+import 'package:fuzzy/fuzzy.dart';
 part 'emotipics_state.dart';
 
 class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
@@ -17,7 +18,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     loadSavedImages();
   }
 
-  Future<void> loadSavedImages() async {
+  Future<void> loadSavedImages({bool showExcluded = false}) async {
     emit(EmotipicsListingLoading());
     final imagesResult = await imageRepository.getImages();
     final tagsResult = await imageRepository.getTags();
@@ -26,6 +27,11 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
         emit(
           EmotipicsListingLoaded(
             images: images,
+            imagesToShow: images.where(
+              (element) {
+                return !element.isExcluded || showExcluded;
+              },
+            ).toList(),
             visibleImageData: {},
             allTags: allTag,
           ),
@@ -39,6 +45,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     if (state
         case EmotipicsListingLoaded(
           :final images,
+          :final imagesToShow,
           :var visibleImageData,
           :final allTags
         )) {
@@ -46,6 +53,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
       emit(
         EmotipicsListingLoaded(
           images: images,
+          imagesToShow: imagesToShow,
           visibleImageData: visibleImageData,
           allTags: allTags,
         ),
@@ -54,11 +62,7 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
   }
 
   Future<void> loadImageBytes({required Uri imageToLoad}) async {
-    if (state
-        case EmotipicsListingLoaded(
-          :final images,
-          :final allTags,
-        )) {
+    if (state case EmotipicsListingLoaded()) {
       final Either<Failure, ImageRepr> bytesResult =
           await imageRepository.getImageData(
         imageUri: imageToLoad,
@@ -69,13 +73,20 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
         case Left():
           break;
         case Right(value: final bytes):
-          if (state case EmotipicsListingLoaded(:final visibleImageData)) {
+          if (state
+              case EmotipicsListingLoaded(
+                :final images,
+                :final allTags,
+                :final visibleImageData,
+                :final imagesToShow,
+              )) {
             // Doing this again because there could be concurrent calls to this
             // function, so visibleImageData might have updated during the
             // above time
             emit(
               EmotipicsListingLoaded(
                 images: images,
+                imagesToShow: imagesToShow,
                 allTags: allTags,
                 visibleImageData: {
                   ...visibleImageData,
@@ -105,12 +116,14 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
               if (state
                   case EmotipicsListingLoaded(
                     :final images,
+                    :final imagesToShow,
                     :final visibleImageData,
                     :final allTags,
                   )) {
                 emit(
                   EmotipicsListingLoaded(
                     images: images,
+                    imagesToShow: imagesToShow,
                     visibleImageData: visibleImageData,
                     allTags: allTags,
                     snackBarMessage: "Image copied!",
@@ -128,12 +141,14 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
           if (state
               case EmotipicsListingLoaded(
                 :final images,
+                :final imagesToShow,
                 :final visibleImageData,
                 :final allTags
               )) {
             emit(
               EmotipicsListingLoaded(
                 images: images,
+                imagesToShow: imagesToShow,
                 visibleImageData: visibleImageData,
                 allTags: allTags,
                 snackBarMessage: "Unable to copy image",
@@ -167,12 +182,14 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
           if (state
               case EmotipicsListingLoaded(
                 :final images,
+                :final imagesToShow,
                 :final visibleImageData,
                 :final allTags
               )) {
             emit(
               EmotipicsListingLoaded(
                 images: images,
+                imagesToShow: imagesToShow,
                 visibleImageData: visibleImageData,
                 allTags: allTags,
                 snackBarMessage: "Unable to share image",
@@ -183,7 +200,73 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     }
   }
 
-  Future<void> searchWithText({required String searchText}) async {}
+  Future<void> searchWithText({required String searchText}) async {
+    final searchTermTrimmed = searchText.trim();
+    if (state
+        case EmotipicsListingLoaded(
+          :final images,
+          :final visibleImageData,
+          :final allTags
+        )) {
+      if (searchTermTrimmed.isEmpty) {
+        emit(
+          EmotipicsListingLoaded(
+            images: images,
+            imagesToShow: images,
+            visibleImageData: visibleImageData,
+            allTags: allTags,
+          ),
+        );
+        return;
+      }
+
+      final tagFuzzy = Fuzzy<String>(
+        allTags,
+        options: FuzzyOptions(
+          tokenSeparator: ",",
+          tokenize: true,
+        ),
+      );
+
+      final notesFuzzy = Fuzzy<String>(
+        images
+            .map(
+              (e) => e.note,
+            )
+            .toList(),
+        options: FuzzyOptions(
+          tokenSeparator: ",",
+          tokenize: true,
+        ),
+      );
+      final tagSearchResult = tagFuzzy
+          .search(searchTermTrimmed, 1)
+          .map(
+            (e) => e.item,
+          )
+          .toSet();
+      final notesSearchResult = notesFuzzy.search(searchTermTrimmed).map(
+            (e) => e.item,
+          );
+      final result = images.where(
+        (element) {
+          return element.tags
+                  .toSet()
+                  .intersection(tagSearchResult)
+                  .isNotEmpty ||
+              notesSearchResult.contains(element.note);
+        },
+      ).toList();
+      emit(
+        EmotipicsListingLoaded(
+          images: images,
+          imagesToShow: result,
+          visibleImageData: visibleImageData,
+          allTags: allTags,
+        ),
+      );
+    }
+  }
 
   Future<void> pickImages() async {
     final pickResult = await imageRepository.pickImagesAndSave();

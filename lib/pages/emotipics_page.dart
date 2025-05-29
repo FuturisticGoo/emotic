@@ -224,7 +224,7 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                   return Center(
                     child: Text("Error loading images"),
                   );
-                case EmotipicsListingLoaded():
+                case EmotipicsListingLoaded(:final allTags):
                   return BlocConsumer<EmotipicsDataEditorCubit,
                       EmotipicsDataEditorState>(
                     listener: (context, state) async {
@@ -246,7 +246,7 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                             child: Column(
                               children: [
                                 GenericSearchBar(
-                                  allTags: [],
+                                  allTags: allTags,
                                   controller: controller,
                                   hintText: "Search by tag and note",
                                   onChange: (searchText) async {

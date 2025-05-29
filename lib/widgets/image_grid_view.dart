@@ -40,112 +40,127 @@ class _ImageGridViewState extends State<ImageGridView> {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: GridView.builder(
-        key: PageStorageKey(emotipicsListingsKey),
-        shrinkWrap: true,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: getCrossAxisCount(context),
-        ),
-        itemCount: widget.state.images.length,
-        itemBuilder: (context, index) {
-          final currentImage = widget.state.images[index];
-          final imageRepr =
-              widget.state.visibleImageData[currentImage.imageUri];
-          if (imageRepr case FlutterImageWidgetImageRepr(:final imageWidget)) {
-            widget.imageCacheInterface
-                .setCacheImage(currentImage.imageUri, imageWidget);
-          }
-          final currentCachedImage =
-              widget.imageCacheInterface.getCachedImage(currentImage.imageUri);
-          return VisibilityDetector(
-            key: Key(widget.state.images[index].toString()),
-            child: currentCachedImage != null
-                ? CopyableImage(
-                    imageWidget: currentCachedImage,
-                    emoticImage: currentImage,
-                    onTap: (emoticImage) async {
-                      await context
-                          .read<EmotipicsListingCubit>()
-                          .copyImageToClipboard(
-                            emoticImage: emoticImage,
-                          );
-                    },
-                    onSecondaryPress: (emoticImage) async {
-                      final result = await showModalBottomSheet<
-                          EmotipicBottomSheetResult?>(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (context) {
-                          return UpdateEmotipicBottomSheet(
-                            image: currentCachedImage,
-                            emoticImage: emoticImage,
-                            allTags: widget.state.allTags,
-                          );
-                        },
-                      );
-                      if (context.mounted) {
-                        switch (result) {
-                          case null:
-                            break;
-                          case DeleteEmotipic(:final emoticImage):
+      child: widget.state.imagesToShow.isEmpty
+          ? Center(
+              child: Text("Nothing but the void O.o"),
+            )
+          : GridView.builder(
+              key: PageStorageKey(emotipicsListingsKey),
+              shrinkWrap: true,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: getCrossAxisCount(context),
+              ),
+              itemCount: widget.state.imagesToShow.length,
+              itemBuilder: (context, index) {
+                final currentImage = widget.state.imagesToShow[index];
+                final imageRepr =
+                    widget.state.visibleImageData[currentImage.imageUri];
+                if (imageRepr
+                    case FlutterImageWidgetImageRepr(:final imageWidget)) {
+                  widget.imageCacheInterface
+                      .setCacheImage(currentImage.imageUri, imageWidget);
+                }
+                final currentCachedImage = widget.imageCacheInterface
+                    .getCachedImage(currentImage.imageUri);
+                return VisibilityDetector(
+                  key: Key(widget.state.imagesToShow[index].toString()),
+                  child: currentCachedImage != null
+                      ? CopyableImage(
+                          imageWidget: currentCachedImage,
+                          emoticImage: currentImage,
+                          onTap: (emoticImage) async {
                             await context
-                                .read<EmotipicsDataEditorCubit>()
-                                .deleteImage(
-                                  image: emoticImage,
+                                .read<EmotipicsListingCubit>()
+                                .copyImageToClipboard(
+                                  emoticImage: emoticImage,
                                 );
-                            if (context.mounted) {
-                              await context
-                                  .read<EmotipicsListingCubit>()
-                                  .loadSavedImages();
-                            }
-                          case UpdateEmotipic(:final modifyEmotipic):
-                            await context
-                                .read<EmotipicsDataEditorCubit>()
-                                .modifyImage(
-                                  newOrModifyEmoticImage: modifyEmotipic,
+                          },
+                          onSecondaryPress: (emoticImage) async {
+                            final result = await showModalBottomSheet<
+                                EmotipicBottomSheetResult?>(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (context) {
+                                return UpdateEmotipicBottomSheet(
+                                  image: currentCachedImage,
+                                  emoticImage: emoticImage,
+                                  allTags: widget.state.allTags,
                                 );
+                              },
+                            );
                             if (context.mounted) {
-                              await context
-                                  .read<EmotipicsListingCubit>()
-                                  .loadSavedImages();
+                              switch (result) {
+                                case null:
+                                  break;
+                                case DeleteEmotipic(:final emoticImage):
+                                  await context
+                                      .read<EmotipicsDataEditorCubit>()
+                                      .deleteImage(
+                                        image: emoticImage,
+                                      );
+                                  if (context.mounted) {
+                                    await context
+                                        .read<EmotipicsListingCubit>()
+                                        .loadSavedImages();
+                                  }
+                                case UpdateEmotipic(:final modifyEmotipic):
+                                  await context
+                                      .read<EmotipicsDataEditorCubit>()
+                                      .modifyImage(
+                                        newOrModifyEmoticImage: modifyEmotipic,
+                                      );
+                                  if (context.mounted) {
+                                    await context
+                                        .read<EmotipicsListingCubit>()
+                                        .loadSavedImages();
+                                  }
+                                case ShareEmotipic(:final selectedImage):
+                                  if (context.mounted) {
+                                    await context
+                                        .read<EmotipicsListingCubit>()
+                                        .shareImage(image: selectedImage);
+                                  }
+                                case EmotipicTagClicked(:final tag):
+                                  widget.onTagClick(tag);
+                              }
                             }
-                          case ShareEmotipic(:final selectedImage):
-                            if (context.mounted) {
-                              await context
-                                  .read<EmotipicsListingCubit>()
-                                  .shareImage(image: selectedImage);
-                            }
-                          case EmotipicTagClicked(:final tag):
-                            widget.onTagClick(tag);
-                        }
+                          },
+                        )
+                      : Center(
+                          child: SizedBox.square(
+                            dimension:
+                                MediaQuery.sizeOf(context).shortestSide * 0.05,
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                  onVisibilityChanged: (info) async {
+                    if (info.visibleFraction > 0) {
+                      if (!widget.imageCacheInterface.isImageCached(
+                          widget.state.imagesToShow[index].imageUri)) {
+                        await context
+                            .read<EmotipicsListingCubit>()
+                            .loadImageBytes(
+                              imageToLoad:
+                                  widget.state.imagesToShow[index].imageUri,
+                            );
                       }
-                    },
-                  )
-                : Center(
-                    child: SizedBox.square(
-                      dimension: MediaQuery.sizeOf(context).shortestSide * 0.05,
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-            onVisibilityChanged: (info) async {
-              if (info.visibleFraction > 0) {
-                if (!widget.imageCacheInterface
-                    .isImageCached(widget.state.images[index].imageUri)) {
-                  await context.read<EmotipicsListingCubit>().loadImageBytes(
-                        imageToLoad: widget.state.images[index].imageUri,
-                      );
-                }
-              } else {
-                if (context.mounted) {
-                  await context.read<EmotipicsListingCubit>().unloadImageBytes(
-                        imageToUnload: widget.state.images[index].imageUri,
-                      );
-                }
-              }
-            },
-          );
-        },
-      ),
+                    } else {
+                      // TODO: investigate why this index condition is required
+                      // for preventing list out of bound index error
+                      if (context.mounted &&
+                          (index < widget.state.imagesToShow.length)) {
+                        await context
+                            .read<EmotipicsListingCubit>()
+                            .unloadImageBytes(
+                              imageToUnload:
+                                  widget.state.imagesToShow[index].imageUri,
+                            );
+                      }
+                    }
+                  },
+                );
+              },
+            ),
     );
   }
 }
