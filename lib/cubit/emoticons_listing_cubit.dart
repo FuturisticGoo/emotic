@@ -39,9 +39,8 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
   }
 
   void searchEmoticons({required String searchTerm}) async {
-    final localState = state;
     final searchTermTrimmed = searchTerm.trim();
-    if (localState
+    if (state
         case EmoticonsListingLoaded(
           :final allEmoticons,
           :final allTags,

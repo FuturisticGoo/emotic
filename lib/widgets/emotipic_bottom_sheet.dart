@@ -19,12 +19,20 @@ class UpdateEmotipic extends EmotipicBottomSheetResult {
   });
 }
 
+class ShareEmotipic extends EmotipicBottomSheetResult {
+  final EmoticImage selectedImage;
+  const ShareEmotipic({
+    required this.selectedImage,
+  });
+}
+ 
 class EmotipicTagClicked extends EmotipicBottomSheetResult {
   final String tag;
   const EmotipicTagClicked({
     required this.tag,
   });
 }
+
 
 class UpdateEmotipicBottomSheet extends StatefulWidget {
   const UpdateEmotipicBottomSheet({
@@ -170,6 +178,22 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
                 children: [
                   ...switch (readOnlyMode) {
                     true => [
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.only(),
+                          ),
+                          onPressed: () async {
+                            Navigator.pop<EmotipicBottomSheetResult>(
+                              context,
+                              ShareEmotipic(
+                                selectedImage: widget.emoticImage,
+                              ),
+                            );
+                          },
+                          child: Icon(
+                            Icons.share,
+                          ),
+                        ),
                         const Spacer(),
                         FilledButton.icon(
                           onPressed: () {

@@ -250,11 +250,13 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                   controller: controller,
                                   hintText: "Search by tag and note",
                                   onChange: (searchText) async {
-                                    await context
-                                        .read<EmotipicsListingCubit>()
-                                        .searchWithText(
-                                          searchText: searchText,
-                                        );
+                                    if (context.mounted) {
+                                      await context
+                                          .read<EmotipicsListingCubit>()
+                                          .searchWithText(
+                                            searchText: searchText,
+                                          );
+                                    }
                                   },
                                 ),
                                 SizedBox(

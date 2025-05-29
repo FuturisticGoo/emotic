@@ -14,6 +14,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pick_or_save/pick_or_save.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:xdg_directories/xdg_directories.dart' as xdg;
 
@@ -88,6 +89,43 @@ Future<Either<Failure, Success>> copyImageToClipboard({
     }
   } catch (error, stackTrace) {
     getLogger().severe("Cannot copy image to clipboard", error, stackTrace);
+    return Either.left(GenericFailure(error, stackTrace));
+  }
+}
+
+Future<Either<Failure, Success>> shareImage({
+  required EmoticImage emoticImage,
+  required Uint8List imageBytes,
+  Uint8List? thumbnailBytes,
+}) async {
+  try {
+    // Extension of the file without the dot
+    final extension = p.extension(emoticImage.imageUri.path).substring(1);
+
+    final tempImage = XFile.fromData(
+      imageBytes,
+      length: imageBytes.lengthInBytes,
+      mimeType: "image/$extension",
+    );
+    XFile? thumbnailImage;
+    if (thumbnailBytes != null) {
+      thumbnailImage = XFile.fromData(
+        thumbnailBytes,
+        length: thumbnailBytes.lengthInBytes,
+        mimeType: "image/$extension",
+      );
+    }
+    final shareParams = ShareParams(
+        files: [tempImage],
+        previewThumbnail: thumbnailImage,
+        fileNameOverrides: [
+          "emotipic.$extension",
+        ]);
+    final result = await SharePlus.instance.share(shareParams);
+    getLogger().info("Shared image with result: ${result.raw}");
+    return Either.right(GenericSuccess());
+  } catch (error, stackTrace) {
+    getLogger().severe("Unable to share image", error, stackTrace);
     return Either.left(GenericFailure(error, stackTrace));
   }
 }

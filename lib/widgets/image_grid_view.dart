@@ -109,6 +109,12 @@ class _ImageGridViewState extends State<ImageGridView> {
                                   .read<EmotipicsListingCubit>()
                                   .loadSavedImages();
                             }
+                          case ShareEmotipic(:final selectedImage):
+                            if (context.mounted) {
+                              await context
+                                  .read<EmotipicsListingCubit>()
+                                  .shareImage(image: selectedImage);
+                            }
                           case EmotipicTagClicked(:final tag):
                             widget.onTagClick(tag);
                         }

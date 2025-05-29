@@ -144,6 +144,45 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     }
   }
 
+  Future<void> shareImage({required EmoticImage image}) async {
+    if (state case EmotipicsListingLoaded()) {
+      final bytesResult = await imageRepository.getImageData(
+        imageUri: image.imageUri,
+        imageReprConfig: Uint8ListReprConfig(),
+      );
+      switch (bytesResult) {
+        case Right(value: Uint8ListImageRepr(:final imageBytes)):
+          final shareResult = await hf.shareImage(
+            emoticImage: image,
+            imageBytes: imageBytes,
+          );
+          if (shareResult case Left()) {
+            continue errorSnackBar;
+          }
+        case Right():
+          // Should not happen because we specifically requested for image bytes
+          continue errorSnackBar;
+        errorSnackBar:
+        case Left():
+          if (state
+              case EmotipicsListingLoaded(
+                :final images,
+                :final visibleImageData,
+                :final allTags
+              )) {
+            emit(
+              EmotipicsListingLoaded(
+                images: images,
+                visibleImageData: visibleImageData,
+                allTags: allTags,
+                snackBarMessage: "Unable to share image",
+              ),
+            );
+          }
+      }
+    }
+  }
+
   Future<void> searchWithText({required String searchText}) async {}
 
   Future<void> pickImages() async {
