@@ -15,14 +15,17 @@ sealed class EmotipicsDataEditorEditing
     implements EmotipicsDataEditorState {
   final List<EmoticImage> images;
   final List<String> allTags;
+  final Map<Uri, ImageRepr> visibleImageData;
   const EmotipicsDataEditorEditing({
     required this.images,
     required this.allTags,
+    required this.visibleImageData,
   });
   @override
   List<Object?> get props => [
         images,
         allTags,
+        visibleImageData,
       ];
 }
 
@@ -31,12 +34,12 @@ class EmotipicsDataEditorModifyTagLink extends EmotipicsDataEditorEditing {
   const EmotipicsDataEditorModifyTagLink({
     required super.images,
     required super.allTags,
+    required super.visibleImageData,
     required this.selectedImage,
   });
   @override
   List<Object?> get props => [
-        images,
-        allTags,
+        super.props,
         selectedImage,
       ];
 }
@@ -45,6 +48,7 @@ class EmotipicsDataEditorModifyOrder extends EmotipicsDataEditorEditing {
   const EmotipicsDataEditorModifyOrder({
     required super.images,
     required super.allTags,
+    required super.visibleImageData,
   });
 }
 
@@ -54,13 +58,13 @@ class EmotipicsDataEditorDelete extends EmotipicsDataEditorEditing {
   const EmotipicsDataEditorDelete({
     required super.images,
     required super.allTags,
+    required super.visibleImageData,
     required this.selectedImages,
     required this.selectedTags,
   });
   @override
   List<Object?> get props => [
-        images,
-        allTags,
+        super.props,
         selectedImages,
         selectedTags,
       ];

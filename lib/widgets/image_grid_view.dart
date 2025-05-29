@@ -24,6 +24,7 @@ class ImageGridView extends StatefulWidget {
 }
 
 class _ImageGridViewState extends State<ImageGridView> {
+  final emotipicsListingsKey = "emotipicListingKey";
   int getCrossAxisCount(BuildContext context) {
     final dPR = MediaQuery.devicePixelRatioOf(context);
 
@@ -40,12 +41,12 @@ class _ImageGridViewState extends State<ImageGridView> {
   Widget build(BuildContext context) {
     return Expanded(
       child: GridView.builder(
+        key: PageStorageKey(emotipicsListingsKey),
         shrinkWrap: true,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: getCrossAxisCount(context),
         ),
         itemCount: widget.state.images.length,
-        restorationId: "imagesListThing",
         itemBuilder: (context, index) {
           final currentImage = widget.state.images[index];
           final imageRepr =
@@ -92,12 +93,22 @@ class _ImageGridViewState extends State<ImageGridView> {
                                 .deleteImage(
                                   image: emoticImage,
                                 );
+                            if (context.mounted) {
+                              await context
+                                  .read<EmotipicsListingCubit>()
+                                  .loadSavedImages();
+                            }
                           case UpdateEmotipic(:final modifyEmotipic):
                             await context
                                 .read<EmotipicsDataEditorCubit>()
                                 .modifyImage(
                                   newOrModifyEmoticImage: modifyEmotipic,
                                 );
+                            if (context.mounted) {
+                              await context
+                                  .read<EmotipicsListingCubit>()
+                                  .loadSavedImages();
+                            }
                           case EmotipicTagClicked(:final tag):
                             widget.onTagClick(tag);
                         }

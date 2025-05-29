@@ -1,6 +1,5 @@
 import 'package:emotic/core/image_cache_interface.dart';
 import 'package:emotic/core/image_data.dart';
-import 'package:emotic/cubit/emotipics_cubit.dart';
 import 'package:emotic/cubit/emotipics_data_editor_cubit.dart';
 import 'package:emotic/widgets/emotipic_tile.dart';
 import 'package:emotic/widgets/tag_tile.dart';
@@ -10,12 +9,10 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 class ImageEditingListView extends StatefulWidget {
   final EmotipicsDataEditorEditing editorState;
-  final EmotipicsListingLoaded listingState;
   final ImageCacheInterface imageCacheInterface;
   const ImageEditingListView({
     super.key,
     required this.editorState,
-    required this.listingState,
     required this.imageCacheInterface,
   });
 
@@ -68,11 +65,11 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                                   newIndex: newIndex,
                                 );
                           },
-                          itemCount: widget.listingState.images.length,
+                          itemCount: widget.editorState.images.length,
                           itemBuilder: (context, index) {
                             final currentImage =
-                                widget.listingState.images[index];
-                            final imageRepr = widget.listingState
+                                widget.editorState.images[index];
+                            final imageRepr = widget.editorState
                                 .visibleImageData[currentImage.imageUri];
                             if (imageRepr
                                 case FlutterImageWidgetImageRepr(
@@ -84,11 +81,10 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                             final currentCachedImage = widget
                                 .imageCacheInterface
                                 .getCachedImage(currentImage.imageUri);
-
                             return VisibilityDetector(
                               key: Key("visibility-${currentImage.imageUri}"),
                               child: EmotipicTile(
-                                key: Key("emoticon-${currentImage.id}"),
+                                key: Key("emotipic-${currentImage.id}"),
                                 image: currentImage,
                                 imageWidget: currentCachedImage,
                                 isSelected: false,
@@ -108,7 +104,7 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                                   if (!widget.imageCacheInterface
                                       .isImageCached(currentImage.imageUri)) {
                                     await context
-                                        .read<EmotipicsListingCubit>()
+                                        .read<EmotipicsDataEditorCubit>()
                                         .loadImageBytes(
                                           imageToLoad: currentImage.imageUri,
                                         );
@@ -116,7 +112,7 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                                 } else {
                                   if (context.mounted) {
                                     await context
-                                        .read<EmotipicsListingCubit>()
+                                        .read<EmotipicsDataEditorCubit>()
                                         .unloadImageBytes(
                                           imageToUnload: currentImage.imageUri,
                                         );
@@ -128,11 +124,11 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                         )
                       : ListView.builder(
                           key: PageStorageKey(emotipicsListKey),
-                          itemCount: widget.listingState.images.length,
+                          itemCount: widget.editorState.images.length,
                           itemBuilder: (context, index) {
                             final currentImage =
-                                widget.listingState.images[index];
-                            final imageRepr = widget.listingState
+                                widget.editorState.images[index];
+                            final imageRepr = widget.editorState
                                 .visibleImageData[currentImage.imageUri];
                             if (imageRepr
                                 case FlutterImageWidgetImageRepr(
@@ -159,7 +155,7 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                             return VisibilityDetector(
                               key: Key("visibility-${currentImage.imageUri}"),
                               child: EmotipicTile(
-                                key: Key("emoticon-${currentImage.id}"),
+                                key: Key("emotipic-${currentImage.id}"),
                                 image: currentImage,
                                 imageWidget: currentCachedImage,
                                 isSelected: isSelected,
@@ -177,7 +173,7 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                                   if (!widget.imageCacheInterface
                                       .isImageCached(currentImage.imageUri)) {
                                     await context
-                                        .read<EmotipicsListingCubit>()
+                                        .read<EmotipicsDataEditorCubit>()
                                         .loadImageBytes(
                                           imageToLoad: currentImage.imageUri,
                                         );
@@ -185,7 +181,7 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                                 } else {
                                   if (context.mounted) {
                                     await context
-                                        .read<EmotipicsListingCubit>()
+                                        .read<EmotipicsDataEditorCubit>()
                                         .unloadImageBytes(
                                           imageToUnload: currentImage.imageUri,
                                         );
@@ -213,10 +209,10 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                                   newIndex: newIndex,
                                 );
                           },
-                          itemCount: widget.listingState.allTags.length,
+                          itemCount: widget.editorState.allTags.length,
                           itemBuilder: (context, index) {
                             final currentTag =
-                                widget.listingState.allTags[index];
+                                widget.editorState.allTags[index];
                             return TagTile(
                               key: Key("tag-$currentTag"),
                               tag: currentTag,
@@ -236,10 +232,10 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                         )
                       : ListView.builder(
                           key: PageStorageKey(tagsListKey),
-                          itemCount: widget.listingState.allTags.length,
+                          itemCount: widget.editorState.allTags.length,
                           itemBuilder: (context, index) {
                             final currentTag =
-                                widget.listingState.allTags[index];
+                                widget.editorState.allTags[index];
 
                             final isSelected = switch (widget.editorState) {
                               EmotipicsDataEditorModifyTagLink(

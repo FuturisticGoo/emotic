@@ -40,12 +40,9 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
       ],
       child: BlocListener<EmotipicsListingCubit, EmotipicsListingState>(
         listener: (context, state) async {
-          switch (state) {
-            case EmotipicsListingLoaded(:final snackBarMessage)
-                when snackBarMessage != null:
-              showSnackBar(context, text: snackBarMessage);
-            default:
-              break;
+          if (state case EmotipicsListingLoaded(:final snackBarMessage)
+              when snackBarMessage != null) {
+            showSnackBar(context, text: snackBarMessage);
           }
         },
         child: Scaffold(
@@ -84,12 +81,12 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                             titleText: "Delete ${selectedImages.length} images"
                                 " and ${selectedTags.length} tags?");
                         if (choice == true && context.mounted) {
-                        await context
-                            .read<EmotipicsDataEditorCubit>()
-                            .deleteImagesAndTags(
-                              emoticImages: selectedImages,
-                              tags: selectedTags,
-                            );
+                          await context
+                              .read<EmotipicsDataEditorCubit>()
+                              .deleteImagesAndTags(
+                                emoticImages: selectedImages,
+                                tags: selectedTags,
+                              );
                         }
                       },
                       icon: Icon(Icons.delete),
@@ -166,9 +163,10 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                   await context
                                       .read<EmotipicsDataEditorCubit>()
                                       .startModifyingTagLink(
-                                        images: images,
-                                        allTags: allTags,
-                                      );
+                                    images: images,
+                                    allTags: allTags,
+                                    visibleImageData: {},
+                                  );
                                 },
                               ),
                             ),
@@ -181,9 +179,10 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                   await context
                                       .read<EmotipicsDataEditorCubit>()
                                       .startDeleting(
-                                        images: images,
-                                        allTags: allTags,
-                                      );
+                                    images: images,
+                                    allTags: allTags,
+                                    visibleImageData: {},
+                                  );
                                 },
                               ),
                             ),
@@ -196,9 +195,10 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                   await context
                                       .read<EmotipicsDataEditorCubit>()
                                       .startModifyingOrder(
-                                        images: images,
-                                        allTags: allTags,
-                                      );
+                                    images: images,
+                                    allTags: allTags,
+                                    visibleImageData: {},
+                                  );
                                 },
                               ),
                             ),
@@ -225,8 +225,17 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                     child: Text("Error loading images"),
                   );
                 case EmotipicsListingLoaded():
-                  return BlocBuilder<EmotipicsDataEditorCubit,
+                  return BlocConsumer<EmotipicsDataEditorCubit,
                       EmotipicsDataEditorState>(
+                    listener: (context, state) async {
+                      await context
+                          .read<EmotipicsListingCubit>()
+                          .loadSavedImages();
+                    },
+                    listenWhen: (previous, current) {
+                      return previous is EmotipicsDataEditorEditing &&
+                          current is EmotipicsDataEditorNotEditing;
+                    },
                     builder: (context, state) {
                       switch (state) {
                         case EmotipicsDataEditorInitial():
@@ -274,7 +283,6 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                         case EmotipicsDataEditorEditing():
                           return ImageEditingListView(
                             editorState: state,
-                            listingState: listingState,
                             imageCacheInterface: ImageCacheInterface(
                               getCachedImage: (imageUri) {
                                 return cachedImage[imageUri];
