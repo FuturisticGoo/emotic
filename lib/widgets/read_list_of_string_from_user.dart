@@ -78,3 +78,12 @@ Future<List<String>?> readTags(BuildContext context) async {
     textHint: "Type one tag per line",
   );
 }
+
+Future<List<String>?> readEmoticons(BuildContext context) async {
+  return readListOfStringFromUser(
+    context,
+    titleText: "Add Emoticons",
+    textLabel: "Emoticons",
+    textHint: "One emoticon per line",
+  );
+}

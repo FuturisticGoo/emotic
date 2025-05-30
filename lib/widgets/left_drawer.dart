@@ -29,13 +29,6 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: const Text("Data Editor"),
-            onTap: () {
-              Navigator.of(context).pop();
-              context.go(Routes.dataEditorPage);
-            },
-          ),
-          ListTile(
             title: const Text("Emotipics"),
             onTap: () {
               Navigator.of(context).pop();

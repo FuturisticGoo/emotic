@@ -1,4 +1,3 @@
-import 'package:emotic/core/emoticon.dart';
 import 'package:emotic/cubit/emoticons_listing_state.dart';
 import 'package:emotic/data/emoticons_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +10,7 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
   }) : super(EmoticonsListingInitial()) {
     loadEmoticons();
   }
+
   Future<void> loadEmoticons() async {
     emit(EmoticonsListingLoading());
     final allEmoticons =
@@ -22,20 +22,6 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
         emoticonsToShow: allEmoticons,
       ),
     );
-  }
-
-  void saveEmoticon({
-    required NewOrModifyEmoticon newOrModifyEmoticon,
-  }) async {
-    await emoticonsRepository.saveEmoticon(
-      newOrModifyEmoticon: newOrModifyEmoticon,
-    );
-    loadEmoticons();
-  }
-
-  void deleteEmoticon({required Emoticon emoticon}) async {
-    await emoticonsRepository.deleteEmoticon(emoticon: emoticon);
-    loadEmoticons();
   }
 
   void searchEmoticons({required String searchTerm}) async {

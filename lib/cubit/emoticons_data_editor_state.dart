@@ -1,22 +1,21 @@
 import 'package:emotic/core/emoticon.dart';
 import 'package:equatable/equatable.dart';
 
-sealed class DataEditorState extends Equatable {}
-
-class DataEditorInitial extends DataEditorState {
-  @override
-  List<Object?> get props => [];
+sealed class EmoticonsDataEditorState {
+  const EmoticonsDataEditorState();
 }
 
-class DataEditorLoading extends DataEditorState {
-  @override
-  List<Object?> get props => [];
-}
+class EmoticonsDataEditorInitial extends EmoticonsDataEditorState {}
 
-class DataEditorLoaded extends DataEditorState {
+class EmoticonsDataEditorLoading extends EmoticonsDataEditorState {}
+
+class EmoticonsDataEditorNotEditing extends EmoticonsDataEditorState {}
+
+sealed class EmoticonsDataEditorEditing extends EmoticonsDataEditorState
+    with EquatableMixin {
   final List<Emoticon> allEmoticons;
   final List<String> allTags;
-  DataEditorLoaded({
+  EmoticonsDataEditorEditing({
     required this.allEmoticons,
     required this.allTags,
   });
@@ -27,37 +26,31 @@ class DataEditorLoaded extends DataEditorState {
       ];
 }
 
-class DataEditorModifyLinks extends DataEditorLoaded {
+class EmoticonsDataEditorModifyLinks extends EmoticonsDataEditorEditing {
   final Emoticon? selectedEmoticon;
-  DataEditorModifyLinks({
+  EmoticonsDataEditorModifyLinks({
     required super.allEmoticons,
     required super.allTags,
     required this.selectedEmoticon,
   });
   @override
   List<Object?> get props => [
-        allEmoticons,
-        allTags,
+        super.props,
         selectedEmoticon,
       ];
 }
 
-class DataEditorModifyOrder extends DataEditorLoaded {
-  DataEditorModifyOrder({
+class EmoticonsDataEditorModifyOrder extends EmoticonsDataEditorEditing {
+  EmoticonsDataEditorModifyOrder({
     required super.allEmoticons,
     required super.allTags,
   });
-  @override
-  List<Object?> get props => [
-        allEmoticons,
-        allTags,
-      ];
 }
 
-class DataEditorDeleteData extends DataEditorLoaded {
+class EmoticonsDataEditorDeleteData extends EmoticonsDataEditorEditing {
   final List<Emoticon> selectedEmoticons;
   final List<String> selectedTags;
-  DataEditorDeleteData({
+  EmoticonsDataEditorDeleteData({
     required super.allEmoticons,
     required super.allTags,
     required this.selectedEmoticons,
@@ -65,8 +58,7 @@ class DataEditorDeleteData extends DataEditorLoaded {
   });
   @override
   List<Object?> get props => [
-        allEmoticons,
-        allTags,
+        super.props,
         selectedEmoticons,
         selectedTags,
       ];

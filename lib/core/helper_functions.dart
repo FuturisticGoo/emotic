@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'dart:math';
-
-import 'package:cross_file/cross_file.dart';
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emotic_image.dart';
 import 'package:emotic/core/logging.dart';

@@ -154,8 +154,13 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                       ),
                                       onTap: () async {
                                         await context
-                                            .read<EmotipicsListingCubit>()
+                                            .read<EmotipicsDataEditorCubit>()
                                             .pickImages();
+                                        if (context.mounted) {
+                                          await context
+                                              .read<EmotipicsListingCubit>()
+                                              .loadSavedImages();
+                                        }
                                       },
                                     ),
                                     PopupMenuItem(
@@ -167,29 +172,31 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                       ),
                                       onTap: () async {
                                         await context
-                                            .read<EmotipicsListingCubit>()
+                                            .read<EmotipicsDataEditorCubit>()
                                             .pickDirectory();
+                                        if (context.mounted) {
+                                          await context
+                                              .read<EmotipicsListingCubit>()
+                                              .loadSavedImages();
+                                        }
                                       },
                                     ),
                                     PopupMenuItem(
                                       child: ListTile(
                                         leading: BlankIconSpace(),
                                         title: Text("Add Tag(s)"),
-                                        onTap: () async {
-                                          Navigator.of(context).pop();
-                                          final newTags =
-                                              await readTags(context);
-                                          if (newTags != null &&
-                                              context.mounted) {
-                                            await context
-                                                .read<
-                                                    EmotipicsDataEditorCubit>()
-                                                .addTags(
-                                                  tags: newTags,
-                                                );
-                                          }
-                                        },
                                       ),
+                                      onTap: () async {
+                                        final newTags = await readTags(context);
+                                        if (newTags != null &&
+                                            context.mounted) {
+                                          await context
+                                              .read<EmotipicsDataEditorCubit>()
+                                              .addTags(
+                                                tags: newTags,
+                                              );
+                                        }
+                                      },
                                     ),
                                     PopupMenuItem(
                                       enabled: false,
@@ -200,24 +207,23 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                       child: ListTile(
                                         leading: BlankIconSpace(),
                                         title: Text("Edit Tag Link"),
-                                        onTap: () async {
-                                          Navigator.of(context).pop();
-                                          await context
-                                              .read<EmotipicsDataEditorCubit>()
-                                              .startModifyingTagLink(
-                                            images: images,
-                                            allTags: allTags,
-                                            visibleImageData: {},
-                                          );
-                                        },
                                       ),
+                                      onTap: () async {
+                                        await context
+                                            .read<EmotipicsDataEditorCubit>()
+                                            .startModifyingTagLink(
+                                          images: images,
+                                          allTags: allTags,
+                                          visibleImageData: {},
+                                        );
+                                      },
                                     ),
                                     PopupMenuItem(
                                       child: ListTile(
                                         leading: Icon(Icons.delete),
                                         title: Text("Delete"),
-                                        onTap: () async {
-                                          Navigator.of(context).pop();
+                                      ),
+                                      onTap: () async {
                                           await context
                                               .read<EmotipicsDataEditorCubit>()
                                               .startDeleting(
@@ -225,24 +231,22 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                             allTags: allTags,
                                             visibleImageData: {},
                                           );
-                                        },
-                                      ),
+                                      },
                                     ),
                                     PopupMenuItem(
                                       child: ListTile(
                                         leading: BlankIconSpace(),
                                         title: Text("Reorder"),
-                                        onTap: () async {
-                                          Navigator.of(context).pop();
-                                          await context
-                                              .read<EmotipicsDataEditorCubit>()
-                                              .startModifyingOrder(
-                                            images: images,
-                                            allTags: allTags,
-                                            visibleImageData: {},
-                                          );
-                                        },
                                       ),
+                                      onTap: () async {
+                                        await context
+                                            .read<EmotipicsDataEditorCubit>()
+                                            .startModifyingOrder(
+                                          images: images,
+                                          allTags: allTags,
+                                          visibleImageData: {},
+                                        );
+                                      },
                                     ),
                                   ];
                                 default:

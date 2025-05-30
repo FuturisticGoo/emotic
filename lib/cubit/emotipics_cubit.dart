@@ -1,6 +1,5 @@
 import 'package:emotic/core/emotic_image.dart';
 import 'package:emotic/core/image_data.dart';
-import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/status_entities.dart';
 import 'package:emotic/data/image_repository.dart';
 import 'package:equatable/equatable.dart';
@@ -265,34 +264,6 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
           allTags: allTags,
         ),
       );
-    }
-  }
-
-  Future<void> pickImages() async {
-    final pickResult = await imageRepository.pickImagesAndSave();
-    switch (pickResult) {
-      case Left(value: final error):
-        getLogger().severe(
-          "pick image failed",
-          error,
-        );
-        break; // TODO: maybe a toast message?
-      case Right():
-        await loadSavedImages();
-    }
-  }
-
-  Future<void> pickDirectory() async {
-    final pickResult = await imageRepository.pickDirectoryAndSaveImages();
-    switch (pickResult) {
-      case Left(value: final error):
-        getLogger().severe(
-          "pick directory failed",
-          error,
-        );
-        break; // TODO: maybe a toast message?
-      case Right():
-        await loadSavedImages();
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:emotic/core/emotic_image.dart';
 import 'package:emotic/core/functional_list_methods.dart';
 import 'package:emotic/core/image_data.dart';
+import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/status_entities.dart';
 import 'package:emotic/data/image_repository.dart';
 import 'package:equatable/equatable.dart';
@@ -111,14 +112,24 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
             ),
           ),
         );
-      case EmotipicsDataEditorDelete():
+      case EmotipicsDataEditorDelete(
+          :final selectedImages,
+          :final selectedTags
+        ):
         emit(
           EmotipicsDataEditorDelete(
             images: images,
             allTags: allTags,
             visibleImageData: visibleImageData,
-            selectedImages: [],
-            selectedTags: [],
+            // Doing this set stuff because we could reach here in two
+            // situations, either the selectedImages were deleted and now its
+            // updating (so selectedImages shouldnt be shown anymore, so []),
+            // or while on delete page new images were added (selectedImages
+            // should be the same)
+            selectedImages:
+                images.toSet().intersection(selectedImages.toSet()).toList(),
+            selectedTags:
+                allTags.toSet().intersection(selectedTags.toSet()).toList(),
           ),
         );
     }
@@ -129,15 +140,32 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     required List<String> allTags,
     required Map<Uri, ImageRepr> visibleImageData,
   }) async {
-    emit(
-      EmotipicsDataEditorDelete(
-        images: images,
-        allTags: allTags,
-        selectedImages: [],
-        selectedTags: [],
-        visibleImageData: visibleImageData,
-      ),
-    );
+    switch (state) {
+      case EmotipicsDataEditorEditing(
+          :final images,
+          :final allTags,
+          :final visibleImageData
+        ):
+        emit(
+          EmotipicsDataEditorDelete(
+            images: images,
+            allTags: allTags,
+            selectedImages: [],
+            selectedTags: [],
+            visibleImageData: visibleImageData,
+          ),
+        );
+      default:
+        emit(
+          EmotipicsDataEditorDelete(
+            images: images,
+            allTags: allTags,
+            selectedImages: [],
+            selectedTags: [],
+            visibleImageData: visibleImageData,
+          ),
+        );
+    }
   }
 
   Future<void> startModifyingOrder({
@@ -145,13 +173,59 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     required List<String> allTags,
     required Map<Uri, ImageRepr> visibleImageData,
   }) async {
-    emit(
-      EmotipicsDataEditorModifyOrder(
-        images: images,
-        allTags: allTags,
-        visibleImageData: visibleImageData,
-      ),
-    );
+    switch (state) {
+      case EmotipicsDataEditorEditing(
+          :final images,
+          :final allTags,
+          :final visibleImageData
+        ):
+        emit(
+          EmotipicsDataEditorModifyOrder(
+            images: images,
+            allTags: allTags,
+            visibleImageData: visibleImageData,
+          ),
+        );
+      default:
+        emit(
+          EmotipicsDataEditorModifyOrder(
+            images: images,
+            allTags: allTags,
+            visibleImageData: visibleImageData,
+          ),
+        );
+    }
+  }
+
+  Future<void> startModifyingTagLink({
+    required List<EmoticImage> images,
+    required List<String> allTags,
+    required Map<Uri, ImageRepr> visibleImageData,
+  }) async {
+    switch (state) {
+      case EmotipicsDataEditorEditing(
+          :final images,
+          :final allTags,
+          :final visibleImageData
+        ):
+        emit(
+          EmotipicsDataEditorModifyTagLink(
+            images: images,
+            allTags: allTags,
+            selectedImage: null,
+            visibleImageData: visibleImageData,
+          ),
+        );
+      default:
+        emit(
+          EmotipicsDataEditorModifyTagLink(
+            images: images,
+            allTags: allTags,
+            selectedImage: null,
+            visibleImageData: visibleImageData,
+          ),
+        );
+    }
   }
 
   Future<void> reorderEmotipic({
@@ -209,21 +283,6 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
       );
       await loadSavedImages();
     }
-  }
-
-  Future<void> startModifyingTagLink({
-    required List<EmoticImage> images,
-    required List<String> allTags,
-    required Map<Uri, ImageRepr> visibleImageData,
-  }) async {
-    emit(
-      EmotipicsDataEditorModifyTagLink(
-        images: images,
-        allTags: allTags,
-        selectedImage: null,
-        visibleImageData: visibleImageData,
-      ),
-    );
   }
 
   Future<void> selectEmotipic({required EmoticImage image}) async {
@@ -305,6 +364,34 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     }
   }
 
+  Future<void> pickImages() async {
+    final pickResult = await imageRepository.pickImagesAndSave();
+    switch (pickResult) {
+      case Left(value: final error):
+        getLogger().severe(
+          "pick image failed",
+          error,
+        );
+        break; // TODO: maybe a toast message?
+      case Right():
+        await loadSavedImages();
+    }
+  }
+
+  Future<void> pickDirectory() async {
+    final pickResult = await imageRepository.pickDirectoryAndSaveImages();
+    switch (pickResult) {
+      case Left(value: final error):
+        getLogger().severe(
+          "pick directory failed",
+          error,
+        );
+        break; // TODO: maybe a toast message?
+      case Right():
+        await loadSavedImages();
+    }
+  }
+
   Future<void> addTags({required List<String> tags}) async {
     for (final tag in tags) {
       final result = await imageRepository.saveTag(tag: tag);
@@ -312,30 +399,17 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     await loadSavedImages();
   }
 
-  Future<void> deleteImage({required EmoticImage image}) async {
-    final result = await imageRepository.deleteImage(image: image);
-  }
-
-  
   Future<void> deleteImagesAndTags({
-    List<EmoticImage>? emoticImages,
-    List<String>? tags,
+    required List<EmoticImage> emoticImages,
+    required List<String> tags,
   }) async {
-    switch (state) {
-      case EmotipicsDataEditorDelete(
-          :final selectedImages,
-          :final selectedTags
-        ):
-        for (final image in selectedImages) {
-          final result = await imageRepository.deleteImage(image: image);
-        }
-        for (final tag in selectedTags) {
-          final result = await imageRepository.deleteTag(tag: tag);
-        }
-        await loadSavedImages();
-      default:
-        break;
+    for (final image in emoticImages) {
+      final result = await imageRepository.deleteImage(image: image);
     }
+    for (final tag in tags) {
+      final result = await imageRepository.deleteTag(tag: tag);
+    }
+    await loadSavedImages();
   }
 
   Future<void> modifyImage({
