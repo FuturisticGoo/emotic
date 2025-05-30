@@ -1,4 +1,5 @@
 import 'package:emotic/core/app_theme.dart';
+import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/settings_cubit.dart';
@@ -180,8 +181,11 @@ class SettingsPage extends StatelessWidget {
                                 dropdownMenuEntries: [
                                   null,
                                   ...Iterable.generate(
-                                    32 - 8 + 1,
-                                    (index) => index + 8,
+                                    emoticonsTextSizeUpperLimit -
+                                        emoticonsTextSizeLowerLimit +
+                                        1,
+                                    (index) =>
+                                        index + emoticonsTextSizeLowerLimit,
                                   )
                                 ].map(
                                   (e) {
@@ -221,8 +225,11 @@ class SettingsPage extends StatelessWidget {
                                 dropdownMenuEntries: [
                                   null,
                                   ...Iterable.generate(
-                                    12 - 1 + 1,
-                                    (index) => index + 1,
+                                    emotipicsColCountUpperLimit -
+                                        emotipicsColCountLowerLimit +
+                                        1,
+                                    (index) =>
+                                        index + emotipicsColCountLowerLimit,
                                   )
                                 ].map(
                                   (e) {

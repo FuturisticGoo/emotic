@@ -13,4 +13,7 @@ const sqldbName = "emoticons_sqlite";
 const appName = "Emotic";
 const sourceLink = "https://github.com/FuturisticGoo/emotic";
 
-
+const emoticonsTextSizeLowerLimit = 8;
+const emoticonsTextSizeUpperLimit = 32;
+const emotipicsColCountLowerLimit = 1;
+const emotipicsColCountUpperLimit = 12;
