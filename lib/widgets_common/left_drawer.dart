@@ -1,5 +1,5 @@
 import 'package:emotic/core/routes.dart';
-import 'package:emotic/pages/about_page.dart';
+import 'package:emotic/widgets_common/emotic_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 

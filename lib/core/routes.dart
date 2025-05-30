@@ -4,7 +4,7 @@ import 'package:emotic/pages/app_update_process_page.dart';
 import 'package:emotic/pages/emoticons_page.dart';
 import 'package:emotic/pages/emotipics_page.dart';
 import 'package:emotic/pages/settings_page.dart';
-import 'package:emotic/widgets/left_drawer.dart';
+import 'package:emotic/widgets_common/left_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 

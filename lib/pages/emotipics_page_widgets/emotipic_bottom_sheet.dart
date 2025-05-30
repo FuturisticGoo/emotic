@@ -1,6 +1,6 @@
 import 'package:emotic/core/emotic_image.dart';
-import 'package:emotic/widgets/delete_confirmation.dart';
-import 'package:emotic/widgets/read_list_of_string_from_user.dart';
+import 'package:emotic/widgets_common/delete_confirmation.dart';
+import 'package:emotic/widgets_common/read_list_of_string_from_user.dart';
 import 'package:flutter/material.dart';
 
 sealed class EmotipicBottomSheetResult {
@@ -25,14 +25,13 @@ class ShareEmotipic extends EmotipicBottomSheetResult {
     required this.selectedImage,
   });
 }
- 
+
 class EmotipicTagClicked extends EmotipicBottomSheetResult {
   final String tag;
   const EmotipicTagClicked({
     required this.tag,
   });
 }
-
 
 class UpdateEmotipicBottomSheet extends StatefulWidget {
   const UpdateEmotipicBottomSheet({
@@ -171,9 +170,6 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
                   ),
                 ),
               ),
-              // const Spacer(
-              //   flex: 1,
-              // ),
               Row(
                 children: [
                   ...switch (readOnlyMode) {

@@ -1,5 +1,5 @@
 import 'package:emotic/core/emoticon.dart';
-import 'package:emotic/widgets/show_message.dart';
+import 'package:emotic/widgets_common/show_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

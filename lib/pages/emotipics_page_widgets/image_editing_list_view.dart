@@ -1,8 +1,8 @@
 import 'package:emotic/core/image_cache_interface.dart';
 import 'package:emotic/core/image_data.dart';
 import 'package:emotic/cubit/emotipics_data_editor_cubit.dart';
-import 'package:emotic/widgets/emotipic_tile.dart';
-import 'package:emotic/widgets/tag_tile.dart';
+import 'package:emotic/pages/emotipics_page_widgets/emotipic_tile.dart';
+import 'package:emotic/widgets_common/tag_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
