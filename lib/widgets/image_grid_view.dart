@@ -10,13 +10,17 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 class ImageGridView extends StatefulWidget {
   final void Function(String tag) onTagClick;
+  final int? emotipicsColCount;
+
   final ImageCacheInterface imageCacheInterface;
   final EmotipicsListingLoaded state;
+
   const ImageGridView({
     super.key,
     required this.onTagClick,
     required this.imageCacheInterface,
     required this.state,
+    required this.emotipicsColCount,
   });
 
   @override
@@ -25,6 +29,7 @@ class ImageGridView extends StatefulWidget {
 
 class _ImageGridViewState extends State<ImageGridView> {
   final emotipicsListingsKey = "emotipicListingKey";
+
   int getCrossAxisCount(BuildContext context) {
     final dPR = MediaQuery.devicePixelRatioOf(context);
 
@@ -48,7 +53,8 @@ class _ImageGridViewState extends State<ImageGridView> {
               key: PageStorageKey(emotipicsListingsKey),
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: getCrossAxisCount(context),
+                crossAxisCount:
+                    widget.emotipicsColCount ?? getCrossAxisCount(context),
               ),
               itemCount: widget.state.imagesToShow.length,
               itemBuilder: (context, index) {

@@ -16,6 +16,7 @@
 * ~~Improve listing performance, use async for reading the database.~~
 * Add fancy text generator, because I use it a lot along with emoticons
 * ~~Image/GIF copy paste sharing page for image reactions~~
-* Share button for images
-* Text size settings
+* ~~Share button for images~~
+* ~~Text size settings~~
 * Update images in directory URI on each start and refresh button  (new images/deleted images)
+* Join Data Editor page into Emoticons page

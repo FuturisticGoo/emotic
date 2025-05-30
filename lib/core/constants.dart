@@ -14,12 +14,6 @@ const appName = "Emotic";
 const sourceLink = "https://github.com/FuturisticGoo/emotic";
 
 // TODO: Move these sqldb constants to the emoticon_source file
-const sqldbSettingsTableName = "settings_data";
-const sqldbSettingsKeyColName = "key";
-const sqldbSettingsValueColName = "value";
-const sqldbSettingsKeyIsFirstTime = "is_first_time";
-const sqldbSettingsKeylastUsedVersion = "last_used_version";
-const sqldbSettingsKeyThemeMode = "theme_mode";
 
 const sqldbEmoticonsTableName = "emoticons";
 const sqldbEmoticonsId = "id";

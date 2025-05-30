@@ -588,7 +588,7 @@ VALUES
       await db.execute("VACUUM");
       await io.File(db.path).copy(outputDbPath);
       final outputDb = await openDatabase(outputDbPath);
-      await outputDb.execute("""DROP TABLE $sqldbSettingsTableName""");
+      // await outputDb.execute("""DROP TABLE $sqldbSettingsTableName""");
       await outputDb.close();
       final dbFile = io.File(outputDbPath);
       outputFile = await FilePicker.platform.saveFile(

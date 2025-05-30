@@ -5,11 +5,13 @@ import 'package:flutter/services.dart';
 
 class CopyableEmoticon extends StatefulWidget {
   final Emoticon emoticon;
+  final int? textSize;
   final Function(Emoticon) onLongPressed;
   const CopyableEmoticon({
     super.key,
     required this.emoticon,
     required this.onLongPressed,
+    required this.textSize,
   });
 
   @override
@@ -39,7 +41,12 @@ class _CopyableEmoticonState extends State<CopyableEmoticon> {
         },
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Text(widget.emoticon.text),
+          child: Text(
+            widget.emoticon.text,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontSize: widget.textSize?.toDouble(),
+                ),
+          ),
         ),
       ),
     );

@@ -24,11 +24,13 @@ class SettingsPage extends StatelessWidget {
               return BlocConsumer<SettingsCubit, SettingsState>(
                 listener: (context, state) async {
                   switch (state) {
-                    case SettingsLoaded(:final snackBarMessage) when snackBarMessage != null:
+                    case SettingsLoaded(:final snackBarMessage)
+                        when snackBarMessage != null:
                       if (context.mounted) {
                         showSnackBar(context, text: snackBarMessage);
                       }
-                    case SettingsLoaded(:final alertMessage) when alertMessage != null:
+                    case SettingsLoaded(:final alertMessage)
+                        when alertMessage != null:
                       if (context.mounted) {
                         showAlertDialog(
                           context,
@@ -118,7 +120,7 @@ class SettingsPage extends StatelessWidget {
                               },
                             ),
                             const Divider(),
-                            const ListTileHeading(text: "Theme"),
+                            const ListTileHeading(text: "Theme & UI"),
                             ListTile(
                               title: Text("Theme mode"),
                               trailing: DropdownMenu(
@@ -155,6 +157,88 @@ class SettingsPage extends StatelessWidget {
                                     label: "Black",
                                   ),
                                 ],
+                              ),
+                            ),
+                            ListTile(
+                              title: Text("Emoticon text size"),
+                              trailing: DropdownMenu(
+                                initialSelection: settings.emoticonsTextSize,
+                                onSelected: (textSize) async {
+                                  await context
+                                      .read<GlobalSettingsCubit>()
+                                      .saveSettings(
+                                        settings.copyWith(
+                                          emoticonsTextSize: textSize,
+                                        ),
+                                      );
+                                  if (context.mounted) {
+                                    await context
+                                        .read<GlobalSettingsCubit>()
+                                        .refreshSettings();
+                                  }
+                                },
+                                dropdownMenuEntries: [
+                                  null,
+                                  ...Iterable.generate(
+                                    32 - 8 + 1,
+                                    (index) => index + 8,
+                                  )
+                                ].map(
+                                  (e) {
+                                    if (e == null) {
+                                      return DropdownMenuEntry(
+                                        value: null,
+                                        label: "Default",
+                                      );
+                                    } else {
+                                      return DropdownMenuEntry(
+                                        value: e,
+                                        label: e.toString(),
+                                      );
+                                    }
+                                  },
+                                ).toList(),
+                              ),
+                            ),
+                            ListTile(
+                              title: Text("Emotipics column count"),
+                              trailing: DropdownMenu(
+                                initialSelection: settings.emotipicsColumnCount,
+                                onSelected: (colCount) async {
+                                  await context
+                                      .read<GlobalSettingsCubit>()
+                                      .saveSettings(
+                                        settings.copyWith(
+                                          emotipicsColumnCount: colCount,
+                                        ),
+                                      );
+                                  if (context.mounted) {
+                                    await context
+                                        .read<GlobalSettingsCubit>()
+                                        .refreshSettings();
+                                  }
+                                },
+                                dropdownMenuEntries: [
+                                  null,
+                                  ...Iterable.generate(
+                                    12 - 1 + 1,
+                                    (index) => index + 1,
+                                  )
+                                ].map(
+                                  (e) {
+                                    if (e == null) {
+                                      return DropdownMenuEntry(
+                                        value: null,
+                                        label: "Default",
+                                      );
+                                    } else {
+                                      return DropdownMenuEntry(
+                                        value: e,
+                                        label: e.toString(),
+                                      );
+                                    }
+                                  },
+                                ).toList(),
                               ),
                             ),
                           ],

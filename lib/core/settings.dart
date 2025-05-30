@@ -12,6 +12,8 @@ class GlobalSettings extends Equatable {
   final bool isFirstTime;
   final SemVer? lastUsedVersion;
   final EmoticThemeMode emoticThemeMode;
+  final int? emoticonsTextSize;
+  final int? emotipicsColumnCount;
   bool get isUpdated {
     return (lastUsedVersion == null) ? true : lastUsedVersion! < version;
   }
@@ -24,6 +26,8 @@ class GlobalSettings extends Equatable {
     required this.isFirstTime,
     required this.lastUsedVersion,
     required this.emoticThemeMode,
+    this.emoticonsTextSize,
+    this.emotipicsColumnCount,
   });
 
   @override
@@ -31,16 +35,31 @@ class GlobalSettings extends Equatable {
         isFirstTime,
         lastUsedVersion,
         emoticThemeMode,
+        emoticonsTextSize,
+        emotipicsColumnCount,
       ];
   GlobalSettings copyWith({
     bool? isFirstTime,
     SemVer? lastUsedVersion,
     EmoticThemeMode? emoticThemeMode,
+    int? emoticonsTextSize = -1,
+    int? emotipicsColumnCount = -1,
   }) {
+    // -1 means that arg wasn't supplied, just to differentiate b/w passing null
     return GlobalSettings(
       isFirstTime: isFirstTime ?? this.isFirstTime,
       lastUsedVersion: lastUsedVersion ?? this.lastUsedVersion,
       emoticThemeMode: emoticThemeMode ?? this.emoticThemeMode,
+      emoticonsTextSize: switch (emoticonsTextSize) {
+        -1 => this.emoticonsTextSize,
+        null => null,
+        _ => emoticonsTextSize,
+      },
+      emotipicsColumnCount: switch (emotipicsColumnCount) {
+        -1 => this.emotipicsColumnCount,
+        null => null,
+        _ => emotipicsColumnCount,
+      },
     );
   }
 }
@@ -55,22 +74,22 @@ class SettingsSourceSQLite implements SettingsSource {
   SettingsSourceSQLite({required this.db});
   Future<void> _ensureTable() async {
     await db.execute("""
-CREATE TABLE IF NOT EXISTS $sqldbSettingsTableName
+CREATE TABLE IF NOT EXISTS ${_SQLNames.settingsTableName}
   (
-    $sqldbSettingsKeyColName VARCHAR,
-    $sqldbSettingsValueColName VARCHAR
+    ${_SQLNames.settingsKeyColName} VARCHAR,
+    ${_SQLNames.settingsValueColName} VARCHAR
   )
 """);
   }
 
-  Map<String, String> _getSettingsKVFromResult(
+  Map<String, String?> _getSettingsKVFromResult(
       List<Map<String, Object?>> result) {
     return Map.fromEntries(
       result.map(
         (row) {
           return MapEntry(
-            row[sqldbSettingsKeyColName] as String,
-            row[sqldbSettingsValueColName] as String,
+            row[_SQLNames.settingsKeyColName] as String,
+            row[_SQLNames.settingsValueColName] as String?,
           );
         },
       ),
@@ -83,9 +102,9 @@ CREATE TABLE IF NOT EXISTS $sqldbSettingsTableName
     await _ensureTable();
     final settingsResult = await db.rawQuery("""
 SELECT 
-  $sqldbSettingsKeyColName, $sqldbSettingsValueColName 
+  ${_SQLNames.settingsKeyColName}, ${_SQLNames.settingsValueColName} 
 FROM 
-  $sqldbSettingsTableName
+  ${_SQLNames.settingsTableName}
 """);
     if (settingsResult.isEmpty) {
       return const GlobalSettings(
@@ -96,12 +115,12 @@ FROM
     } else {
       final settingsKV = _getSettingsKVFromResult(settingsResult);
       final isFirstTime = bool.tryParse(
-        settingsKV[sqldbSettingsKeyIsFirstTime] ?? "",
+        settingsKV[_SQLNames.settingsKeyIsFirstTime] ?? "",
       );
       SemVer? lastUsedVersion;
       try {
         final lastUsedVersionString =
-            settingsKV[sqldbSettingsKeylastUsedVersion];
+            settingsKV[_SQLNames.settingsKeylastUsedVersion];
         if (lastUsedVersionString != null) {
           lastUsedVersion = SemVer.fromString(
             lastUsedVersionString,
@@ -114,14 +133,19 @@ FROM
       }
 
       final emoticThemeMode = EmoticThemeMode.values.byName(
-        settingsKV[sqldbSettingsKeyThemeMode]?.toString() ??
+        settingsKV[_SQLNames.settingsKeyThemeMode]?.toString() ??
             EmoticThemeMode.system.name,
       );
-
+      final emoticonsTextSize =
+          int.tryParse(settingsKV[_SQLNames.settingsKeyEmoticonTextSize] ?? "");
+      final emotipicsColCount = int.tryParse(
+          settingsKV[_SQLNames.settingsKeyEmotipicsColCount] ?? "");
       final globalSettings = GlobalSettings(
         isFirstTime: isFirstTime ?? true,
         lastUsedVersion: lastUsedVersion,
         emoticThemeMode: emoticThemeMode,
+        emoticonsTextSize: emoticonsTextSize,
+        emotipicsColumnCount: emotipicsColCount,
       );
       getLogger().fine("Got $globalSettings");
       return globalSettings;
@@ -132,50 +156,36 @@ FROM
   Future<void> saveSettings(GlobalSettings newSettings) async {
     await _ensureTable();
     getLogger().config("Going to save $newSettings");
+
+    final settingsRowsToInsert = {
+      _SQLNames.settingsKeyIsFirstTime: newSettings.isFirstTime.toString(),
+      _SQLNames.settingsKeylastUsedVersion:
+          (newSettings.lastUsedVersion ?? version).toString(),
+      _SQLNames.settingsKeyThemeMode: newSettings.emoticThemeMode.name,
+      _SQLNames.settingsKeyEmoticonTextSize:
+          newSettings.emoticonsTextSize.toString(),
+      _SQLNames.settingsKeyEmotipicsColCount:
+          newSettings.emotipicsColumnCount.toString(),
+    };
     await db.execute("""
-DELETE FROM $sqldbSettingsTableName
+DELETE FROM ${_SQLNames.settingsTableName}
 """);
 
-    await db.rawInsert(
-      """
-INSERT INTO 
-  $sqldbSettingsTableName
-    ($sqldbSettingsKeyColName, $sqldbSettingsValueColName)
-VALUES
-  (?, ?)
-""",
-      [
-        sqldbSettingsKeyIsFirstTime,
-        newSettings.isFirstTime.toString(),
-      ],
-    );
-
-    await db.rawInsert(
-      """
-INSERT INTO 
-  $sqldbSettingsTableName
-    ($sqldbSettingsKeyColName, $sqldbSettingsValueColName)
-VALUES
-  (?, ?)
-""",
-      [
-        sqldbSettingsKeylastUsedVersion,
-        (newSettings.lastUsedVersion ?? version).toString(),
-      ],
-    );
-    await db.rawInsert(
-      """
-INSERT INTO
-  $sqldbSettingsTableName
-    ($sqldbSettingsKeyColName, $sqldbSettingsValueColName)
-VALUES
-  (?, ?)
-""",
-      [
-        sqldbSettingsKeyThemeMode,
-        newSettings.emoticThemeMode.name,
-      ],
-    );
+    for (final row in settingsRowsToInsert.entries) {
+      await db.rawInsert(
+        """
+        INSERT INTO 
+          ${_SQLNames.settingsTableName}
+            (${_SQLNames.settingsKeyColName}, ${_SQLNames.settingsValueColName})
+        VALUES
+          (?, ?)
+        """,
+        [
+          row.key,
+          row.value,
+        ],
+      );
+    }
   }
 
   Future<void> _performMigrationForPre0_1_6() async {
@@ -212,20 +222,23 @@ DROP TABLE IF EXISTS settings
       await _ensureTable();
       await db.rawInsert(
         """
-INSERT INTO $sqldbSettingsTableName
-VALUES
-  (?, ?)
-      """,
-        [sqldbSettingsKeyIsFirstTime, false.toString()],
-      );
-      await db.rawInsert(
-        """
-INSERT INTO $sqldbSettingsTableName
+INSERT INTO ${_SQLNames.settingsTableName}
 VALUES
   (?, ?)
       """,
         [
-          sqldbSettingsKeylastUsedVersion,
+          _SQLNames.settingsKeyIsFirstTime,
+          false.toString(),
+        ],
+      );
+      await db.rawInsert(
+        """
+INSERT INTO ${_SQLNames.settingsTableName}
+VALUES
+  (?, ?)
+      """,
+        [
+          _SQLNames.settingsKeylastUsedVersion,
           "0.1.5"
         ], // We'll assume it's this version, no change with older one anyway
       );
@@ -282,4 +295,15 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
     getLogger().fine("Saving settings");
     await settingsSource.saveSettings(newSettings);
   }
+}
+
+abstract final class _SQLNames {
+  static const settingsTableName = "settings_data";
+  static const settingsKeyColName = "key";
+  static const settingsValueColName = "value";
+  static const settingsKeyIsFirstTime = "is_first_time";
+  static const settingsKeylastUsedVersion = "last_used_version";
+  static const settingsKeyThemeMode = "theme_mode";
+  static const settingsKeyEmoticonTextSize = "emoticons_text_size";
+  static const settingsKeyEmotipicsColCount = "emotipics_col_count";
 }

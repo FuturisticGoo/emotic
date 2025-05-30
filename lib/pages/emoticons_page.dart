@@ -61,7 +61,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
             return const Center(
               child: CircularProgressIndicator.adaptive(),
             );
-          case GlobalSettingsLoaded():
+          case GlobalSettingsLoaded(:final settings):
             return BlocProvider(
               create: (context) => EmoticonsListingCubit(
                 emoticonsRepository: sl(),
@@ -165,6 +165,8 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                           (emoticon) {
                                             return CopyableEmoticon(
                                               emoticon: emoticon,
+                                              textSize:
+                                                  settings.emoticonsTextSize,
                                               onLongPressed: (emoticon) async {
                                                 final result =
                                                     await showModalBottomSheet<
