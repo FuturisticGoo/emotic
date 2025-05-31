@@ -1,7 +1,18 @@
 // Success
-sealed class Success {}
+sealed class Success {
+  const Success();
+}
 
 class GenericSuccess implements Success {}
+
+class RefreshImageSuccess implements Success {
+  final int newImages;
+  final int deletedImages;
+  const RefreshImageSuccess({
+    required this.newImages,
+    required this.deletedImages,
+  });
+}
 
 // Failure
 sealed class Failure {

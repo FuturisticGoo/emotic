@@ -18,5 +18,5 @@
 * ~~Image/GIF copy paste sharing page for image reactions~~
 * ~~Share button for images~~
 * ~~Text size settings~~
-* Update images in directory URI on each start and refresh button  (new images/deleted images)
-* Join Data Editor page into Emoticons page
+* ~~Update images in directory URI on each start and refresh button  (new images/deleted images)~~ Kinda added, auto refresh not added yet
+* ~~Join Data Editor page into Emoticons page~~

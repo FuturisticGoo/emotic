@@ -8,7 +8,14 @@ class EmotipicsDataEditorInitial implements EmotipicsDataEditorState {}
 
 class EmotipicsDataEditorLoading implements EmotipicsDataEditorState {}
 
-class EmotipicsDataEditorNotEditing implements EmotipicsDataEditorState {}
+class EmotipicsDataEditorNotEditing
+    with EquatableMixin
+    implements EmotipicsDataEditorState {
+  final String? snackBarMessage;
+  EmotipicsDataEditorNotEditing({this.snackBarMessage});
+  @override
+  List<Object?> get props => [snackBarMessage];
+}
 
 sealed class EmotipicsDataEditorEditing
     with EquatableMixin
@@ -16,16 +23,19 @@ sealed class EmotipicsDataEditorEditing
   final List<EmoticImage> images;
   final List<String> allTags;
   final Map<Uri, ImageRepr> visibleImageData;
+  final String? snackBarMessage;
   const EmotipicsDataEditorEditing({
     required this.images,
     required this.allTags,
     required this.visibleImageData,
+    this.snackBarMessage,
   });
   @override
   List<Object?> get props => [
         images,
         allTags,
         visibleImageData,
+        snackBarMessage,
       ];
 }
 
@@ -35,6 +45,7 @@ class EmotipicsDataEditorModifyTagLink extends EmotipicsDataEditorEditing {
     required super.images,
     required super.allTags,
     required super.visibleImageData,
+    super.snackBarMessage,
     required this.selectedImage,
   });
   @override
@@ -45,11 +56,11 @@ class EmotipicsDataEditorModifyTagLink extends EmotipicsDataEditorEditing {
 }
 
 class EmotipicsDataEditorModifyOrder extends EmotipicsDataEditorEditing {
-  const EmotipicsDataEditorModifyOrder({
-    required super.images,
-    required super.allTags,
-    required super.visibleImageData,
-  });
+  const EmotipicsDataEditorModifyOrder(
+      {required super.images,
+      required super.allTags,
+      required super.visibleImageData,
+      super.snackBarMessage});
 }
 
 class EmotipicsDataEditorDelete extends EmotipicsDataEditorEditing {
@@ -59,6 +70,7 @@ class EmotipicsDataEditorDelete extends EmotipicsDataEditorEditing {
     required super.images,
     required super.allTags,
     required super.visibleImageData,
+    super.snackBarMessage,
     required this.selectedImages,
     required this.selectedTags,
   });

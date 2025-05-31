@@ -25,6 +25,21 @@ class ImageRepository {
     }
   }
 
+  Future<Either<Failure, RefreshImageSuccess>> refreshImages() async {
+    try {
+      if (imageSource case ImageSourceSQLiteAndFS()) {
+        final result = await (imageSource as ImageSourceSQLiteAndFS)
+            .refreshDirectoryImages();
+        return Either.right(result);
+      } else {
+        throw UnsupportedError("Not supported");
+      }
+    } catch (error, stackTrace) {
+      getLogger().severe("Unable to refresh images", error, stackTrace);
+      return Either.left(GenericFailure(error, stackTrace));
+    }
+  }
+
   Future<Either<Failure, ImageRepr>> getImageData({
     required Uri imageUri,
     required ImageReprConfig imageReprConfig,

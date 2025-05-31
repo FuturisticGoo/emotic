@@ -19,7 +19,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
 
   // :( this is duplicating the same code in EmoitipicsCubit because I cant
   // seem to find a neat way of loading the data after editing
-  Future<void> loadSavedImages() async {
+  Future<void> loadSavedImages({String? snackBarMessage}) async {
     final imagesResult = await imageRepository.getImages();
     final tagsResult = await imageRepository.getTags();
     switch ((imagesResult, tagsResult)) {
@@ -27,11 +27,25 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
         await _updateWithData(
           images: images,
           allTags: allTags,
+          snackBarMessage: snackBarMessage,
           visibleImageData: {},
         );
       default:
         //TODO: handle error
         return;
+    }
+  }
+
+  Future<void> refreshImages() async {
+    final result = await imageRepository.refreshImages();
+    switch (result) {
+      case Left():
+        //TODO: handle
+        break;
+      case Right(:final value):
+        await loadSavedImages(
+            snackBarMessage: "Added ${value.newImages} and removed"
+                " ${value.deletedImages} images.");
     }
   }
 
@@ -85,8 +99,11 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     required List<EmoticImage> images,
     required List<String> allTags,
     required Map<Uri, ImageRepr> visibleImageData,
+    String? snackBarMessage,
   }) async {
     switch (state) {
+      case EmotipicsDataEditorNotEditing() when snackBarMessage != null:
+        emit(EmotipicsDataEditorNotEditing(snackBarMessage: snackBarMessage));
       case EmotipicsDataEditorInitial():
       case EmotipicsDataEditorLoading():
       case EmotipicsDataEditorNotEditing():
@@ -97,6 +114,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
             images: images,
             allTags: allTags,
             visibleImageData: visibleImageData,
+            snackBarMessage: snackBarMessage,
           ),
         );
       case EmotipicsDataEditorModifyTagLink(:final selectedImage):
@@ -105,6 +123,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
             images: images,
             allTags: allTags,
             visibleImageData: visibleImageData,
+            snackBarMessage: snackBarMessage,
             selectedImage: images.singleWhereOrNull(
               (element) => element.id == selectedImage?.id,
               // Because selectedImage would have updated, so using the one
@@ -121,6 +140,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
             images: images,
             allTags: allTags,
             visibleImageData: visibleImageData,
+            snackBarMessage: snackBarMessage,
             // Doing this set stuff because we could reach here in two
             // situations, either the selectedImages were deleted and now its
             // updating (so selectedImages shouldnt be shown anymore, so []),

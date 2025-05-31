@@ -905,6 +905,88 @@ ORDER BY
     );
   }
 
+  Future<RefreshImageSuccess> refreshDirectoryImages() async {
+    final directoriesResult = await db.rawQuery("""
+    SELECT 
+      ${_SQLNames.dirId},
+      ${_SQLNames.dirUri}
+    FROM  
+      ${_SQLNames.directoriesTableName}
+    """);
+    final directories = directoriesResult.map(
+      (e) {
+        return (
+          e[_SQLNames.dirId] as int,
+          Uri.parse(e[_SQLNames.dirUri] as String)
+        );
+      },
+    );
+    List<NewOrModifyEmoticImage> imagesToAdd = [];
+    List<int> imagesToRemove = [];
+    for (final dir in directories) {
+      final savedImagesInDbResult = await db.rawQuery(
+        """
+      SELECT
+        em.${_SQLNames.emotipicId},
+        em.${_SQLNames.emotipicUri}
+      FROM
+        ${_SQLNames.emotipicsTableName} em
+      INNER JOIN
+        ${_SQLNames.emotipicsToDirectoryJoinTableName} dirjoin
+      ON
+        em.${_SQLNames.emotipicId}=dirjoin.${_SQLNames.emotipicId}
+      WHERE
+        ${_SQLNames.dirId}=?
+      """,
+        [dir.$1],
+      );
+
+      Map<Uri, int> savedImages = {};
+      for (final row in savedImagesInDbResult) {
+        savedImages[Uri.parse(row[_SQLNames.emotipicUri] as String)] =
+            row[_SQLNames.emotipicId] as int;
+      }
+
+      final emoticImageDirectory = EmoticImageDirectory(dir.$2);
+      final latestImagesInDir = await emoticImageDirectory.listImages();
+
+      if (latestImagesInDir != null) {
+        final newImagesUri =
+            latestImagesInDir.toSet().difference(savedImages.keys.toSet());
+        final invalidImagesUri =
+            savedImages.keys.toSet().difference(latestImagesInDir.toSet());
+
+        imagesToAdd.addAll(
+          newImagesUri.map(
+            (e) {
+              return NewOrModifyEmoticImage.newImage(
+                imageUri: e,
+                parentDirectoryUri: dir.$2,
+              );
+            },
+          ),
+        );
+        imagesToRemove.addAll(invalidImagesUri.map(
+          (e) => savedImages[e]!,
+        ));
+      } else {
+        // This means the directory doesn't exist anymore or can't be accessed.
+        // Should we delete the dir from record? Or is it an overreaction?
+        // For now, doing nothing
+      }
+    }
+    for (final image in imagesToAdd) {
+      await saveImage(image: image);
+    }
+    for (final imageId in imagesToRemove) {
+      await deleteImage(imageId: imageId);
+    }
+    return RefreshImageSuccess(
+      newImages: imagesToAdd.length,
+      deletedImages: imagesToRemove.length,
+    );
+  }
+
   /// Saves the uri of all images and the directory uri. Does not
   /// copy the images.
   @override
