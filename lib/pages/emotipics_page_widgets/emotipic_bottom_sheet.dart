@@ -97,24 +97,24 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              Text(
-                switch (readOnlyMode) {
-                  true => "Emotipic",
-                  false => "Modify Emotipic",
-                },
-              ),
-              SizedBox(
-                height: isSmallScreen ? 10 : 20,
-              ),
-              widget.image,
-              SizedBox(
-                height: isSmallScreen ? 15 : 30,
-              ),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      Text(
+                        switch (readOnlyMode) {
+                          true => "Emotipic",
+                          false => "Modify Emotipic",
+                        },
+                      ),
+                      SizedBox(
+                        height: isSmallScreen ? 10 : 20,
+                      ),
+                      widget.image,
+                      SizedBox(
+                        height: isSmallScreen ? 15 : 30,
+                      ),
                       TagsSelection(
                         isSmallScreen: isSmallScreen,
                         tagsSelection: readOnlyMode
