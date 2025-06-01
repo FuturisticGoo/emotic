@@ -5,6 +5,7 @@ import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/cross_file_writer.dart' as hf;
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/import_export_writer.dart';
+import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/status_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:emotic/core/helper_functions.dart' as hf;
@@ -50,8 +51,9 @@ class SettingsSourceImpl implements SettingsSource {
     if (importFile == null) {
       throw NoImportFilePickedException();
     }
-    if (importFile.path.endsWith(".tar.gz")) {
-      // New export version
+
+    try {
+      // Try using tar reader first, its the new export file format
       final importFileStream = hf.getFileStreamFromUri(uri: importFile);
       final tarImportReader = await TarImportReader.extractTar(
         inputTarFileStream: importFileStream.map(
@@ -70,7 +72,15 @@ class SettingsSourceImpl implements SettingsSource {
           await File.fromUri(dbPath).delete();
         },
       );
-    } else if (importFile.path.endsWith(".sqlite")) {
+    } catch (error, stackTrace) {
+      getLogger().warning(
+        "Opening import file as tar.gz failed.",
+        error,
+        stackTrace,
+      );
+    }
+
+    try {
       // Old/Emoticons only version, still supported
       final importFileStream = hf.getFileStreamFromUri(uri: importFile);
       final cachePath = await emoticAppDataDirectory.getAppCacheDir();
@@ -98,9 +108,18 @@ class SettingsSourceImpl implements SettingsSource {
           await cachedDbFile.delete();
         },
       );
-    } else {
+    } catch (error, stackTrace) {
+      getLogger().warning(
+        "Opening import file as sqlite failed",
+        error,
+        stackTrace,
+      );
+      getLogger().severe(
+        "Trying to open import  Unrecognized import file format: $importFile",
+      );
       throw UnrecognizedImportFileException();
     }
+
   }
 
   @override
