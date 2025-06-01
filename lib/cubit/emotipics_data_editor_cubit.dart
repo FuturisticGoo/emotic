@@ -403,16 +403,6 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
           ),
         );
         await loadSavedImages();
-      // emit(
-      //   EmotipicsDataEditorHiding(
-      //     images: images,
-      //     allTags: allTags,
-      //     selectedImages: (selectedImages.contains(image))
-      //         ? selectedImages.removeIfExists(image)
-      //         : selectedImages.addIfNotExists(image),
-      //     visibleImageData: visibleImageData,
-      //   ),
-      // );
       default:
         break;
     }

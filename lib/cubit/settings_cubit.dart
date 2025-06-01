@@ -22,6 +22,12 @@ class SettingsCubit extends Cubit<SettingsState> {
     emit(SettingsLoaded());
   }
 
+  void _safeEmit(SettingsState settingsState) {
+    if (!isClosed) {
+      emit(settingsState);
+    }
+  }
+
   Future<void> loadEmoticonsFromAsset() async {
     emit(SettingsLoading());
     await emoticonsRepository.getEmoticons(shouldLoadFromAsset: true);
@@ -68,7 +74,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     globalProgressPipe.subscribeToProgress<EmoticonsProgressUpdate,
         EmoticonsProgressFinished>(
       onUpdate: (progressUpdate) {
-        emit(
+        _safeEmit(
           SettingsProgressBar(
             currentProgress: progressUpdate.finishedEmoticons,
             outOf: progressUpdate.totalEmoticons,
@@ -77,7 +83,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         );
       },
       onFinish: (progressFinish) {
-        emit(
+        _safeEmit(
           SettingsLoading(),
         );
       },
@@ -88,7 +94,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     globalProgressPipe.subscribeToProgress<EmotipicsProgressUpdate,
         EmotipicsProgressFinished>(
       onUpdate: (progressUpdate) {
-        emit(
+        _safeEmit(
           SettingsProgressBar(
             currentProgress: progressUpdate.finishedEmotipics,
             outOf: progressUpdate.totalEmotipics,
@@ -97,7 +103,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         );
       },
       onFinish: (progressFinish) {
-        emit(
+        _safeEmit(
           SettingsLoading(),
         );
       },
@@ -108,7 +114,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     globalProgressPipe.subscribeToProgress<FileExtractionProgressUpdate,
         FileExtractionProgressFinished>(
       onUpdate: (progressUpdate) {
-        emit(
+        _safeEmit(
           SettingsProgressBar(
             currentProgress: progressUpdate.finishedFiles,
             outOf: progressUpdate.totalFiles,
@@ -117,7 +123,7 @@ class SettingsCubit extends Cubit<SettingsState> {
         );
       },
       onFinish: (progressFinish) {
-        emit(
+        _safeEmit(
           SettingsLoading(),
         );
       },

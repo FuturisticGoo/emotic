@@ -675,14 +675,42 @@ ORDER BY
   return tags;
 }
 
+Future<int?> _getIdOfImageWithUri(Database db, {required Uri imageUri}) async {
+  final result = await db.rawQuery(
+    """
+  SELECT
+    ${_SQLNames.emotipicId}
+  FROM 
+    ${_SQLNames.emotipicsTableName}
+  WHERE
+    ${_SQLNames.emotipicUri}=?
+  """,
+    [
+      imageUri.toString(),
+    ],
+  );
+  if (result.isEmpty) {
+    return null;
+  }
+
+  if (result.length != 1) {
+    getLogger().warning("${result.length} emotipics with uri: $imageUri found");
+  }
+
+  return result.first[_SQLNames.emotipicId] as int;
+}
+
 Future<int> _saveImage(
   Database db, {
   required NewOrModifyEmoticImage image,
 }) async {
   int emotipicId;
   if (image.oldImage == null) {
-    emotipicId = await db.rawInsert(
-      """
+    final existing = await _getIdOfImageWithUri(db, imageUri: image.imageUri);
+
+    emotipicId = existing ??
+        await db.rawInsert(
+          """
         INSERT INTO ${_SQLNames.emotipicsTableName} 
         (
           ${_SQLNames.emotipicId}, 
@@ -693,13 +721,13 @@ Future<int> _saveImage(
         VALUES 
         (?, ?, ?, ?)
         """,
-      [
-        null,
-        image.imageUri.toString(),
-        image.note,
-        image.isExcluded ? 1 : 0,
-      ],
-    );
+          [
+            null,
+            image.imageUri.toString(),
+            image.note,
+            image.isExcluded ? 1 : 0,
+          ],
+        );
     // No need to link if its null, it means the image was selected by
     // itself, not through a directory
     if (image.parentDirectoryUri != null) {
@@ -709,7 +737,9 @@ Future<int> _saveImage(
         parentDirUri: image.parentDirectoryUri!,
       );
     }
-    await _appendToEmotipicsOrder(db, emotipicId: emotipicId);
+    if (existing == null) {
+      await _appendToEmotipicsOrder(db, emotipicId: emotipicId);
+    }
   } else {
     emotipicId = image.oldImage!.id;
     // Updating notes, if there's any change
@@ -726,6 +756,8 @@ Future<int> _saveImage(
         ],
       );
     }
+
+    // Updating exclusion, if any
     await db.rawUpdate(
       """
     UPDATE ${_SQLNames.emotipicsTableName}
@@ -738,9 +770,7 @@ Future<int> _saveImage(
       ],
     );
   }
-  // This step is the same in both cases, remove all links and relink, its
-  // easier this way
-  await _unlinkImageWithAllTags(db, emotipicId: emotipicId);
+
   for (final tag in image.tags) {
     await _linkImageWithTag(db, emotipicId: emotipicId, tag: tag);
   }
@@ -1088,8 +1118,8 @@ Future<void> _deleteTagFromOrder(Database db, {required int tagId}) async {
   );
 }
 
-/// Links the image with the given parent uri. Directory is inserted if not in
-/// table already
+/// Links the image with the given parent uri. If link already exists,
+/// its a noop. Directory is inserted if not in dirs table already
 Future<void> _linkImageWithDirectory(
   Database db, {
   required int emotipicId,
@@ -1151,8 +1181,8 @@ Future<void> _unlinkDirectoryFromAllImages(Database db,
   );
 }
 
-/// Links the image with the given parent tag. Tag is inserted if not in
-/// table already
+/// Links the image with the given parent tag. If the link already exists,
+/// its a noop. Tag is inserted if not in tag table already
 Future<void> _linkImageWithTag(
   Database db, {
   required int emotipicId,
