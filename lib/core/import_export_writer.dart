@@ -134,7 +134,7 @@ class TarImportReader implements ImportReader {
     final cacheDir = await emoticAppDataDirectory.getAppCacheDir();
     final imageDir = await emoticAppDataDirectory.imagePath;
     String? dbPath;
-    final appMediaPath = await emoticAppDataDirectory.getAppDataDir();
+    final appMediaPath = await emoticAppDataDirectory.getAppMediaDir();
     int count = 1;
     while (await tarReader.moveNext()) {
       final current = tarReader.current;
@@ -199,7 +199,6 @@ class TarImportReader implements ImportReader {
     final imageFileName = p.basename(relativeImageUri.path);
     final imagePath = p.join(
       appMediaPath,
-      mediaFolderName,
       imagesFolderName,
       imageFileName,
     );

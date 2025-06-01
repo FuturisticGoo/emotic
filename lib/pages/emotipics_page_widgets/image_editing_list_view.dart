@@ -40,6 +40,8 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                     "Select the images and tags you wish to delete",
                   EmotipicsDataEditorModifyOrder() =>
                     "Drag the handle to reorder images or tags",
+                  EmotipicsDataEditorHiding() =>
+                    "Select the images you wish to hide",
                 },
               ),
             ),
@@ -147,6 +149,10 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                               ) =>
                                 selectedImage?.id == currentImage.id,
                               EmotipicsDataEditorDelete(
+                                :final selectedImages
+                              ) =>
+                                selectedImages.contains(currentImage),
+                              EmotipicsDataEditorHiding(
                                 :final selectedImages
                               ) =>
                                 selectedImages.contains(currentImage),

@@ -282,6 +282,23 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                           );
                                         },
                                       ),
+                                      PopupMenuItem(
+                                        child: ListTile(
+                                          leading:
+                                              Icon(Icons.hide_image_outlined),
+                                          title: Text("Hide image(s)"),
+                                        ),
+                                        onTap: () async {
+                                          await context
+                                              .read<EmotipicsDataEditorCubit>()
+                                              .startHidingImages(
+                                            images: images,
+                                            allTags: allTags,
+                                            visibleImageData: {},
+                                          );
+                                        },
+                                      ),
+
                                     ];
                                   default:
                                     return [];

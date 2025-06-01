@@ -81,3 +81,19 @@ class EmotipicsDataEditorDelete extends EmotipicsDataEditorEditing {
         selectedTags,
       ];
 }
+
+class EmotipicsDataEditorHiding extends EmotipicsDataEditorEditing {
+  final List<EmoticImage> selectedImages;
+  const EmotipicsDataEditorHiding({
+    required super.images,
+    required super.allTags,
+    required super.visibleImageData,
+    super.snackBarMessage,
+    required this.selectedImages,
+  });
+  @override
+  List<Object?> get props => [
+        super.props,
+        selectedImages,
+      ];
+}

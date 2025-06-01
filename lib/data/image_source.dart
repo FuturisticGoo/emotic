@@ -135,6 +135,8 @@ class ImageSourceSQLiteAndFS implements ImageSource {
     required Uri imageUri,
     required ImageReprConfig imageReprConfig,
   }) async {
+    getLogger().info(
+        "Reading image bytes: $imageUri with config ${imageReprConfig.runtimeType}");
     if (imageUri.isScheme("file")) {
       final file = File.fromUri(imageUri);
       if (await file.exists()) {
@@ -724,6 +726,17 @@ Future<int> _saveImage(
         ],
       );
     }
+    await db.rawUpdate(
+      """
+    UPDATE ${_SQLNames.emotipicsTableName}
+    SET ${_SQLNames.emotipicExcluded}=?
+    WHERE ${_SQLNames.emotipicId}=?
+    """,
+      [
+        image.isExcluded ? 1 : 0,
+        emotipicId,
+      ],
+    );
   }
   // This step is the same in both cases, remove all links and relink, its
   // easier this way

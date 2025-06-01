@@ -117,6 +117,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
             snackBarMessage: snackBarMessage,
           ),
         );
+
       case EmotipicsDataEditorModifyTagLink(:final selectedImage):
         emit(
           EmotipicsDataEditorModifyTagLink(
@@ -150,6 +151,20 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
                 images.toSet().intersection(selectedImages.toSet()).toList(),
             selectedTags:
                 allTags.toSet().intersection(selectedTags.toSet()).toList(),
+          ),
+        );
+      case EmotipicsDataEditorHiding():
+        emit(
+          EmotipicsDataEditorHiding(
+            images: images,
+            allTags: allTags,
+            visibleImageData: visibleImageData,
+            snackBarMessage: snackBarMessage,
+            selectedImages: images
+                .where(
+                  (element) => element.isExcluded,
+                )
+                .toList(),
           ),
         );
     }
@@ -248,6 +263,45 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     }
   }
 
+  Future<void> startHidingImages({
+    required List<EmoticImage> images,
+    required List<String> allTags,
+    required Map<Uri, ImageRepr> visibleImageData,
+  }) async {
+    switch (state) {
+      case EmotipicsDataEditorEditing(
+          :final images,
+          :final allTags,
+          :final visibleImageData
+        ):
+        emit(
+          EmotipicsDataEditorHiding(
+            images: images,
+            allTags: allTags,
+            selectedImages: images
+                .where(
+                  (element) => element.isExcluded,
+                )
+                .toList(),
+            visibleImageData: visibleImageData,
+          ),
+        );
+      default:
+        emit(
+          EmotipicsDataEditorHiding(
+            images: images,
+            allTags: allTags,
+            selectedImages: images
+                .where(
+                  (element) => element.isExcluded,
+                )
+                .toList(),
+            visibleImageData: visibleImageData,
+          ),
+        );
+    }
+  }
+
   Future<void> reorderEmotipic({
     required int oldIndex,
     required int newIndex,
@@ -339,6 +393,26 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
             visibleImageData: visibleImageData,
           ),
         );
+      case EmotipicsDataEditorHiding(
+          :final selectedImages,
+        ):
+        await modifyImage(
+          newOrModifyEmoticImage: NewOrModifyEmoticImage.modify(
+            oldImage: image,
+            isExcluded: selectedImages.contains(image) ? false : true,
+          ),
+        );
+        await loadSavedImages();
+      // emit(
+      //   EmotipicsDataEditorHiding(
+      //     images: images,
+      //     allTags: allTags,
+      //     selectedImages: (selectedImages.contains(image))
+      //         ? selectedImages.removeIfExists(image)
+      //         : selectedImages.addIfNotExists(image),
+      //     visibleImageData: visibleImageData,
+      //   ),
+      // );
       default:
         break;
     }

@@ -19,5 +19,6 @@ const emoticonsTextSizeUpperLimit = 32;
 const emotipicsColCountLowerLimit = 1;
 const emotipicsColCountUpperLimit = 12;
 
+/// Very less reasons to use this constant directly, use the helper function
 const mediaFolderName = "media";
 const imagesFolderName = "images";
