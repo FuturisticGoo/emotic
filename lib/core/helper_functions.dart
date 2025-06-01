@@ -271,10 +271,11 @@ Future<List<XFile>?> pickImages() async {
 }
 
 Future<Uri?> pickImportFile() async {
-  final allowedExtensions = [".sqlite", ".tar.gz", ".gz"];
+  final allowedExtensions = [".sqlite", ".db", ".tar.gz", ".gz"];
   if (Platform.isAndroid) {
     final filePicked = await PickOrSave().filePicker(
       params: FilePickerParams(
+        mimeTypesFilter: ["*/*"],
         enableMultipleSelection: false,
         getCachedFilePath: false,
         pickerType: PickerType.file,

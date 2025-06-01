@@ -24,5 +24,5 @@
 * ~~Join Data Editor page into Emoticons page~~
 * ~~Clear all data should also clear images~~
 * Emotipics/emoticons exclusion while exporting
-* Emotipics exclusion while listing
+* ~~Emotipics exclusion while listing~~
 * ~~Maybe a progress indicator?~~
