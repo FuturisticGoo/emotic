@@ -39,7 +39,7 @@ class NewOrModifyEmoticon extends Equatable {
           oldEmoticon: emoticon,
         );
 
-  // Copy from another emoticon, but not for modifying that emoticon
+  /// Copy from another emoticon, but not for modifying that emoticon
   NewOrModifyEmoticon.copyFromEmoticon(Emoticon emoticon)
       : this(
           text: emoticon.text,

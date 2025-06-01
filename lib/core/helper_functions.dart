@@ -14,6 +14,7 @@ import 'package:pick_or_save/pick_or_save.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:uri_content/uri_content.dart';
 import 'package:xdg_directories/xdg_directories.dart' as xdg;
 
 const _imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"];
@@ -156,11 +157,15 @@ class EmoticAppDataDirectoryImpl implements EmoticAppDataDirectory {
       } else {
         androidPath = "/storage/emulated/0/Android/";
       }
-      final mediaFolder = p.join(androidPath, "media", await getAppId());
+      final mediaFolder = p.join(
+        androidPath,
+        mediaFolderName,
+        await getAppId(),
+      );
       await Directory(mediaFolder).create(recursive: true);
       return mediaFolder;
     } else {
-      final dataPath = p.join(await getAppDataDir(), "media");
+      final dataPath = p.join(await getAppDataDir(), mediaFolderName);
       await Directory(dataPath).create(recursive: true);
       return dataPath;
     }
@@ -189,7 +194,7 @@ class EmoticAppDataDirectoryImpl implements EmoticAppDataDirectory {
 extension CommonPaths on EmoticAppDataDirectory {
   Future<String> get imagePath async {
     final mediaPath = await getAppMediaDir();
-    final path = p.join(mediaPath, "images");
+    final path = p.join(mediaPath, imagesFolderName);
     await Directory(path).create(recursive: true);
     return path;
   }
@@ -263,6 +268,59 @@ Future<List<XFile>?> pickImages() async {
     return null;
   }
   return imagesPicked.xFiles;
+}
+
+Future<Uri?> pickImportFile() async {
+  final allowedExtensions = [".sqlite", ".tar.gz"];
+  if (Platform.isAndroid) {
+    final filePicked = await PickOrSave().filePicker(
+      params: FilePickerParams(
+        enableMultipleSelection: false,
+        getCachedFilePath: false,
+        pickerType: PickerType.file,
+        allowedExtensions: allowedExtensions,
+      ),
+    );
+    if (filePicked == null) {
+      return null;
+    } else {
+      return Uri.parse(filePicked.single);
+    }
+  } else if (Platform.isLinux || Platform.isWindows) {
+    final filePicked = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      withData: false,
+      withReadStream: false,
+      type: FileType.custom,
+      allowedExtensions: allowedExtensions
+          .map(
+            (e) => e.substring(1),
+          )
+          .toList(),
+    );
+    if (filePicked == null) {
+      return null;
+    } else {
+      return Uri.file(filePicked.xFiles.single.path);
+    }
+  } else {
+    throw UnsupportedError("Apple devices not supported");
+  }
+}
+
+Stream<Uint8List> getFileStreamFromUri({required Uri uri}) {
+  if (Platform.isAndroid) {
+    final uriContent = UriContent();
+    return uriContent.getContentStream(
+      uri,
+    );
+  } else if (Platform.isLinux || Platform.isWindows) {
+    return File.fromUri(uri).openRead().map(
+          (event) => Uint8List.fromList(event),
+        );
+  } else {
+    throw UnsupportedError("Apple devices not supported");
+  }
 }
 
 // SQL common helpers

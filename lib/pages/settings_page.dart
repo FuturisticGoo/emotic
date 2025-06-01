@@ -17,6 +17,9 @@ class SettingsPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => SettingsCubit(
         emoticonsRepository: sl(),
+        settingsRepository: sl(),
+        imageRepository: sl(),
+        globalProgressPipe: sl(),
       ),
       child: BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
         builder: (context, globalSettingstate) {
@@ -255,6 +258,29 @@ class SettingsPage extends StatelessWidget {
                     case SettingsLoading():
                       return const Center(
                         child: CircularProgressIndicator(),
+                      );
+                    case SettingsProgressBar(
+                        :final currentProgress,
+                        :final outOf,
+                        :final message,
+                      ):
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(message),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          SizedBox(
+                            width: MediaQuery.sizeOf(context).width * 0.5,
+                            child: LinearProgressIndicator(
+                              value: outOf == null
+                                  ? null
+                                  : currentProgress / outOf,
+                            ),
+                          ),
+                        ],
                       );
                   }
                 },

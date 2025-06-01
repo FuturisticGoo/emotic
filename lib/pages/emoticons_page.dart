@@ -362,6 +362,7 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                                     emoticonsToShow: emoticonsToShow,
                                     settings: settings,
                                   );
+
                                 case EmoticonsDataEditorEditing():
                                   return EmoticonsEditingView(
                                     state: state,

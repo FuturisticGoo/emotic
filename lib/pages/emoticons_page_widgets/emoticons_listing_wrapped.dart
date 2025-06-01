@@ -44,83 +44,90 @@ class EmoticonsListingWrapped extends StatelessWidget {
             height: 20,
           ),
           Expanded(
-            child: SingleChildScrollView(
-              key: PageStorageKey(emoticonListingViewId),
-              restorationId: emoticonListingViewId,
-              child: Column(
-                children: [
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 4.0,
-                    runSpacing: 4.0,
-                    children: emoticonsToShow.map(
-                      (emoticon) {
-                        return CopyableEmoticon(
-                          emoticon: emoticon,
-                          textSize: settings.emoticonsTextSize,
-                          onLongPressed: (emoticon) async {
-                            final result =
-                                await showModalBottomSheet<BottomSheetResult?>(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (context) {
-                                return UpdateEmoticonBottomSheet(
-                                  newOrModifyEmoticon:
-                                      NewOrModifyEmoticon.editExistingEmoticon(
-                                    emoticon,
-                                  ),
-                                  isEditMode: true,
-                                  allTags: allTags,
-                                );
-                              },
-                            );
-                            if (context.mounted) {
-                              switch (result) {
-                                case DeleteEmoticon(
-                                      newOrModifyEmoticon: NewOrModifyEmoticon(
-                                        :final oldEmoticon
-                                      )
-                                    )
-                                    when oldEmoticon != null:
-                                  await context
-                                      .read<EmoticonsDataEditorCubit>()
-                                      .deleteEmoticonsAndTags(
-                                    emoticons: [oldEmoticon],
-                                    tags: [],
+            child: emoticonsToShow.isEmpty
+                ? Center(
+                    child: Text("Nothing O.o"),
+                  )
+                : SingleChildScrollView(
+                    key: PageStorageKey(emoticonListingViewId),
+                    restorationId: emoticonListingViewId,
+                    child: Column(
+                      children: [
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          spacing: 4.0,
+                          runSpacing: 4.0,
+                          children: emoticonsToShow.map(
+                            (emoticon) {
+                              return CopyableEmoticon(
+                                emoticon: emoticon,
+                                textSize: settings.emoticonsTextSize,
+                                onLongPressed: (emoticon) async {
+                                  final result = await showModalBottomSheet<
+                                      BottomSheetResult?>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    builder: (context) {
+                                      return UpdateEmoticonBottomSheet(
+                                        newOrModifyEmoticon: NewOrModifyEmoticon
+                                            .editExistingEmoticon(
+                                          emoticon,
+                                        ),
+                                        isEditMode: true,
+                                        allTags: allTags,
+                                      );
+                                    },
                                   );
                                   if (context.mounted) {
-                                    await context
-                                        .read<EmoticonsListingCubit>()
-                                        .loadEmoticons();
-                                  }
-                                case UpdateEmoticon(:final newOrModifyEmoticon):
-                                  await context
-                                      .read<EmoticonsDataEditorCubit>()
-                                      .addNewEmoticons(
-                                    newEmoticons: [newOrModifyEmoticon],
-                                  );
+                                    switch (result) {
+                                      case DeleteEmoticon(
+                                            newOrModifyEmoticon:
+                                                NewOrModifyEmoticon(
+                                              :final oldEmoticon
+                                            )
+                                          )
+                                          when oldEmoticon != null:
+                                        await context
+                                            .read<EmoticonsDataEditorCubit>()
+                                            .deleteEmoticonsAndTags(
+                                          emoticons: [oldEmoticon],
+                                          tags: [],
+                                        );
+                                        if (context.mounted) {
+                                          await context
+                                              .read<EmoticonsListingCubit>()
+                                              .loadEmoticons();
+                                        }
+                                      case UpdateEmoticon(
+                                          :final newOrModifyEmoticon
+                                        ):
+                                        await context
+                                            .read<EmoticonsDataEditorCubit>()
+                                            .addNewEmoticons(
+                                          newEmoticons: [newOrModifyEmoticon],
+                                        );
 
-                                  if (context.mounted) {
-                                    await context
-                                        .read<EmoticonsListingCubit>()
-                                        .loadEmoticons();
+                                        if (context.mounted) {
+                                          await context
+                                              .read<EmoticonsListingCubit>()
+                                              .loadEmoticons();
+                                        }
+                                      case TagClicked(:final tag):
+                                        controller.text = tag;
+                                      case AddEmoticon():
+                                      case DeleteEmoticon():
+                                      case null:
+                                        break;
+                                    }
                                   }
-                                case TagClicked(:final tag):
-                                  controller.text = tag;
-                                case AddEmoticon():
-                                case DeleteEmoticon():
-                                case null:
-                                  break;
-                              }
-                            }
-                          },
-                        );
-                      },
-                    ).toList(),
+                                },
+                              );
+                            },
+                          ).toList(),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

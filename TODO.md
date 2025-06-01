@@ -4,10 +4,11 @@
 * ~~Add emoticon filter below search / show tags~~
 * Multi tag search
 * ~~Merge new emoticons correctly on app update, instead of replacing~~
-* ~~Add a simple about screen~~ Now to add a complicated one
+* ~~Add a simple about screen~~ 
+* ^Now to add a complicated one
 * ~~Add a tag<->emoticon link editor page~~
 * ~~Add export/import functionality~~
-* Add image stuff to above ^ 
+* ~~Add image stuff to above ^ ~~
 * Maybe an emoji to emoticon converter, which displays the most equivlent emoticon to the given emoji
 * ~~I should probably use sqlite db as the initial asset instead of csv+json~~
 * ML algorithm to generate an emoticon for a particular prompt, or joining multiple emoticons using ML
@@ -18,5 +19,9 @@
 * ~~Image/GIF copy paste sharing page for image reactions~~
 * ~~Share button for images~~
 * ~~Text size settings~~
-* ~~Update images in directory URI on each start and refresh button  (new images/deleted images)~~ Kinda added, auto refresh not added yet
+* ~~Update images in directory URI on each start and refresh button  (new images/deleted images)~~ 
+* ^Kinda added, auto refresh not added yet
 * ~~Join Data Editor page into Emoticons page~~
+* ~~Clear all data should also clear images~~
+* Emotipics/emoticons exclusion while exporting
+* ~~Maybe a progress indicator?~~

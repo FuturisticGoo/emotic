@@ -64,14 +64,14 @@ class GlobalSettings extends Equatable {
   }
 }
 
-abstract class SettingsSource {
+abstract class GlobalSettingsSource {
   Future<GlobalSettings> getSavedSettings();
   Future<void> saveSettings(GlobalSettings newSettings);
 }
 
-class SettingsSourceSQLite implements SettingsSource {
+class GlobalSettingsSourceSQLite implements GlobalSettingsSource {
   final Database db;
-  SettingsSourceSQLite({required this.db});
+  GlobalSettingsSourceSQLite({required this.db});
   Future<void> _ensureTable() async {
     await db.execute("""
 CREATE TABLE IF NOT EXISTS ${_SQLNames.settingsTableName}
@@ -268,10 +268,10 @@ class GlobalSettingsLoaded extends Equatable implements GlobalSettingsState {
 }
 
 class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
-  final SettingsSource settingsSource;
+  final GlobalSettingsSource globalsettingsSource;
 
   GlobalSettingsCubit({
-    required this.settingsSource,
+    required this.globalsettingsSource,
   }) : super(const GlobalSettingsInitial()) {
     _loadSettings();
   }
@@ -281,7 +281,7 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
     emit(const GlobalSettingsLoading());
     emit(
       GlobalSettingsLoaded(
-        settings: await settingsSource.getSavedSettings(),
+        settings: await globalsettingsSource.getSavedSettings(),
       ),
     );
   }
@@ -293,7 +293,7 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
 
   Future<void> saveSettings(GlobalSettings newSettings) async {
     getLogger().fine("Saving settings");
-    await settingsSource.saveSettings(newSettings);
+    await globalsettingsSource.saveSettings(newSettings);
   }
 }
 

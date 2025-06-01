@@ -146,6 +146,8 @@ class ImageRepository {
       await imageSource.clearAllData();
       return Either.right(GenericSuccess());
     } catch (error, stackTrace) {
+      getLogger().severe(
+          "Unable to clear all data of image source", error, stackTrace);
       return Either.left(GenericFailure(error, stackTrace));
     }
   }

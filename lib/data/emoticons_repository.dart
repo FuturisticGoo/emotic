@@ -1,4 +1,3 @@
-import 'package:async/async.dart';
 import 'package:emotic/core/emoticon.dart';
 import 'package:emotic/data/emoticons_source.dart';
 
@@ -74,25 +73,5 @@ class EmoticonsRepository {
       tag: tag,
       newOrder: newOrder,
     );
-  }
-
-  Future<Result<void>> exportToFile() async {
-    if (database is EmoticonsSqliteSource) {
-      return (database as EmoticonsSqliteSource).exportToDb();
-    } else {
-      return Result.error(
-          UnimplementedError("Export unavailable for this source"));
-    }
-  }
-
-  Future<Result<void>> importFromFile() async {
-    if (database is EmoticonsSqliteSource) {
-      return (database as EmoticonsSqliteSource).importFromDb(
-        importStrategy: ImportStrategy.merge,
-      );
-    } else {
-      return Result.error(
-          UnimplementedError("Import unavailable for this source"));
-    }
   }
 }

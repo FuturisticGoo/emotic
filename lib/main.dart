@@ -20,7 +20,7 @@ class EmoticApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => GlobalSettingsCubit(
-        settingsSource: init.sl(),
+        globalsettingsSource: init.sl(),
       ),
       child: BlocBuilder<GlobalSettingsCubit, GlobalSettingsState>(
         builder: (context, state) {

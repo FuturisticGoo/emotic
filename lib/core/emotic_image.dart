@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:fpdart/fpdart.dart';
 
 class EmoticImage extends Equatable {
   final int id;
@@ -53,6 +54,8 @@ class NewOrModifyEmoticImage extends Equatable {
         note,
         oldImage,
       ];
+
+  /// New image with only essential params and the others blank/null
   NewOrModifyEmoticImage.newImage({
     required this.imageUri,
     required this.parentDirectoryUri,
@@ -60,11 +63,36 @@ class NewOrModifyEmoticImage extends Equatable {
         note = "",
         isExcluded = false,
         oldImage = null;
+
+  /// Copy from an oldImage, and keep reference to it
   NewOrModifyEmoticImage.modify({
     required EmoticImage this.oldImage,
-    required this.tags,
-    required this.note,
-    required this.isExcluded,
+    List<String>? tags,
+    String? note,
+    bool? isExcluded,
   })  : imageUri = oldImage.imageUri,
-        parentDirectoryUri = oldImage.parentDirectoryUri;
+        parentDirectoryUri = oldImage.parentDirectoryUri,
+        tags = tags ?? oldImage.tags,
+        note = note ?? oldImage.note,
+        isExcluded = isExcluded ?? oldImage.isExcluded;
+
+  /// Copy from an oldImage, but without keeping reference to oldImage
+  NewOrModifyEmoticImage.copyImage({
+    required EmoticImage oldImage,
+    Uri? imageUri,
+    Option<Uri>? parentDirectoryUri,
+    List<String>? tags,
+    String? note,
+    bool? isExcluded,
+  })  : oldImage = null,
+        imageUri = imageUri ?? oldImage.imageUri,
+        parentDirectoryUri = parentDirectoryUri == null
+            ? oldImage.parentDirectoryUri
+            : switch (parentDirectoryUri) {
+                Some(:final value) => value,
+                None() => null,
+              },
+        tags = tags ?? oldImage.tags,
+        note = note ?? oldImage.note,
+        isExcluded = isExcluded ?? oldImage.isExcluded;
 }

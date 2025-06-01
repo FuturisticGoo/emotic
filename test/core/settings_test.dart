@@ -19,7 +19,7 @@ Future<void> main() async {
       },
     );
     test('New user settings', () async {
-      final settingsSource = SettingsSourceSQLite(db: db);
+      final settingsSource = GlobalSettingsSourceSQLite(db: db);
       final settings = await settingsSource.getSavedSettings();
       expect(
         settings.isFirstTime && settings.lastUsedVersion == null,
@@ -28,7 +28,7 @@ Future<void> main() async {
     });
 
     test('Saving and retrieving settings', () async {
-      final settingsSource = SettingsSourceSQLite(db: db);
+      final settingsSource = GlobalSettingsSourceSQLite(db: db);
       final trialSettings = GlobalSettings(
         isFirstTime: false,
         lastUsedVersion: version,

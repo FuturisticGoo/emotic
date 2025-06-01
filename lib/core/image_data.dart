@@ -23,6 +23,8 @@ class FlutterImageWidgetReprConfig implements ImageReprConfig {
 
 class Uint8ListReprConfig implements ImageReprConfig {}
 
+class FileStreamReprConfig implements ImageReprConfig {}
+
 sealed class ImageRepr {
   final Uri imageUri;
   ImageRepr({
@@ -54,5 +56,18 @@ class Uint8ListImageRepr implements ImageRepr {
   });
   Future<Uint8List> getImageBytes() async {
     return imageBytes;
+  }
+}
+
+class FileStreamImageRepr implements ImageRepr {
+  final Stream<Uint8List> imageByteStream;
+  @override
+  final Uri imageUri;
+  FileStreamImageRepr({
+    required this.imageUri,
+    required this.imageByteStream,
+  });
+  Stream<Uint8List> getImageByteStream() {
+    return imageByteStream;
   }
 }

@@ -43,3 +43,11 @@ class CannotReadFromFileException implements Exception {}
 class CannotReadFromContentUriException implements Exception {}
 
 class UnknownUriSchemeException implements Exception {}
+
+class EmoticDatabaseNotFoundException implements Exception {}
+
+class NoImportFilePickedException implements Exception {}
+
+class NoSaveFilePickedException implements Exception {}
+
+class UnrecognizedImportFileException implements Exception {}

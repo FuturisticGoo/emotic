@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-Future<bool?> confirmDeletionDialog(BuildContext context,
-    {
+Future<bool?> confirmDeletionDialog(
+  BuildContext context, {
   required String titleText,
 }) {
   return showAdaptiveDialog<bool?>(
