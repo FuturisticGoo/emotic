@@ -2,7 +2,6 @@ import 'dart:io' as io;
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
-import 'package:emotic/core/semver.dart';
 import 'package:path/path.dart' as p;
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/emoticon.dart';

@@ -74,7 +74,8 @@ class _ImageGridViewState extends State<ImageGridView> {
                 final currentCachedImage = widget.imageCacheInterface
                     .getCachedImage(currentImage.imageUri);
                 return VisibilityDetector(
-                  key: Key(widget.state.imagesToShow[index].toString()),
+                  key: Key(
+                      "visibility-${widget.state.imagesToShow[index].imageUri}"),
                   child: switch (imageReprResult) {
                     fp.Left(:final value) => Placeholder(
                         child: Center(
