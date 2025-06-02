@@ -1,0 +1,9 @@
+Feature creep edition ┬┴┬┴┤ω・)
+• Emotipics page! Add reaction images or folder of images and add tags, notes
+• Search using tags and notes
+• Copy or share the image
+• Merged Data Editor page into Emoticons page
+• Export and import will use tar.gz file from now on, containing all the necessary data
+• Old exported sqlite files can still be imported
+• Add text size settings for emoticons
+• Progress bar for import/export

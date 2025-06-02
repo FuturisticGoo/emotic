@@ -1,12 +1,19 @@
-<b>A simple app which lists a bunch of emoticons (not emojis!).</b>
+<b>A simple app which lists a bunch of emoticons (not emojis!) and reaction images.</b>
 
 Features:
 <ul>
 <li>Browse through a list of emoticons which you can copy to clipboard without using internet or any websites.</li>
 <li>Add or modify your own emoticons.</li>
-<li>Search using related tags.</li>
-<li>Reorder them to your liking</li>
-<li>Import and export the database.</li>
+<li>Easily copy or share reaction images through Emotipics page.</li>
+<li>Add your images or folder of images.</li>
+<li>Add notes to images.</li>
+<li>Search using related tags or notes.</li>
+<li>Reorder them to your liking.</li>
+<li>Import and export the data.</li>
 </ul>
 
-App is written in Flutter, using Material 3 and supports dark/light mode.
+Visit this link to download some export files containing emoticons and images https://github.com/FuturisticGoo/emotic/issues/19
+
+This app doesn't use internet, and probably never will. </br>
+Made using Flutter, with Material 3 and light/dark/black mode. </br>
+Programmed with <3

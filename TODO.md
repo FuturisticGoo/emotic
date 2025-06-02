@@ -26,3 +26,4 @@
 * Emotipics/emoticons exclusion while exporting
 * ~~Emotipics exclusion while listing~~
 * ~~Maybe a progress indicator?~~
+* Fix bug where importing legit file gives sqlite error after opening wrong file
