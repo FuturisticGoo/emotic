@@ -47,6 +47,7 @@ class UnrecognizedFileFailure extends Failure {
   @override
   String get message => "Wrong file.";
 }
+
 // Exceptions
 class NoImagePickedException implements Exception {}
 

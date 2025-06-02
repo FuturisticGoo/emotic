@@ -93,67 +93,68 @@ class _ImageGridViewState extends State<ImageGridView> {
                             ),
                           ),
                         _ => CopyableImage(
-                          imageWidget: currentCachedImage,
-                          emoticImage: currentImage,
-                          onTap: (emoticImage) async {
-                            await context
-                                .read<EmotipicsListingCubit>()
-                                .copyImageToClipboard(
-                                  emoticImage: emoticImage,
-                                );
-                          },
-                          onSecondaryPress: (emoticImage) async {
-                            final result = await showModalBottomSheet<
-                                EmotipicBottomSheetResult?>(
-                              context: context,
-                              isScrollControlled: true,
-                              builder: (context) {
-                                return UpdateEmotipicBottomSheet(
-                                  image: currentCachedImage,
-                                  emoticImage: emoticImage,
-                                  allTags: widget.state.allTags,
-                                );
-                              },
-                            );
-                            if (context.mounted) {
-                              switch (result) {
-                                case null:
-                                  break;
-                                case DeleteEmotipic(:final emoticImage):
-                                  await context
-                                      .read<EmotipicsDataEditorCubit>()
-                                      .deleteImagesAndTags(
-                                    emoticImages: [emoticImage],
-                                    tags: [],
+                            imageWidget: currentCachedImage,
+                            emoticImage: currentImage,
+                            onTap: (emoticImage) async {
+                              await context
+                                  .read<EmotipicsListingCubit>()
+                                  .copyImageToClipboard(
+                                    emoticImage: emoticImage,
                                   );
-                                  if (context.mounted) {
+                            },
+                            onSecondaryPress: (emoticImage) async {
+                              final result = await showModalBottomSheet<
+                                  EmotipicBottomSheetResult?>(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return UpdateEmotipicBottomSheet(
+                                    image: currentCachedImage,
+                                    emoticImage: emoticImage,
+                                    allTags: widget.state.allTags,
+                                  );
+                                },
+                              );
+                              if (context.mounted) {
+                                switch (result) {
+                                  case null:
+                                    break;
+                                  case DeleteEmotipic(:final emoticImage):
                                     await context
-                                        .read<EmotipicsListingCubit>()
-                                        .loadSavedImages();
-                                  }
-                                case UpdateEmotipic(:final modifyEmotipic):
-                                  await context
-                                      .read<EmotipicsDataEditorCubit>()
-                                      .modifyImage(
-                                        newOrModifyEmoticImage: modifyEmotipic,
-                                      );
-                                  if (context.mounted) {
+                                        .read<EmotipicsDataEditorCubit>()
+                                        .deleteImagesAndTags(
+                                      emoticImages: [emoticImage],
+                                      tags: [],
+                                    );
+                                    if (context.mounted) {
+                                      await context
+                                          .read<EmotipicsListingCubit>()
+                                          .loadSavedImages();
+                                    }
+                                  case UpdateEmotipic(:final modifyEmotipic):
                                     await context
-                                        .read<EmotipicsListingCubit>()
-                                        .loadSavedImages();
-                                  }
-                                case ShareEmotipic(:final selectedImage):
-                                  if (context.mounted) {
-                                    await context
-                                        .read<EmotipicsListingCubit>()
-                                        .shareImage(image: selectedImage);
-                                  }
-                                case EmotipicTagClicked(:final tag):
-                                  widget.onTagClick(tag);
+                                        .read<EmotipicsDataEditorCubit>()
+                                        .modifyImage(
+                                          newOrModifyEmoticImage:
+                                              modifyEmotipic,
+                                        );
+                                    if (context.mounted) {
+                                      await context
+                                          .read<EmotipicsListingCubit>()
+                                          .loadSavedImages();
+                                    }
+                                  case ShareEmotipic(:final selectedImage):
+                                    if (context.mounted) {
+                                      await context
+                                          .read<EmotipicsListingCubit>()
+                                          .shareImage(image: selectedImage);
+                                    }
+                                  case EmotipicTagClicked(:final tag):
+                                    widget.onTagClick(tag);
+                                }
                               }
-                            }
-                          },
-                        )
+                            },
+                          )
                       }
                   },
                   onVisibilityChanged: (info) async {

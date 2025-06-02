@@ -157,11 +157,7 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     required Database importDb,
     required ImportStrategy importStrategy,
   }) async {
-    final dbVersion = await getMetadataVersion(db: importDb);
-    if (dbVersion < SemVer.fromString("0.1.6")) {
-      await importDb.execute(SQLStatements.createEmoticonsOrderingTableStmt);
-      await importDb.execute(SQLStatements.createTagsOrderingTableStmt);
-    }
+    await _ensureTables(importDb);
     final emoticons = await _getEmoticonsFromDb(db: importDb);
     final tags = await _getTagsFromDb(db: importDb);
     switch (importStrategy) {

@@ -303,7 +303,6 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                           );
                                         },
                                       ),
-
                                     ];
                                   default:
                                     return [];

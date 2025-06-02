@@ -172,12 +172,16 @@ class TarImportReader implements ImportReader {
           count++;
           getLogger().info("Extracting image file: ${current.name}");
           final fileName = p.basename(current.name);
-          final imageFileStream = File(p.join(imageDir, fileName)).openWrite(
-            mode: FileMode.writeOnly,
-          );
-          await imageFileStream.addStream(current.contents);
-          await imageFileStream.flush();
-          await imageFileStream.close();
+          final file = File(p.join(imageDir, fileName));
+          if (!await file.exists()) {
+            // No need to write if it already exists, might speed up time ig?
+            final imageFileStream = file.openWrite(
+              mode: FileMode.writeOnly,
+            );
+            await imageFileStream.addStream(current.contents);
+            await imageFileStream.flush();
+            await imageFileStream.close();
+          }
         } else {
           getLogger()
               .warning("Unknown entry in import tar file ${current.name}");

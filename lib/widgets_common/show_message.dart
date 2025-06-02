@@ -14,21 +14,21 @@ void showAlertDialog(
 }) {
   // showDialog
   showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(content),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
               onPressed();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
     },
   );
 }
