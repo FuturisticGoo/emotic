@@ -22,7 +22,7 @@ sealed class EmotipicsDataEditorEditing
     implements EmotipicsDataEditorState {
   final List<EmoticImage> images;
   final List<String> allTags;
-  final Map<Uri, ImageRepr> visibleImageData;
+  final Map<Uri, Either<Failure, ImageRepr>> visibleImageData;
   final String? snackBarMessage;
   const EmotipicsDataEditorEditing({
     required this.images,

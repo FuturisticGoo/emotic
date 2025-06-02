@@ -17,19 +17,26 @@ class RefreshImageSuccess implements Success {
 // Failure
 sealed class Failure {
   // aka me ;)
+  const Failure();
+  String get message {
+    return runtimeType.toString();
+  }
 }
 
-class GenericFailure implements Failure {
+class GenericFailure extends Failure {
   final Object error;
   final StackTrace stackTrace;
   const GenericFailure(this.error, this.stackTrace);
 }
 
-class FilePickingCancelledFailure implements Failure {}
+class FilePickingCancelledFailure extends Failure {}
 
-class NoImagesFoundFailure implements Failure {}
+class NoImagesFoundFailure extends Failure {}
 
-class CannotReadFileFailure implements Failure {}
+class CannotReadFileFailure extends Failure {
+  @override
+  String get message => "Unable to read file";
+}
 
 // Exceptions
 class NoImagePickedException implements Exception {}

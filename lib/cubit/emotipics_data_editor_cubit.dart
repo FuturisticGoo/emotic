@@ -58,7 +58,10 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
         )) {
       visibleImageData.remove(imageToUnload);
       await _updateWithData(
-          images: images, allTags: allTags, visibleImageData: visibleImageData);
+        images: images,
+        allTags: allTags,
+        visibleImageData: visibleImageData,
+      );
     }
   }
 
@@ -69,28 +72,23 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
         imageUri: imageToLoad,
         imageReprConfig: FlutterImageWidgetReprConfig.thumbnail(),
       );
-      switch (bytesResult) {
-        case Left():
-          break;
-        case Right(value: final bytes):
-          if (state
-              case EmotipicsDataEditorEditing(
-                :final images,
-                :final allTags,
-                :final visibleImageData,
-              )) {
-            // Doing this again because there could be concurrent calls to this
-            // function, so visibleImageData might have updated during the
-            // above time
-            await _updateWithData(
-              images: images,
-              allTags: allTags,
-              visibleImageData: {
-                ...visibleImageData,
-                imageToLoad: bytes,
-              },
-            );
-          }
+      if (state
+          case EmotipicsDataEditorEditing(
+            :final images,
+            :final allTags,
+            :final visibleImageData,
+          )) {
+        // Doing this again because there could be concurrent calls to this
+        // function, so visibleImageData might have updated during the
+        // above time
+        await _updateWithData(
+          images: images,
+          allTags: allTags,
+          visibleImageData: {
+            ...visibleImageData,
+            imageToLoad: bytesResult,
+          },
+        );
       }
     }
   }
@@ -98,7 +96,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
   Future<void> _updateWithData({
     required List<EmoticImage> images,
     required List<String> allTags,
-    required Map<Uri, ImageRepr> visibleImageData,
+    required Map<Uri, Either<Failure, ImageRepr>> visibleImageData,
     String? snackBarMessage,
   }) async {
     switch (state) {
@@ -173,7 +171,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
   Future<void> startDeleting({
     required List<EmoticImage> images,
     required List<String> allTags,
-    required Map<Uri, ImageRepr> visibleImageData,
+    required Map<Uri, Either<Failure, ImageRepr>> visibleImageData,
   }) async {
     switch (state) {
       case EmotipicsDataEditorEditing(
@@ -206,7 +204,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
   Future<void> startModifyingOrder({
     required List<EmoticImage> images,
     required List<String> allTags,
-    required Map<Uri, ImageRepr> visibleImageData,
+    required Map<Uri, Either<Failure, ImageRepr>> visibleImageData,
   }) async {
     switch (state) {
       case EmotipicsDataEditorEditing(
@@ -235,7 +233,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
   Future<void> startModifyingTagLink({
     required List<EmoticImage> images,
     required List<String> allTags,
-    required Map<Uri, ImageRepr> visibleImageData,
+    required Map<Uri, Either<Failure, ImageRepr>> visibleImageData,
   }) async {
     switch (state) {
       case EmotipicsDataEditorEditing(
@@ -266,7 +264,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
   Future<void> startHidingImages({
     required List<EmoticImage> images,
     required List<String> allTags,
-    required Map<Uri, ImageRepr> visibleImageData,
+    required Map<Uri, Either<Failure, ImageRepr>> visibleImageData,
   }) async {
     switch (state) {
       case EmotipicsDataEditorEditing(

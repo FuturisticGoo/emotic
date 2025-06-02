@@ -67,33 +67,27 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
         imageUri: imageToLoad,
         imageReprConfig: FlutterImageWidgetReprConfig.thumbnail(),
       );
-      // TODO: handle errors, maybe the map
-      switch (bytesResult) {
-        case Left():
-          break;
-        case Right(value: final bytes):
-          if (state
-              case EmotipicsListingLoaded(
-                :final images,
-                :final allTags,
-                :final visibleImageData,
-                :final imagesToShow,
-              )) {
-            // Doing this again because there could be concurrent calls to this
-            // function, so visibleImageData might have updated during the
-            // above time
-            emit(
-              EmotipicsListingLoaded(
-                images: images,
-                imagesToShow: imagesToShow,
-                allTags: allTags,
-                visibleImageData: {
-                  ...visibleImageData,
-                  imageToLoad: bytes,
-                },
-              ),
-            );
-          }
+      if (state
+          case EmotipicsListingLoaded(
+            :final images,
+            :final allTags,
+            :final visibleImageData,
+            :final imagesToShow,
+          )) {
+        // Doing this case again because there could be concurrent calls to this
+        // function, so visibleImageData might have updated during the
+        // above time
+        emit(
+          EmotipicsListingLoaded(
+            images: images,
+            imagesToShow: imagesToShow,
+            allTags: allTags,
+            visibleImageData: {
+              ...visibleImageData,
+              imageToLoad: bytesResult,
+            },
+          ),
+        );
       }
     }
   }

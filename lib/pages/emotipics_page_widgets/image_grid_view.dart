@@ -6,6 +6,7 @@ import 'package:emotic/pages/emotipics_page_widgets/copyable_image.dart';
 import 'package:emotic/pages/emotipics_page_widgets/emotipic_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fpdart/fpdart.dart' as fp;
 import 'package:visibility_detector/visibility_detector.dart';
 
 class ImageGridView extends StatefulWidget {
@@ -59,19 +60,39 @@ class _ImageGridViewState extends State<ImageGridView> {
               itemCount: widget.state.imagesToShow.length,
               itemBuilder: (context, index) {
                 final currentImage = widget.state.imagesToShow[index];
-                final imageRepr =
+                final imageReprResult =
                     widget.state.visibleImageData[currentImage.imageUri];
-                if (imageRepr
-                    case FlutterImageWidgetImageRepr(:final imageWidget)) {
-                  widget.imageCacheInterface
-                      .setCacheImage(currentImage.imageUri, imageWidget);
+                switch (imageReprResult) {
+                  case fp.Right(
+                      value: FlutterImageWidgetImageRepr(:final imageWidget)
+                    ):
+                    widget.imageCacheInterface
+                        .setCacheImage(currentImage.imageUri, imageWidget);
+                  default:
+                    break;
                 }
                 final currentCachedImage = widget.imageCacheInterface
                     .getCachedImage(currentImage.imageUri);
                 return VisibilityDetector(
                   key: Key(widget.state.imagesToShow[index].toString()),
-                  child: currentCachedImage != null
-                      ? CopyableImage(
+                  child: switch (imageReprResult) {
+                    fp.Left(:final value) => Placeholder(
+                        child: Center(
+                          child: Text(
+                            value.message,
+                          ),
+                        ),
+                      ),
+                    _ => switch (currentCachedImage) {
+                        null => Center(
+                            child: SizedBox.square(
+                              dimension:
+                                  MediaQuery.sizeOf(context).shortestSide *
+                                      0.05,
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                        _ => CopyableImage(
                           imageWidget: currentCachedImage,
                           emoticImage: currentImage,
                           onTap: (emoticImage) async {
@@ -133,13 +154,8 @@ class _ImageGridViewState extends State<ImageGridView> {
                             }
                           },
                         )
-                      : Center(
-                          child: SizedBox.square(
-                            dimension:
-                                MediaQuery.sizeOf(context).shortestSide * 0.05,
-                            child: CircularProgressIndicator(),
-                          ),
-                        ),
+                      }
+                  },
                   onVisibilityChanged: (info) async {
                     if (info.visibleFraction > 0) {
                       if (!widget.imageCacheInterface.isImageCached(

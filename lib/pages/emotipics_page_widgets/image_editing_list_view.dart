@@ -5,6 +5,7 @@ import 'package:emotic/pages/emotipics_page_widgets/emotipic_tile.dart';
 import 'package:emotic/widgets_common/tag_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fpdart/fpdart.dart' as fp;
 import 'package:visibility_detector/visibility_detector.dart';
 
 class ImageEditingListView extends StatefulWidget {
@@ -71,24 +72,39 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                           itemBuilder: (context, index) {
                             final currentImage =
                                 widget.editorState.images[index];
-                            final imageRepr = widget.editorState
+
+                            final imageReprResult = widget.editorState
                                 .visibleImageData[currentImage.imageUri];
-                            if (imageRepr
-                                case FlutterImageWidgetImageRepr(
-                                  :final imageWidget
-                                )) {
-                              widget.imageCacheInterface.setCacheImage(
-                                  currentImage.imageUri, imageWidget);
+                            switch (imageReprResult) {
+                              case fp.Right(
+                                  value: FlutterImageWidgetImageRepr(
+                                    :final imageWidget
+                                  )
+                                ):
+                                widget.imageCacheInterface.setCacheImage(
+                                    currentImage.imageUri, imageWidget);
+                              default:
+                                break;
                             }
                             final currentCachedImage = widget
                                 .imageCacheInterface
                                 .getCachedImage(currentImage.imageUri);
+
                             return VisibilityDetector(
                               key: Key("visibility-${currentImage.imageUri}"),
                               child: EmotipicTile(
                                 key: Key("emotipic-${currentImage.id}"),
                                 image: currentImage,
-                                imageWidget: currentCachedImage,
+                                imageWidget: switch (imageReprResult) {
+                                  fp.Left(:final value) => Placeholder(
+                                      child: Center(
+                                        child: Text(
+                                          value.message,
+                                        ),
+                                      ),
+                                    ),
+                                  _ => currentCachedImage,
+                                },
                                 isSelected: false,
                                 onTap: () {},
                                 trailing: ReorderableDragStartListener(
@@ -130,14 +146,18 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                           itemBuilder: (context, index) {
                             final currentImage =
                                 widget.editorState.images[index];
-                            final imageRepr = widget.editorState
+                            final imageReprResult = widget.editorState
                                 .visibleImageData[currentImage.imageUri];
-                            if (imageRepr
-                                case FlutterImageWidgetImageRepr(
-                                  :final imageWidget
-                                )) {
-                              widget.imageCacheInterface.setCacheImage(
-                                  currentImage.imageUri, imageWidget);
+                            switch (imageReprResult) {
+                              case fp.Right(
+                                  value: FlutterImageWidgetImageRepr(
+                                    :final imageWidget
+                                  )
+                                ):
+                                widget.imageCacheInterface.setCacheImage(
+                                    currentImage.imageUri, imageWidget);
+                              default:
+                                break;
                             }
                             final currentCachedImage = widget
                                 .imageCacheInterface
@@ -163,7 +183,16 @@ class _ImageEditingListViewState extends State<ImageEditingListView> {
                               child: EmotipicTile(
                                 key: Key("emotipic-${currentImage.id}"),
                                 image: currentImage,
-                                imageWidget: currentCachedImage,
+                                imageWidget: switch (imageReprResult) {
+                                  fp.Left(:final value) => Placeholder(
+                                      child: Center(
+                                        child: Text(
+                                          value.message,
+                                        ),
+                                      ),
+                                    ),
+                                  _ => currentCachedImage,
+                                },
                                 isSelected: isSelected,
                                 onTap: () async {
                                   await context

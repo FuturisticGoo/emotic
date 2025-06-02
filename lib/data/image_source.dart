@@ -1270,8 +1270,10 @@ Future<int?> _getIdOfDirectoryWithUri(Database db, {required Uri uri}) async {
 }
 
 /// Will only delete those images which are in the app data directory
-Future<void> _deleteImageFromStorage(Database db,
-    {required int imageId}) async {
+Future<void> _deleteImageFromStorage(
+  Database db, {
+  required int imageId,
+}) async {
   final uriCol = "uri_col";
   final dirCol = "dir_col";
   final result = await db.rawQuery(
@@ -1294,7 +1296,12 @@ Future<void> _deleteImageFromStorage(Database db,
   final parentDirId = result.first[dirCol] as int?;
   if (uri.isScheme("file") && parentDirId == null) {
     // We can only delete those image that are stored in our app data folder
-    await File.fromUri(uri).delete();
+    final file = File.fromUri(uri);
+    if (await file.exists()) {
+      await File.fromUri(uri).delete();
+    } else {
+      getLogger().warning("Trying to delete image $uri which doesn't exist");
+    }
   }
 }
 

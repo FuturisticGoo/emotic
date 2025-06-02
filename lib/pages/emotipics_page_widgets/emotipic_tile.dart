@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class EmotipicTile extends StatelessWidget {
   final EmoticImage image;
-  final Image? imageWidget;
+  final Widget? imageWidget;
   final bool isSelected;
   final void Function() onTap;
   final Widget? trailing;
