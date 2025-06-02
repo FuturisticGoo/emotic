@@ -50,7 +50,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final result = await settingsRepository.exportToFile();
     switch (result) {
       case Left(:final value):
-        emit(SettingsLoaded(alertMessage: "Error exporting: $value"));
+        emit(SettingsLoaded(alertMessage: "Error exporting: ${value.message}"));
       case Right():
         emit(SettingsLoaded(snackBarMessage: "Export successful"));
     }
@@ -64,7 +64,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     final result = await settingsRepository.importFromFile();
     switch (result) {
       case Left(:final value):
-        emit(SettingsLoaded(alertMessage: "Error importing: $value"));
+        emit(SettingsLoaded(alertMessage: "Error importing: ${value.message}"));
       case Right():
         emit(SettingsLoaded(snackBarMessage: "Import successful"));
     }

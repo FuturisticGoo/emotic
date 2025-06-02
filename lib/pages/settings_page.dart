@@ -108,11 +108,20 @@ class SettingsPage extends StatelessWidget {
                             ListTile(
                               title: const Text("Import"),
                               onTap: () async {
-                                if (context.mounted) {
-                                  await context
-                                      .read<SettingsCubit>()
-                                      .importData();
-                                }
+                                showAlertDialog(
+                                  context,
+                                  title: "Import warning",
+                                  content: "This allows importing .sqlite and"
+                                      " .tar.gz files.\nOnly import .tar.gz"
+                                      " files from trusted sources. ( ⚆ _ ⚆ )",
+                                  onPressed: () async {
+                                    if (context.mounted) {
+                                      await context
+                                          .read<SettingsCubit>()
+                                          .importData();
+                                    }
+                                  },
+                                );
                               },
                             ),
                             ListTile(

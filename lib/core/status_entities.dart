@@ -27,9 +27,14 @@ class GenericFailure extends Failure {
   final Object error;
   final StackTrace stackTrace;
   const GenericFailure(this.error, this.stackTrace);
+  @override
+  String get message => "GenericFailure\n$error\n$stackTrace";
 }
 
-class FilePickingCancelledFailure extends Failure {}
+class FilePickingCancelledFailure extends Failure {
+  @override
+  String get message => "File picking cancelled";
+}
 
 class NoImagesFoundFailure extends Failure {}
 
@@ -38,6 +43,10 @@ class CannotReadFileFailure extends Failure {
   String get message => "Unable to read file";
 }
 
+class UnrecognizedFileFailure extends Failure {
+  @override
+  String get message => "Wrong file.";
+}
 // Exceptions
 class NoImagePickedException implements Exception {}
 

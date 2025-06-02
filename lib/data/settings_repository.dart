@@ -32,6 +32,16 @@ class SettingsRepository {
       }
       await importBundle.onImportFinish();
       return Either.right(GenericSuccess());
+    } on NoImportFilePickedException catch (error, stackTrace) {
+      getLogger().warning("No import file picked", error, stackTrace);
+      return Either.left(FilePickingCancelledFailure());
+    } on UnrecognizedImportFileException catch (error, stackTrace) {
+      getLogger().warning(
+        "Unrecognized file picked for import",
+        error,
+        stackTrace,
+      );
+      return Either.left(UnrecognizedFileFailure());
     } catch (error, stackTrace) {
       getLogger().severe("Error importing", error, stackTrace);
       return Either.left(GenericFailure(error, stackTrace));
@@ -57,6 +67,9 @@ class SettingsRepository {
       await exportBundle.finishExport();
       getLogger().config("Finished writing");
       return Either.right(GenericSuccess());
+    } on NoSaveFilePickedException catch (error, stackTrace) {
+      getLogger().warning("Export file not picked", error, stackTrace);
+      return Either.left(FilePickingCancelledFailure());
     } catch (error, stackTrace) {
       getLogger().severe("Error exporting", error, stackTrace);
       return Either.left(GenericFailure(error, stackTrace));

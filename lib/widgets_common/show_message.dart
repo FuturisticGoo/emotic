@@ -23,10 +23,12 @@ void showAlertDialog(
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
+              onPressed();
               },
               child: const Text('OK'),
             ),
           ],
         );
-      });
+    },
+  );
 }
