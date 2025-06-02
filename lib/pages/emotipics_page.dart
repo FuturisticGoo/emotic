@@ -229,6 +229,11 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                                                 .addTags(
                                                   tags: newTags,
                                                 );
+                                            if (context.mounted) {
+                                              await context
+                                                  .read<EmotipicsListingCubit>()
+                                                  .loadSavedImages();
+                                            }
                                           }
                                         },
                                       ),

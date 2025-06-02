@@ -54,6 +54,7 @@ class SettingsSourceImpl implements SettingsSource {
 
     try {
       // Try using tar reader first, its the new export file format
+      getLogger().info("Trying to open file as tar.gz");
       final importFileStream = hf.getFileStreamFromUri(uri: importFile);
       final tarImportReader = await TarImportReader.extractTar(
         inputTarFileStream: importFileStream.map(
@@ -64,10 +65,13 @@ class SettingsSourceImpl implements SettingsSource {
       );
       final dbPath = await tarImportReader.getDatabasePath();
       final db = await openDatabase(dbPath.toFilePath());
+      getLogger().info("Opening extracted database at ${db.path}");
+
       return ImportBundle(
         db: db,
         importReader: tarImportReader,
         onImportFinish: () async {
+          getLogger().info("Closing extracted database and deleting cache");
           await db.close();
           await File.fromUri(dbPath).delete();
         },
@@ -82,6 +86,7 @@ class SettingsSourceImpl implements SettingsSource {
 
     try {
       // Old/Emoticons only version, still supported
+      getLogger().info("Trying to open file as sqlite");
       final importFileStream = hf.getFileStreamFromUri(uri: importFile);
       final cachePath = await emoticAppDataDirectory.getAppCacheDir();
       final cachedDbFile = File(p.join(cachePath, exportImportDbFileName));
@@ -97,6 +102,7 @@ class SettingsSourceImpl implements SettingsSource {
       await cacheDbFileStream.close();
       final db = await openDatabase(cachedDbFile.path);
       final appMediaDir = await emoticAppDataDirectory.getAppMediaDir();
+      
       return ImportBundle(
         db: db,
         importReader: TarImportReader(
@@ -104,6 +110,7 @@ class SettingsSourceImpl implements SettingsSource {
           appMediaPath: appMediaDir,
         ),
         onImportFinish: () async {
+          getLogger().info("Closing extracted database and deleting cache");
           await db.close();
           await cachedDbFile.delete();
         },
@@ -119,7 +126,6 @@ class SettingsSourceImpl implements SettingsSource {
       );
       throw UnrecognizedImportFileException();
     }
-
   }
 
   @override

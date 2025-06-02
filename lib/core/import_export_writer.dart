@@ -150,6 +150,9 @@ class TarImportReader implements ImportReader {
           count++;
           getLogger().info("Extracting database file: ${current.name}");
           final dbFile = File(p.join(cacheDir, exportImportDbFileName));
+          if (await dbFile.exists()) {
+            await dbFile.delete();
+          }
           final dbFileStream = dbFile.openWrite(
             mode: FileMode.writeOnly,
           );
