@@ -146,21 +146,22 @@ class EmoticAppDataDirectoryImpl implements EmoticAppDataDirectory {
   @override
   Future<String> getAppMediaDir() async {
     if (Platform.isAndroid) {
-      // On android, Android/media is user accessible, so using that for media
-      // files
+      // Update: Apparently .../Android/media/<appId> folder can't be created
+      // without permission on newer API levels. We have to use MediaStore API.
+      // And there is no way to do this easily from Dart.
+      // FFFFFFFUUUUUUUUUUUUUUUUU*******
+      // Ahem, gonna use the Android/data/files/<appId> folder instead
       String androidPath;
       final externalPath = await getExternalStorageDirectory();
+      getLogger().info("External storage path: $externalPath");
       if (externalPath != null) {
-        // We get directory .../Android/data/<appId>/files, so we just need
-        // path till Android and then it should be media
-        androidPath = externalPath.parent.parent.parent.path;
+        androidPath = externalPath.path;
       } else {
-        androidPath = "/storage/emulated/0/Android/";
+        androidPath = "/storage/emulated/0/Android/${await getAppId()}/files";
       }
       final mediaFolder = p.join(
         androidPath,
         mediaFolderName,
-        await getAppId(),
       );
       await Directory(mediaFolder).create(recursive: true);
       return mediaFolder;
