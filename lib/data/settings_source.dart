@@ -102,7 +102,7 @@ class SettingsSourceImpl implements SettingsSource {
       await cacheDbFileStream.close();
       final db = await openDatabase(cachedDbFile.path);
       final appMediaDir = await emoticAppDataDirectory.getAppMediaDir();
-      
+
       return ImportBundle(
         db: db,
         importReader: TarImportReader(
@@ -140,6 +140,8 @@ class SettingsSourceImpl implements SettingsSource {
     final cachePath = await emoticAppDataDirectory.getAppCacheDir();
     final cachedDbFile = File(p.join(cachePath, exportImportDbFileName));
     final db = await openDatabase(cachedDbFile.path);
+    await hf.createMetadataTable(db: db);
+    await hf.prefillMetadata(db: db);
     final tarExportWriter = TarExportWriter(
       onBytes: (bytes) async {
         await outputCrossFileWriter.writeBytes(bytes: bytes);

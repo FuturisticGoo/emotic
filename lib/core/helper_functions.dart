@@ -376,7 +376,33 @@ OFFSET ?
   return (nMinus1th, nth);
 }
 
-Future<SemVer> getMetadataVersion({required Database db}) async {
+Future<(double, double)?> getCurrentMinAndMaxOrder({
+  required Database db,
+  required String tableName,
+  required String orderColumnName,
+}) async {
+  final lowest = "lowest";
+  final higest = "highest";
+  final result = (await db.rawQuery("""
+SELECT 
+  MIN($orderColumnName) as $lowest,
+  MAX($orderColumnName) as $higest
+FROM 
+  $tableName
+    """)).single;
+  if (result[lowest] != null) {
+    return (result[lowest] as double, result[higest] as double);
+  } else {
+    return null;
+  }
+}
+
+Future<void> commonEnsureTables({required Database db}) async {
+  await createMetadataTable(db: db);
+  await prefillMetadata(db: db);
+}
+
+Future<void> createMetadataTable({required Database db}) async {
   await db.execute("""
 CREATE TABLE IF NOT EXISTS
   ${_SQLNames.metadataTableName}
@@ -385,6 +411,10 @@ CREATE TABLE IF NOT EXISTS
       ${_SQLNames.metadataValueName} VARCHAR
     )
     """);
+}
+
+Future<SemVer> getMetadataVersion({required Database db}) async {
+  await createMetadataTable(db: db);
   final versionResult = await db.rawQuery(
     """
 SELECT
@@ -411,40 +441,7 @@ WHERE
   }
 }
 
-Future<(double, double)?> getCurrentMinAndMaxOrder({
-  required Database db,
-  required String tableName,
-  required String orderColumnName,
-}) async {
-  final lowest = "lowest";
-  final higest = "highest";
-  final result = (await db.rawQuery("""
-SELECT 
-  MIN($orderColumnName) as $lowest,
-  MAX($orderColumnName) as $higest
-FROM 
-  $tableName
-    """)).single;
-  if (result[lowest] != null) {
-    return (result[lowest] as double, result[higest] as double);
-  } else {
-    return null;
-  }
-}
-
-Future<void> commonEnsureTables({required Database db}) async {
-  await db.execute("""
-CREATE TABLE IF NOT EXISTS
-  ${_SQLNames.metadataTableName}
-    (
-      ${_SQLNames.metadataKeyName} VARCHAR,
-      ${_SQLNames.metadataValueName} VARCHAR
-    )
-    """);
-  await _prefillMetadata(db: db);
-}
-
-Future<void> _prefillMetadata({required Database db}) async {
+Future<void> prefillMetadata({required Database db}) async {
   final existingVersionRows = await db.rawQuery(
     """
 SELECT 
@@ -461,40 +458,30 @@ WHERE
       getLogger()
           .warning("Existing version rows: ${existingVersionRows.length}");
     }
-    final updatedRows = await db.rawDelete(
+    await db.rawDelete(
       """
-UPDATE 
-  ${_SQLNames.metadataTableName}
-SET
-  ${_SQLNames.metadataValueName}=?
-WHERE
-  ${_SQLNames.metadataKeyName}=? AND
-  ${_SQLNames.metadataValueName}!=?
-      """,
-      [
-        version.toString(),
-        _SQLNames.metadataKeyVersion,
-        version.toString(),
-      ],
+    DELETE FROM 
+      ${_SQLNames.metadataTableName}
+    WHERE
+      ${_SQLNames.metadataKeyName}=?
+    """,
+      [_SQLNames.metadataKeyVersion],
     );
-    if (updatedRows > 0) {
-      getLogger().config("Updated $updatedRows rows of version metadata");
-    }
-  } else {
-    await db.rawInsert(
-      """
+  }
+
+  await db.rawInsert(
+    """
 INSERT INTO 
   ${_SQLNames.metadataTableName}
   (${_SQLNames.metadataKeyName}, ${_SQLNames.metadataValueName})
 VALUES
   (?, ?)
       """,
-      [
-        _SQLNames.metadataKeyVersion,
-        version.toString(),
-      ],
-    );
-  }
+    [
+      _SQLNames.metadataKeyVersion,
+      version.toString(),
+    ],
+  );
 }
 
 abstract final class _SQLNames {
