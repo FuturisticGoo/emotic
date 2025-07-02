@@ -212,7 +212,6 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
         );
         return;
       }
-
       final tagFuzzy = Fuzzy<String>(
         allTags,
         options: FuzzyOptions(
@@ -233,14 +232,27 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
         ),
       );
       final tagSearchResult = tagFuzzy
-          .search(searchTermTrimmed, 1)
+          .search(
+            searchTermTrimmed,
+            1,
+          )
+          .where((e) {
+            return e.score < 0.5;
+          })
           .map(
             (e) => e.item,
           )
           .toSet();
-      final notesSearchResult = notesFuzzy.search(searchTermTrimmed).map(
-            (e) => e.item,
-          );
+      final notesSearchResult = notesFuzzy
+          .search(
+        searchTermTrimmed,
+        1,
+      )
+          .where((e) {
+        return e.score < 0.4;
+      }).map(
+        (e) => e.item,
+      );
       final result = images.where(
         (element) {
           return element.tags

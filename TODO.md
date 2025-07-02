@@ -27,3 +27,4 @@
 * ~~Emotipics exclusion while listing~~
 * ~~Maybe a progress indicator?~~
 * Fix bug where importing legit file gives sqlite error after opening wrong file
+* Category based listing
