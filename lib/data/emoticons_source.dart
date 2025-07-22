@@ -702,14 +702,16 @@ CREATE TABLE IF NOT EXISTS ${_SQLNames.emoticonsToTagsJoinTableName}
 CREATE TABLE IF NOT EXISTS ${_SQLNames.emoticonsOrderingTableName}
 (
   ${_SQLNames.emoticonsOrderingEmoticonId} INTEGER,
-  ${_SQLNames.emoticonsOrderingUserOrder} REAL
+  ${_SQLNames.emoticonsOrderingUserOrder} REAL,
+  ${_SQLNames.emoticonsOrderingUsageCount} INTEGER NOT NULL DEFAULT 0
 )
 """;
   static const PreparedStatement createTagsOrderingTableStmt = """
 CREATE TABLE IF NOT EXISTS ${_SQLNames.tagsOrderingTableName}
 (
   ${_SQLNames.tagsOrderingTagId} INTEGER,
-  ${_SQLNames.tagsOrderingUserOrder} REAL
+  ${_SQLNames.tagsOrderingUserOrder} REAL,
+  ${_SQLNames.tagsOrderingUsageCount} INTEGER NOT NULL DEFAULT 0
 )
 """;
 
@@ -789,8 +791,10 @@ abstract final class _SQLNames {
   static const emoticonsOrderingTableName = "emoticons_ordering";
   static const emoticonsOrderingEmoticonId = "emoticon_id";
   static const emoticonsOrderingUserOrder = "emoticon_user_order";
+  static const emoticonsOrderingUsageCount = "emoticon_usage_count";
 
   static const tagsOrderingTableName = "tags_ordering";
   static const tagsOrderingTagId = "tag_id";
   static const tagsOrderingUserOrder = "tag_user_order";
+  static const tagsOrderingUsageCount = "tag_usage_count";
 }

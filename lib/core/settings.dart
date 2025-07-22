@@ -286,14 +286,43 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
     );
   }
 
-  Future<void> refreshSettings() async {
-    getLogger().fine("Refreshing settings");
-    await _loadSettings();
-  }
 
   Future<void> saveSettings(GlobalSettings newSettings) async {
     getLogger().fine("Saving settings");
     await globalsettingsSource.saveSettings(newSettings);
+    emit(GlobalSettingsLoaded(settings: newSettings));
+  }
+
+  Future<void> changeEmotipicsColCount({required int? colCount}) async {
+    if (state case GlobalSettingsLoaded(:final settings)) {
+      if (colCount != null &&
+          (colCount < emotipicsColCountLowerLimit ||
+              colCount > emotipicsColCountUpperLimit)) {
+        return;
+      } else {
+        await saveSettings(
+          settings.copyWith(
+            emotipicsColumnCount: colCount,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> changeEmoticonsFontSize({required int? newSize}) async {
+    if (state case GlobalSettingsLoaded(:final settings)) {
+      if (newSize != null &&
+          (newSize < emoticonsTextSizeLowerLimit ||
+              newSize > emoticonsTextSizeUpperLimit)) {
+        return;
+      } else {
+        await saveSettings(
+          settings.copyWith(
+            emoticonsTextSize: newSize,
+          ),
+        );
+      }
+    }
   }
 }
 

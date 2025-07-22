@@ -29,9 +29,6 @@ class AppUpdateProcessPage extends StatelessWidget {
                 ),
               );
         }
-        if (context.mounted) {
-          await context.read<GlobalSettingsCubit>().refreshSettings();
-        }
       case GlobalSettingsLoaded(:final settings) when !settings.shouldReload:
         context.go(Routes.emoticonsPage);
       default:

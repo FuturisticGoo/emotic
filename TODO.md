@@ -23,7 +23,7 @@
 * ^Kinda added, auto refresh not added yet
 * ~~Join Data Editor page into Emoticons page~~
 * ~~Clear all data should also clear images~~
-* Emotipics/emoticons exclusion while exporting
+* Emotipics/emoticons selection while exporting
 * ~~Emotipics exclusion while listing~~
 * ~~Maybe a progress indicator?~~
 * Fix bug where importing legit file gives sqlite error after opening wrong file

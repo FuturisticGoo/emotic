@@ -146,11 +146,6 @@ class SettingsPage extends StatelessWidget {
                                           emoticThemeMode: emoticThemeMode,
                                         ),
                                       );
-                                  if (context.mounted) {
-                                    await context
-                                        .read<GlobalSettingsCubit>()
-                                        .refreshSettings();
-                                  }
                                 },
                                 dropdownMenuEntries: [
                                   DropdownMenuEntry(
@@ -179,16 +174,9 @@ class SettingsPage extends StatelessWidget {
                                 onSelected: (textSize) async {
                                   await context
                                       .read<GlobalSettingsCubit>()
-                                      .saveSettings(
-                                        settings.copyWith(
-                                          emoticonsTextSize: textSize,
-                                        ),
+                                      .changeEmoticonsFontSize(
+                                        newSize: textSize,
                                       );
-                                  if (context.mounted) {
-                                    await context
-                                        .read<GlobalSettingsCubit>()
-                                        .refreshSettings();
-                                  }
                                 },
                                 dropdownMenuEntries: [
                                   null,
@@ -223,16 +211,9 @@ class SettingsPage extends StatelessWidget {
                                 onSelected: (colCount) async {
                                   await context
                                       .read<GlobalSettingsCubit>()
-                                      .saveSettings(
-                                        settings.copyWith(
-                                          emotipicsColumnCount: colCount,
-                                        ),
+                                      .changeEmotipicsColCount(
+                                        colCount: colCount,
                                       );
-                                  if (context.mounted) {
-                                    await context
-                                        .read<GlobalSettingsCubit>()
-                                        .refreshSettings();
-                                  }
                                 },
                                 dropdownMenuEntries: [
                                   null,
@@ -248,7 +229,7 @@ class SettingsPage extends StatelessWidget {
                                     if (e == null) {
                                       return DropdownMenuEntry(
                                         value: null,
-                                        label: "Default",
+                                        label: "Auto",
                                       );
                                     } else {
                                       return DropdownMenuEntry(
