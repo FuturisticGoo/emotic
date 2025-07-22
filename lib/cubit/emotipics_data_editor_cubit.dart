@@ -17,7 +17,7 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     emit(EmotipicsDataEditorNotEditing());
   }
 
-  // :( this is duplicating the same code in EmoitipicsCubit because I cant
+  // :( this is duplicating the same code in EmotipicsCubit because I cant
   // seem to find a neat way of loading the data after editing
   Future<void> loadSavedImages({String? snackBarMessage}) async {
     final imagesResult = await imageRepository.getImages();
@@ -65,12 +65,16 @@ class EmotipicsDataEditorCubit extends Cubit<EmotipicsDataEditorState> {
     }
   }
 
-  Future<void> loadImageBytes({required Uri imageToLoad}) async {
+  Future<void> loadImageBytes({
+    required Uri imageToLoad,
+    ImageReprConfig? imageReprConfig,
+  }) async {
     if (state case EmotipicsDataEditorEditing()) {
       final Either<Failure, ImageRepr> bytesResult =
           await imageRepository.getImageData(
         imageUri: imageToLoad,
-        imageReprConfig: FlutterImageWidgetReprConfig.thumbnail(),
+        imageReprConfig:
+            imageReprConfig ?? FlutterImageWidgetReprConfig.thumbnail(),
       );
       if (state
           case EmotipicsDataEditorEditing(

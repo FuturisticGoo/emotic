@@ -60,12 +60,16 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     }
   }
 
-  Future<void> loadImageBytes({required Uri imageToLoad}) async {
+  Future<void> loadImageBytes({
+    required Uri imageToLoad,
+    ImageReprConfig? imageReprConfig,
+  }) async {
     if (state case EmotipicsListingLoaded()) {
       final Either<Failure, ImageRepr> bytesResult =
           await imageRepository.getImageData(
         imageUri: imageToLoad,
-        imageReprConfig: FlutterImageWidgetReprConfig.thumbnail(),
+        imageReprConfig:
+            imageReprConfig ?? FlutterImageWidgetReprConfig.thumbnail(),
       );
       if (state
           case EmotipicsListingLoaded(

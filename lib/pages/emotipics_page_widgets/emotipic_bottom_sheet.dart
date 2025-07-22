@@ -88,8 +88,8 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
       showDragHandle: true,
       enableDrag: false,
       constraints: BoxConstraints.expand(
-        // height: screenHeight,
-        height: isSmallScreen ? screenHeight : screenHeight * 0.7,
+        height: screenHeight,
+        // height: isSmallScreen ? screenHeight : screenHeight * 0.7,
       ),
       onClosing: () {},
       builder: (context) {
@@ -111,7 +111,11 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
                       SizedBox(
                         height: isSmallScreen ? 10 : 20,
                       ),
-                      widget.image,
+                      SizedBox(
+                        height: screenHeight * 0.5,
+                        // width: double.infinity,
+                        child: widget.image,
+                      ),
                       SizedBox(
                         height: isSmallScreen ? 15 : 30,
                       ),
@@ -169,6 +173,9 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
                     ],
                   ),
                 ),
+              ),
+              SizedBox(
+                height: 8,
               ),
               Row(
                 children: [
