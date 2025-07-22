@@ -286,7 +286,6 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
     );
   }
 
-
   Future<void> saveSettings(GlobalSettings newSettings) async {
     getLogger().fine("Saving settings");
     await globalsettingsSource.saveSettings(newSettings);

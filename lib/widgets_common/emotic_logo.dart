@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class EmoticLogo extends StatelessWidget {
   const EmoticLogo({
     super.key,
+    this.emoticonText = "OwO"
   });
-
+  final String emoticonText;
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -13,7 +14,7 @@ class EmoticLogo extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            "OwO",
+            emoticonText,
             style: Theme.of(context).textTheme.displayLarge,
           ),
           const Text("Emotic"),

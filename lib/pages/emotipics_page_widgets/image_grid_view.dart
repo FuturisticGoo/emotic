@@ -104,15 +104,35 @@ class _ImageGridViewState extends State<ImageGridView> {
                                   );
                             },
                             onSecondaryPress: (emoticImage) async {
+                              final emotipicsCubit =
+                                  context.read<EmotipicsListingCubit>();
                               final result = await showModalBottomSheet<
                                   EmotipicBottomSheetResult?>(
                                 context: context,
                                 isScrollControlled: true,
-                                builder: (context) {
-                                  return UpdateEmotipicBottomSheet(
-                                    image: currentCachedImage,
-                                    emoticImage: emoticImage,
-                                    allTags: widget.state.allTags,
+                                builder: (bottomSheetContext) {
+                                  return BlocProvider.value(
+                                    value: emotipicsCubit,
+                                    child: UpdateEmotipicBottomSheet(
+                                      emoticImage: emoticImage,
+                                      allTags: widget.state.allTags,
+                                      loadImageBytes: (
+                                        Uri imageToLoad,
+                                        ImageReprConfig? imageReprConfig,
+                                      ) async {
+                                        await emotipicsCubit.loadImageBytes(
+                                          imageToLoad: imageToLoad,
+                                          imageReprConfig: imageReprConfig,
+                                        );
+                                      },
+                                      unloadImageBytes: (
+                                        Uri imageToUnload,
+                                      ) async {
+                                        await emotipicsCubit.unloadImageBytes(
+                                          imageToUnload: imageToUnload,
+                                        );
+                                      },
+                                    ),
                                   );
                                 },
                               );

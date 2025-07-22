@@ -8,16 +8,24 @@ sealed class ImageReprConfig {
 
 class FlutterImageWidgetReprConfig implements ImageReprConfig {
   final int? width;
+  final int? height;
   final FilterQuality filterQuality;
   const FlutterImageWidgetReprConfig({
     required this.width,
+    required this.height,
     required this.filterQuality,
   });
-  FlutterImageWidgetReprConfig.thumbnail()
-      : width = 128,
+  FlutterImageWidgetReprConfig.thumbnail({
+    int? preferredWidth,
+    int? preferredHeight,
+  })  : width = preferredWidth ?? 128,
+        height = preferredWidth,
         filterQuality = FilterQuality.medium;
-  FlutterImageWidgetReprConfig.full()
-      : width = null,
+  FlutterImageWidgetReprConfig.full({
+    int? preferredWidth,
+    int? preferredHeight,
+  })  : width = preferredWidth,
+        height = preferredWidth,
         filterQuality = FilterQuality.high;
 }
 

@@ -100,8 +100,13 @@ class EmotipicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         onTap: () async {
                           await context
-                              .read<EmotipicsDataEditorCubit>()
-                              .pickImages();
+                              .read<EmotipicsListingCubit>()
+                              .showLoading();
+                          if (context.mounted) {
+                            await context
+                                .read<EmotipicsDataEditorCubit>()
+                                .pickImages();
+                          }
                           if (context.mounted) {
                             await context
                                 .read<EmotipicsListingCubit>()
@@ -118,8 +123,13 @@ class EmotipicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         onTap: () async {
                           await context
-                              .read<EmotipicsDataEditorCubit>()
-                              .pickDirectory();
+                              .read<EmotipicsListingCubit>()
+                              .showLoading();
+                          if (context.mounted) {
+                            await context
+                                .read<EmotipicsDataEditorCubit>()
+                                .pickDirectory();
+                          }
                           if (context.mounted) {
                             await context
                                 .read<EmotipicsListingCubit>()

@@ -156,6 +156,10 @@ class EmotipicsListingCubit extends Cubit<EmotipicsListingState> {
     }
   }
 
+  Future<void> showLoading() async {
+    emit(EmotipicsListingLoading());
+  }
+
   Future<void> shareImage({required EmoticImage image}) async {
     if (state case EmotipicsListingLoaded()) {
       final bytesResult = await imageRepository.getImageData(
