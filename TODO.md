@@ -28,4 +28,4 @@
 * ~~Maybe a progress indicator?~~
 * Fix bug where importing legit file gives sqlite error after opening wrong file
 * Category based listing
-* Show better quality preview in emotipic bottom sheet
+* ~~Show better quality preview in emotipic bottom sheet~~

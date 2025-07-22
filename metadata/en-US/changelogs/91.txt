@@ -1,0 +1,6 @@
+QoL fixes and additions ツ
+• Fix search in Emotipics, should be better now
+• Snackbar won't get queued when copying
+• Add zoom option to action menu
+• Show full quality image in Emotipics bottom sheet
+• And a secret additon ^‿-

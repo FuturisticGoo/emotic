@@ -16,4 +16,4 @@ Visit this link to download some export files containing emoticons and images ht
 
 This app doesn't use internet, and probably never will. </br>
 Made using Flutter, with Material 3 and light/dark/black mode. </br>
-Programmed with <3
+Programmed with ♡
