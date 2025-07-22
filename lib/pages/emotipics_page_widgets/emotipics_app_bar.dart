@@ -170,7 +170,7 @@ class EmotipicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                                     const Spacer(),
                                     ActionChip(
                                       onPressed: () async {
-                                        final newColCount = colCount - 1;
+                                        final newColCount = colCount + 1;
                                         await context
                                             .read<GlobalSettingsCubit>()
                                             .changeEmotipicsColCount(
@@ -191,7 +191,7 @@ class EmotipicsAppBar extends StatelessWidget implements PreferredSizeWidget {
                                     const SizedBox(width: 4),
                                     ActionChip(
                                       onPressed: () async {
-                                        final newColCount = colCount + 1;
+                                        final newColCount = colCount - 1;
                                         await context
                                             .read<GlobalSettingsCubit>()
                                             .changeEmotipicsColCount(
