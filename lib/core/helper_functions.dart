@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:emotic/core/constants.dart';
-import 'package:emotic/core/emotic_image.dart';
+import 'package:emotic/core/entities/emotic_image.dart';
 import 'package:emotic/core/logging.dart';
-import 'package:emotic/core/semver.dart';
-import 'package:emotic/core/status_entities.dart';
+import 'package:emotic/core/entities/semver.dart';
+import 'package:emotic/core/entities/status_entities.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:pasteboard/pasteboard.dart';

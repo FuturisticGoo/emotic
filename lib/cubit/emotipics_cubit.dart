@@ -1,6 +1,6 @@
-import 'package:emotic/core/emotic_image.dart';
-import 'package:emotic/core/image_data.dart';
-import 'package:emotic/core/status_entities.dart';
+import 'package:emotic/core/entities/emotic_image.dart';
+import 'package:emotic/core/entities/image_data.dart';
+import 'package:emotic/core/entities/status_entities.dart';
 import 'package:emotic/data/image_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

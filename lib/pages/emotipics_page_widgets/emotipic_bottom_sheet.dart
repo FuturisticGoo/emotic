@@ -1,5 +1,5 @@
-import 'package:emotic/core/emotic_image.dart';
-import 'package:emotic/core/image_data.dart';
+import 'package:emotic/core/entities/emotic_image.dart';
+import 'package:emotic/core/entities/image_data.dart';
 import 'package:emotic/cubit/emotipics_cubit.dart';
 import 'package:emotic/widgets_common/delete_confirmation.dart';
 import 'package:emotic/widgets_common/read_list_of_string_from_user.dart';

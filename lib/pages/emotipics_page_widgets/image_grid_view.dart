@@ -1,5 +1,5 @@
-import 'package:emotic/core/image_cache_interface.dart';
-import 'package:emotic/core/image_data.dart';
+import 'package:emotic/core/entities/image_cache_interface.dart';
+import 'package:emotic/core/entities/image_data.dart';
 import 'package:emotic/cubit/emotipics_cubit.dart';
 import 'package:emotic/cubit/emotipics_data_editor_cubit.dart';
 import 'package:emotic/pages/emotipics_page_widgets/copyable_image.dart';

@@ -1,4 +1,4 @@
-import 'package:emotic/core/image_cache_interface.dart';
+import 'package:emotic/core/entities/image_cache_interface.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/routes.dart';

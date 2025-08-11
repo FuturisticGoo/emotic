@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:emotic/core/helper_functions.dart';
-import 'package:emotic/core/status_entities.dart';
+import 'package:emotic/core/entities/status_entities.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;

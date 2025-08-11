@@ -1,4 +1,4 @@
-import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/core/entities/emoticon.dart';
 import 'package:emotic/widgets_common/delete_confirmation.dart';
 import 'package:emotic/widgets_common/read_list_of_string_from_user.dart';
 import 'package:flutter/material.dart';

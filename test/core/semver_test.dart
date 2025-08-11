@@ -1,4 +1,4 @@
-import 'package:emotic/core/semver.dart';
+import 'package:emotic/core/entities/semver.dart';
 import 'package:test/test.dart';
 
 void main() {

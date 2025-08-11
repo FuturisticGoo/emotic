@@ -1,4 +1,4 @@
-import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/core/entities/emoticon.dart';
 import 'package:emotic/core/open_root_scaffold_drawer.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/emoticons_data_editor_cubit.dart';

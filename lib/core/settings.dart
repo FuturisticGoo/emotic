@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:emotic/core/app_theme.dart';
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/logging.dart';
-import 'package:emotic/core/semver.dart';
+import 'package:emotic/core/entities/semver.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sqflite/sqflite.dart';

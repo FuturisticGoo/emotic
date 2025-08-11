@@ -5,7 +5,7 @@ import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
-import 'package:emotic/core/status_entities.dart';
+import 'package:emotic/core/entities/status_entities.dart';
 import 'package:tar/tar.dart';
 import 'package:path/path.dart' as p;
 

@@ -1,4 +1,4 @@
-import 'package:emotic/core/emotic_image.dart';
+import 'package:emotic/core/entities/emotic_image.dart';
 import 'package:flutter/material.dart';
 
 class EmotipicTile extends StatelessWidget {

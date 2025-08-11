@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:emotic/core/emotic_image.dart';
+import 'package:emotic/core/entities/emotic_image.dart';
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/import_export_writer.dart';
 import 'package:emotic/core/helper_functions.dart';
-import 'package:emotic/core/image_data.dart';
+import 'package:emotic/core/entities/image_data.dart';
 import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/mutex.dart';
-import 'package:emotic/core/status_entities.dart';
+import 'package:emotic/core/entities/status_entities.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fpdart/fpdart.dart';

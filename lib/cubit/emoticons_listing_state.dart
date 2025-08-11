@@ -1,4 +1,4 @@
-import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/core/entities/emoticon.dart';
 import 'package:equatable/equatable.dart';
 
 sealed class EmoticonsListingState extends Equatable {}

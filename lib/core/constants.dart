@@ -1,4 +1,4 @@
-import 'package:emotic/core/semver.dart';
+import 'package:emotic/core/entities/semver.dart';
 
 const emoticonsSourceDbName = "emoticons_source.sqlite";
 const emoticonsSourceDbAsset = "assets/$emoticonsSourceDbName";

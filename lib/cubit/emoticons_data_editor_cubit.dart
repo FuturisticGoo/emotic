@@ -1,4 +1,4 @@
-import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/core/entities/emoticon.dart';
 import 'package:emotic/core/functional_list_methods.dart';
 import 'emoticons_data_editor_state.dart';
 import 'package:emotic/data/emoticons_repository.dart';

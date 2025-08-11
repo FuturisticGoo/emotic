@@ -6,7 +6,7 @@ import 'package:emotic/core/cross_file_writer.dart' as hf;
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/import_export_writer.dart';
 import 'package:emotic/core/logging.dart';
-import 'package:emotic/core/status_entities.dart';
+import 'package:emotic/core/entities/status_entities.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:emotic/core/helper_functions.dart' as hf;
 import 'package:path/path.dart' as p;

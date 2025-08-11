@@ -4,7 +4,7 @@ import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:emotic/core/constants.dart';
-import 'package:emotic/core/emoticon.dart';
+import 'package:emotic/core/entities/emoticon.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
