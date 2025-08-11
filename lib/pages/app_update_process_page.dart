@@ -43,16 +43,18 @@ class AppUpdateProcessPage extends StatelessWidget {
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => doAppUpdateProcess(context, state),
         );
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              SizedBox(
-                height: 10,
-              ),
-              Text("Updating stuff ● . ◉"),
-            ],
+        return SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                SizedBox(
+                  height: 10,
+                ),
+                Text("Updating stuff ● . ◉"),
+              ],
+            ),
           ),
         );
       },

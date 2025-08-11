@@ -90,105 +90,111 @@ class _EmotipicsPageState extends State<EmotipicsPage> {
                         break;
                     }
                   },
-                  child: Scaffold(
-                    appBar: EmotipicsAppBar(),
-                    body: BlocBuilder<EmotipicsListingCubit,
-                        EmotipicsListingState>(
-                      builder: (context, listingState) {
-                        switch (listingState) {
-                          case EmotipicsListingInitial():
-                          case EmotipicsListingLoading():
-                            return Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          case EmotipicsListingError():
-                            return Center(
-                              child: Text("Error loading images"),
-                            );
-                          case EmotipicsListingLoaded(:final allTags):
-                            return BlocConsumer<EmotipicsDataEditorCubit,
-                                EmotipicsDataEditorState>(
-                              listener: (context, state) async {
-                                await context
-                                    .read<EmotipicsListingCubit>()
-                                    .loadSavedImages();
-                              },
-                              listenWhen: (previous, current) {
-                                return previous is EmotipicsDataEditorEditing &&
-                                    current is EmotipicsDataEditorNotEditing;
-                              },
-                              builder: (context, state) {
-                                switch (state) {
-                                  case EmotipicsDataEditorInitial():
-                                  case EmotipicsDataEditorLoading():
-                                  case EmotipicsDataEditorNotEditing():
-                                    return Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: [
-                                          GenericSearchBar(
-                                            allTags: allTags,
-                                            controller: controller,
-                                            hintText: "Search by tag and note",
-                                            onChange: (searchText) async {
-                                              if (context.mounted) {
-                                                await context
-                                                    .read<
-                                                        EmotipicsListingCubit>()
-                                                    .searchWithText(
-                                                      searchText: searchText,
-                                                    );
-                                              }
-                                            },
-                                          ),
-                                          SizedBox(
-                                            height: 10,
-                                          ),
-                                          ImageGridView(
-                                            state: listingState,
-                                            emotipicsColCount:
-                                                settings.emotipicsColumnCount,
-                                            onTagClick: (tag) {
-                                              controller.text = tag;
-                                            },
-                                            imageCacheInterface:
-                                                ImageCacheInterface(
-                                              getCachedImage: (imageUri) {
-                                                return cachedImage[imageUri];
-                                              },
-                                              setCacheImage: (imageUri, image) {
-                                                cachedImage[imageUri] = image;
-                                              },
-                                              isImageCached: (imageUri) {
-                                                return cachedImage
-                                                    .containsKey(imageUri);
+                  child: SafeArea(
+                    child: Scaffold(
+                      appBar: EmotipicsAppBar(),
+                      body: BlocBuilder<EmotipicsListingCubit,
+                          EmotipicsListingState>(
+                        builder: (context, listingState) {
+                          switch (listingState) {
+                            case EmotipicsListingInitial():
+                            case EmotipicsListingLoading():
+                              return Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            case EmotipicsListingError():
+                              return Center(
+                                child: Text("Error loading images"),
+                              );
+                            case EmotipicsListingLoaded(:final allTags):
+                              return BlocConsumer<EmotipicsDataEditorCubit,
+                                  EmotipicsDataEditorState>(
+                                listener: (context, state) async {
+                                  await context
+                                      .read<EmotipicsListingCubit>()
+                                      .loadSavedImages();
+                                },
+                                listenWhen: (previous, current) {
+                                  return previous
+                                          is EmotipicsDataEditorEditing &&
+                                      current is EmotipicsDataEditorNotEditing;
+                                },
+                                builder: (context, state) {
+                                  switch (state) {
+                                    case EmotipicsDataEditorInitial():
+                                    case EmotipicsDataEditorLoading():
+                                    case EmotipicsDataEditorNotEditing():
+                                      return Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          children: [
+                                            GenericSearchBar(
+                                              allTags: allTags,
+                                              controller: controller,
+                                              hintText:
+                                                  "Search by tag and note",
+                                              onChange: (searchText) async {
+                                                if (context.mounted) {
+                                                  await context
+                                                      .read<
+                                                          EmotipicsListingCubit>()
+                                                      .searchWithText(
+                                                        searchText: searchText,
+                                                      );
+                                                }
                                               },
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  case EmotipicsDataEditorEditing():
-                                    return ImageEditingListView(
-                                      editorState: state,
-                                      imageCacheInterface: ImageCacheInterface(
-                                        getCachedImage: (imageUri) {
-                                          return cachedImage[imageUri];
-                                        },
-                                        setCacheImage: (imageUri, image) {
-                                          cachedImage[imageUri] = image;
-                                        },
-                                        isImageCached: (imageUri) {
-                                          return cachedImage
-                                              .containsKey(imageUri);
-                                        },
-                                      ),
-                                    );
-                                }
-                              },
-                            );
-                        }
-                      },
+                                            SizedBox(
+                                              height: 10,
+                                            ),
+                                            ImageGridView(
+                                              state: listingState,
+                                              emotipicsColCount:
+                                                  settings.emotipicsColumnCount,
+                                              onTagClick: (tag) {
+                                                controller.text = tag;
+                                              },
+                                              imageCacheInterface:
+                                                  ImageCacheInterface(
+                                                getCachedImage: (imageUri) {
+                                                  return cachedImage[imageUri];
+                                                },
+                                                setCacheImage:
+                                                    (imageUri, image) {
+                                                  cachedImage[imageUri] = image;
+                                                },
+                                                isImageCached: (imageUri) {
+                                                  return cachedImage
+                                                      .containsKey(imageUri);
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    case EmotipicsDataEditorEditing():
+                                      return ImageEditingListView(
+                                        editorState: state,
+                                        imageCacheInterface:
+                                            ImageCacheInterface(
+                                          getCachedImage: (imageUri) {
+                                            return cachedImage[imageUri];
+                                          },
+                                          setCacheImage: (imageUri, image) {
+                                            cachedImage[imageUri] = image;
+                                          },
+                                          isImageCached: (imageUri) {
+                                            return cachedImage
+                                                .containsKey(imageUri);
+                                          },
+                                        ),
+                                      );
+                                  }
+                                },
+                              );
+                          }
+                        },
+                      ),
                     ),
                   ),
                 ),

@@ -50,198 +50,201 @@ class SettingsPage extends StatelessWidget {
                 builder: (context, state) {
                   switch (state) {
                     case SettingsLoaded():
-                      return Scaffold(
-                        appBar: AppBar(
-                          title: const Text("Settings"),
-                          leading: DrawerButton(
-                            onPressed: context.openRootScaffoldDrawer,
+                      return SafeArea(
+                        child: Scaffold(
+                          appBar: AppBar(
+                            title: const Text("Settings"),
+                            leading: DrawerButton(
+                              onPressed: context.openRootScaffoldDrawer,
+                            ),
                           ),
-                        ),
-                        body: ListView(
-                          children: [
-                            const ListTileHeading(
-                              text: "Manage data",
-                            ),
-                            ListTile(
-                              title: const Text("Restore all emoticons"),
-                              onTap: () async {
-                                await context
-                                    .read<SettingsCubit>()
-                                    .loadEmoticonsFromAsset();
-                              },
-                            ),
-                            ListTile(
-                              title: const Text("Clear all data"),
-                              onTap: () async {
-                                final shouldClear = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text("Confirm"),
-                                    content: const Text(
-                                      "Are you sure you want to delete all data?",
-                                    ),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('No'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: const Text('Yes'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (shouldClear == true && context.mounted) {
+                          body: ListView(
+                            children: [
+                              const ListTileHeading(
+                                text: "Manage data",
+                              ),
+                              ListTile(
+                                title: const Text("Restore all emoticons"),
+                                onTap: () async {
                                   await context
                                       .read<SettingsCubit>()
-                                      .clearAllData();
-                                }
-                              },
-                            ),
-                            const Divider(),
-                            const ListTileHeading(
-                              text: "Backup and Restore",
-                            ),
-                            ListTile(
-                              title: const Text("Import"),
-                              onTap: () async {
-                                showAlertDialog(
-                                  context,
-                                  title: "Import warning",
-                                  content: "This allows importing .sqlite and"
-                                      " .tar.gz files.\nOnly import .tar.gz"
-                                      " files from trusted sources.\n( ⚆ _ ⚆ )",
-                                  onPressed: () async {
-                                    if (context.mounted) {
-                                      await context
-                                          .read<SettingsCubit>()
-                                          .importData();
-                                    }
-                                  },
-                                );
-                              },
-                            ),
-                            ListTile(
-                              title: const Text("Export"),
-                              onTap: () async {
-                                await context
-                                    .read<SettingsCubit>()
-                                    .exportData();
-                              },
-                            ),
-                            const Divider(),
-                            const ListTileHeading(text: "Theme & UI"),
-                            ListTile(
-                              title: Text("Theme mode"),
-                              trailing: DropdownMenu(
-                                initialSelection: settings.emoticThemeMode,
-                                onSelected: (emoticThemeMode) async {
-                                  await context
-                                      .read<GlobalSettingsCubit>()
-                                      .saveSettings(
-                                        settings.copyWith(
-                                          emoticThemeMode: emoticThemeMode,
+                                      .loadEmoticonsFromAsset();
+                                },
+                              ),
+                              ListTile(
+                                title: const Text("Clear all data"),
+                                onTap: () async {
+                                  final shouldClear = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text("Confirm"),
+                                      content: const Text(
+                                        "Are you sure you want to delete all data?",
+                                      ),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('No'),
                                         ),
-                                      );
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Yes'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (shouldClear == true && context.mounted) {
+                                    await context
+                                        .read<SettingsCubit>()
+                                        .clearAllData();
+                                  }
                                 },
-                                dropdownMenuEntries: [
-                                  DropdownMenuEntry(
-                                    value: EmoticThemeMode.system,
-                                    label: "System",
-                                  ),
-                                  DropdownMenuEntry(
-                                    value: EmoticThemeMode.light,
-                                    label: "Light",
-                                  ),
-                                  DropdownMenuEntry(
-                                    value: EmoticThemeMode.dark,
-                                    label: "Dark",
-                                  ),
-                                  DropdownMenuEntry(
-                                    value: EmoticThemeMode.black,
-                                    label: "Black",
-                                  ),
-                                ],
                               ),
-                            ),
-                            ListTile(
-                              title: Text("Emoticon text size"),
-                              trailing: DropdownMenu(
-                                initialSelection: settings.emoticonsTextSize,
-                                onSelected: (textSize) async {
+                              const Divider(),
+                              const ListTileHeading(
+                                text: "Backup and Restore",
+                              ),
+                              ListTile(
+                                title: const Text("Import"),
+                                onTap: () async {
+                                  showAlertDialog(
+                                    context,
+                                    title: "Import warning",
+                                    content: "This allows importing .sqlite and"
+                                        " .tar.gz files.\nOnly import .tar.gz"
+                                        " files from trusted sources.\n( ⚆ _ ⚆ )",
+                                    onPressed: () async {
+                                      if (context.mounted) {
+                                        await context
+                                            .read<SettingsCubit>()
+                                            .importData();
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                              ListTile(
+                                title: const Text("Export"),
+                                onTap: () async {
                                   await context
-                                      .read<GlobalSettingsCubit>()
-                                      .changeEmoticonsFontSize(
-                                        newSize: textSize,
-                                      );
+                                      .read<SettingsCubit>()
+                                      .exportData();
                                 },
-                                dropdownMenuEntries: [
-                                  null,
-                                  ...Iterable.generate(
-                                    emoticonsTextSizeUpperLimit -
-                                        emoticonsTextSizeLowerLimit +
-                                        1,
-                                    (index) =>
-                                        index + emoticonsTextSizeLowerLimit,
-                                  )
-                                ].map(
-                                  (e) {
-                                    if (e == null) {
-                                      return DropdownMenuEntry(
-                                        value: null,
-                                        label: "Default",
-                                      );
-                                    } else {
-                                      return DropdownMenuEntry(
-                                        value: e,
-                                        label: e.toString(),
-                                      );
-                                    }
-                                  },
-                                ).toList(),
                               ),
-                            ),
-                            ListTile(
-                              title: Text("Emotipics column count"),
-                              trailing: DropdownMenu(
-                                initialSelection: settings.emotipicsColumnCount,
-                                onSelected: (colCount) async {
-                                  await context
-                                      .read<GlobalSettingsCubit>()
-                                      .changeEmotipicsColCount(
-                                        colCount: colCount,
-                                      );
-                                },
-                                dropdownMenuEntries: [
-                                  null,
-                                  ...Iterable.generate(
-                                    emotipicsColCountUpperLimit -
-                                        emotipicsColCountLowerLimit +
-                                        1,
-                                    (index) =>
-                                        index + emotipicsColCountLowerLimit,
-                                  )
-                                ].map(
-                                  (e) {
-                                    if (e == null) {
-                                      return DropdownMenuEntry(
-                                        value: null,
-                                        label: "Auto",
-                                      );
-                                    } else {
-                                      return DropdownMenuEntry(
-                                        value: e,
-                                        label: e.toString(),
-                                      );
-                                    }
+                              const Divider(),
+                              const ListTileHeading(text: "Theme & UI"),
+                              ListTile(
+                                title: Text("Theme mode"),
+                                trailing: DropdownMenu(
+                                  initialSelection: settings.emoticThemeMode,
+                                  onSelected: (emoticThemeMode) async {
+                                    await context
+                                        .read<GlobalSettingsCubit>()
+                                        .saveSettings(
+                                          settings.copyWith(
+                                            emoticThemeMode: emoticThemeMode,
+                                          ),
+                                        );
                                   },
-                                ).toList(),
+                                  dropdownMenuEntries: [
+                                    DropdownMenuEntry(
+                                      value: EmoticThemeMode.system,
+                                      label: "System",
+                                    ),
+                                    DropdownMenuEntry(
+                                      value: EmoticThemeMode.light,
+                                      label: "Light",
+                                    ),
+                                    DropdownMenuEntry(
+                                      value: EmoticThemeMode.dark,
+                                      label: "Dark",
+                                    ),
+                                    DropdownMenuEntry(
+                                      value: EmoticThemeMode.black,
+                                      label: "Black",
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                              ListTile(
+                                title: Text("Emoticon text size"),
+                                trailing: DropdownMenu(
+                                  initialSelection: settings.emoticonsTextSize,
+                                  onSelected: (textSize) async {
+                                    await context
+                                        .read<GlobalSettingsCubit>()
+                                        .changeEmoticonsFontSize(
+                                          newSize: textSize,
+                                        );
+                                  },
+                                  dropdownMenuEntries: [
+                                    null,
+                                    ...Iterable.generate(
+                                      emoticonsTextSizeUpperLimit -
+                                          emoticonsTextSizeLowerLimit +
+                                          1,
+                                      (index) =>
+                                          index + emoticonsTextSizeLowerLimit,
+                                    )
+                                  ].map(
+                                    (e) {
+                                      if (e == null) {
+                                        return DropdownMenuEntry(
+                                          value: null,
+                                          label: "Default",
+                                        );
+                                      } else {
+                                        return DropdownMenuEntry(
+                                          value: e,
+                                          label: e.toString(),
+                                        );
+                                      }
+                                    },
+                                  ).toList(),
+                                ),
+                              ),
+                              ListTile(
+                                title: Text("Emotipics column count"),
+                                trailing: DropdownMenu(
+                                  initialSelection:
+                                      settings.emotipicsColumnCount,
+                                  onSelected: (colCount) async {
+                                    await context
+                                        .read<GlobalSettingsCubit>()
+                                        .changeEmotipicsColCount(
+                                          colCount: colCount,
+                                        );
+                                  },
+                                  dropdownMenuEntries: [
+                                    null,
+                                    ...Iterable.generate(
+                                      emotipicsColCountUpperLimit -
+                                          emotipicsColCountLowerLimit +
+                                          1,
+                                      (index) =>
+                                          index + emotipicsColCountLowerLimit,
+                                    )
+                                  ].map(
+                                    (e) {
+                                      if (e == null) {
+                                        return DropdownMenuEntry(
+                                          value: null,
+                                          label: "Auto",
+                                        );
+                                      } else {
+                                        return DropdownMenuEntry(
+                                          value: e,
+                                          label: e.toString(),
+                                        );
+                                      }
+                                    },
+                                  ).toList(),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     case SettingsInitial():

@@ -13,18 +13,20 @@ class _AboutPageState extends State<AboutPage>
     with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("About"),
-        leading: DrawerButton(
-          onPressed: context.openRootScaffoldDrawer,
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("About"),
+          leading: DrawerButton(
+            onPressed: context.openRootScaffoldDrawer,
+          ),
         ),
-      ),
-      body: const Center(
-        child: Stack(
-          children: [
-            AboutForeground(),
-          ],
+        body: const Center(
+          child: Stack(
+            children: [
+              AboutForeground(),
+            ],
+          ),
         ),
       ),
     );

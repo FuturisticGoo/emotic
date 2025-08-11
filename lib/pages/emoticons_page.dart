@@ -83,47 +83,49 @@ class _EmoticonsPageState extends State<EmoticonsPage> {
                   return previous is EmoticonsDataEditorEditing &&
                       current is EmoticonsDataEditorNotEditing;
                 },
-                child: Scaffold(
-                  appBar: EmoticonsAppBar(),
-                  body:
-                      BlocBuilder<EmoticonsListingCubit, EmoticonsListingState>(
-                    builder: (context, state) {
-                      switch (state) {
-                        case EmoticonsListingInitial():
-                        case EmoticonsListingLoading():
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        case EmoticonsListingLoaded(
-                            :final emoticonsToShow,
-                            :final allTags
-                          ):
-                          return BlocBuilder<EmoticonsDataEditorCubit,
-                              EmoticonsDataEditorState>(
-                            builder: (context, state) {
-                              switch (state) {
-                                case EmoticonsDataEditorInitial():
-                                case EmoticonsDataEditorLoading():
-                                  return Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                case EmoticonsDataEditorNotEditing():
-                                  return EmoticonsListingWrapped(
-                                    allTags: allTags,
-                                    controller: controller,
-                                    emoticonsToShow: emoticonsToShow,
-                                    settings: settings,
-                                  );
+                child: SafeArea(
+                  child: Scaffold(
+                    appBar: EmoticonsAppBar(),
+                    body: BlocBuilder<EmoticonsListingCubit,
+                        EmoticonsListingState>(
+                      builder: (context, state) {
+                        switch (state) {
+                          case EmoticonsListingInitial():
+                          case EmoticonsListingLoading():
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          case EmoticonsListingLoaded(
+                              :final emoticonsToShow,
+                              :final allTags
+                            ):
+                            return BlocBuilder<EmoticonsDataEditorCubit,
+                                EmoticonsDataEditorState>(
+                              builder: (context, state) {
+                                switch (state) {
+                                  case EmoticonsDataEditorInitial():
+                                  case EmoticonsDataEditorLoading():
+                                    return Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  case EmoticonsDataEditorNotEditing():
+                                    return EmoticonsListingWrapped(
+                                      allTags: allTags,
+                                      controller: controller,
+                                      emoticonsToShow: emoticonsToShow,
+                                      settings: settings,
+                                    );
 
-                                case EmoticonsDataEditorEditing():
-                                  return EmoticonsEditingView(
-                                    state: state,
-                                  );
-                              }
-                            },
-                          );
-                      }
-                    },
+                                  case EmoticonsDataEditorEditing():
+                                    return EmoticonsEditingView(
+                                      state: state,
+                                    );
+                                }
+                              },
+                            );
+                        }
+                      },
+                    ),
                   ),
                 ),
               ),
