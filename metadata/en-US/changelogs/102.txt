@@ -1,0 +1,4 @@
+Talk fancier than ever (〜^∇^)〜
+• Fancy text page! Enter your text to get its fancy version.
+• Added 8 new emoticons.
+• Fix bug where navigation bar overlaps emoticons listing.
