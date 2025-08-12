@@ -3,6 +3,7 @@ import 'package:emotic/pages/about_page.dart';
 import 'package:emotic/pages/app_update_process_page.dart';
 import 'package:emotic/pages/emoticons_page.dart';
 import 'package:emotic/pages/emotipics_page.dart';
+import 'package:emotic/pages/fancy_text_page.dart';
 import 'package:emotic/pages/settings_page.dart';
 import 'package:emotic/widgets_common/left_drawer.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,8 @@ import 'package:go_router/go_router.dart';
 
 class Routes {
   static const emoticonsPage = "/emoticons";
-  static const emotipics = "/emotipics";
+  static const emotipicsPage = "/emotipics";
+  static const fancyTextPage = "/fancyText";
   static const settingsPage = "/settings";
   static const aboutPage = "/about";
   static const updatingPage = "/updating";
@@ -43,17 +45,24 @@ class Routes {
                 },
               ),
               GoRoute(
+                path: fancyTextPage,
+                builder: (context, state) {
+                  getLogger().fine("Going to FancyTextPage");
+                  return const FancyTextPage();
+                },
+              ),
+              GoRoute(
+                path: emotipicsPage,
+                builder: (context, state) {
+                  getLogger().fine("Going to EmotiPicsPage");
+                  return const EmotipicsPage();
+                },
+              ),
+              GoRoute(
                 path: settingsPage,
                 builder: (context, state) {
                   getLogger().fine("Going to SettingsPage");
                   return const SettingsPage();
-                },
-              ),
-              GoRoute(
-                path: emotipics,
-                builder: (context, state) {
-                  getLogger().fine("Going to EmotiPicsPage");
-                  return const EmotipicsPage();
                 },
               ),
               GoRoute(

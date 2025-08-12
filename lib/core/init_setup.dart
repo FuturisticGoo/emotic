@@ -5,6 +5,8 @@ import 'package:emotic/core/logging.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/data/emoticons_repository.dart';
 import 'package:emotic/data/emoticons_source.dart';
+import 'package:emotic/data/fancy_text_repository.dart';
+import 'package:emotic/data/fancy_text_source.dart';
 import 'package:emotic/data/image_repository.dart';
 import 'package:emotic/data/image_source.dart';
 import 'package:emotic/data/settings_repository.dart';
@@ -103,6 +105,13 @@ Future<void> initSetup() async {
   sl.registerSingleton<ImageRepository>(
     ImageRepository(
       imageSource: sl(),
+    ),
+  );
+
+  sl.registerSingleton<FancyTextSource>(FancyTextSourceHardcoded());
+  sl.registerSingleton<FancyTextRepository>(
+    FancyTextRepository(
+      fancyTextSource: sl(),
     ),
   );
 

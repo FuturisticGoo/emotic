@@ -29,3 +29,5 @@
 * Fix bug where importing legit file gives sqlite error after opening wrong file
 * Category based listing
 * ~~Show better quality preview in emotipic bottom sheet~~
+* Mark new emoticons as new_emoticons, so that during update, it only reads and
+adds the new emoticon to the database, instead of going through the whole list

@@ -14,6 +14,7 @@ class GlobalSettings extends Equatable {
   final EmoticThemeMode emoticThemeMode;
   final int? emoticonsTextSize;
   final int? emotipicsColumnCount;
+  final int? fancyTextSize;
   bool get isUpdated {
     return (lastUsedVersion == null) ? true : lastUsedVersion! < version;
   }
@@ -28,6 +29,7 @@ class GlobalSettings extends Equatable {
     required this.emoticThemeMode,
     this.emoticonsTextSize,
     this.emotipicsColumnCount,
+    this.fancyTextSize,
   });
 
   @override
@@ -37,6 +39,7 @@ class GlobalSettings extends Equatable {
         emoticThemeMode,
         emoticonsTextSize,
         emotipicsColumnCount,
+        fancyTextSize,
       ];
   GlobalSettings copyWith({
     bool? isFirstTime,
@@ -44,6 +47,7 @@ class GlobalSettings extends Equatable {
     EmoticThemeMode? emoticThemeMode,
     int? emoticonsTextSize = -1,
     int? emotipicsColumnCount = -1,
+    int? fancyTextSize = -1,
   }) {
     // -1 means that arg wasn't supplied, just to differentiate b/w passing null
     return GlobalSettings(
@@ -59,6 +63,11 @@ class GlobalSettings extends Equatable {
         -1 => this.emotipicsColumnCount,
         null => null,
         _ => emotipicsColumnCount,
+      },
+      fancyTextSize: switch (fancyTextSize) {
+        -1 => this.fancyTextSize,
+        null => null,
+        _ => fancyTextSize,
       },
     );
   }
@@ -140,12 +149,15 @@ FROM
           int.tryParse(settingsKV[_SQLNames.settingsKeyEmoticonTextSize] ?? "");
       final emotipicsColCount = int.tryParse(
           settingsKV[_SQLNames.settingsKeyEmotipicsColCount] ?? "");
+      final fancyTextSize =
+          int.tryParse(settingsKV[_SQLNames.settingsKeyFancyTextSize] ?? "");
       final globalSettings = GlobalSettings(
         isFirstTime: isFirstTime ?? true,
         lastUsedVersion: lastUsedVersion,
         emoticThemeMode: emoticThemeMode,
         emoticonsTextSize: emoticonsTextSize,
         emotipicsColumnCount: emotipicsColCount,
+        fancyTextSize: fancyTextSize,
       );
       getLogger().fine("Got $globalSettings");
       return globalSettings;
@@ -166,6 +178,7 @@ FROM
           newSettings.emoticonsTextSize.toString(),
       _SQLNames.settingsKeyEmotipicsColCount:
           newSettings.emotipicsColumnCount.toString(),
+      _SQLNames.settingsKeyFancyTextSize: newSettings.fancyTextSize.toString(),
     };
     await db.execute("""
 DELETE FROM ${_SQLNames.settingsTableName}
@@ -323,6 +336,22 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
       }
     }
   }
+
+  Future<void> changeFancyTextFontSize({required int? newSize}) async {
+    if (state case GlobalSettingsLoaded(:final settings)) {
+      if (newSize != null &&
+          (newSize < fancyTextSizeLowerLimit ||
+              newSize > fancyTextSizeUpperLimit)) {
+        return;
+      } else {
+        await saveSettings(
+          settings.copyWith(
+            fancyTextSize: newSize,
+          ),
+        );
+      }
+    }
+  }
 }
 
 abstract final class _SQLNames {
@@ -334,4 +363,5 @@ abstract final class _SQLNames {
   static const settingsKeyThemeMode = "theme_mode";
   static const settingsKeyEmoticonTextSize = "emoticons_text_size";
   static const settingsKeyEmotipicsColCount = "emotipics_col_count";
+  static const settingsKeyFancyTextSize = "fancy_text_size";
 }

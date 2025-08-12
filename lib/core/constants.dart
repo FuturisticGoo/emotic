@@ -16,6 +16,8 @@ const sourceLink = "https://github.com/FuturisticGoo/emotic";
 
 const emoticonsTextSizeLowerLimit = 8;
 const emoticonsTextSizeUpperLimit = 32;
+const fancyTextSizeLowerLimit = 8;
+const fancyTextSizeUpperLimit = 32;
 const emotipicsColCountLowerLimit = 1;
 const emotipicsColCountUpperLimit = 12;
 

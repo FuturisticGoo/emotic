@@ -243,6 +243,43 @@ class SettingsPage extends StatelessWidget {
                                   ).toList(),
                                 ),
                               ),
+                              ListTile(
+                                title: Text("Fancy text size"),
+                                trailing: DropdownMenu(
+                                  initialSelection: settings.fancyTextSize,
+                                  onSelected: (textSize) async {
+                                    await context
+                                        .read<GlobalSettingsCubit>()
+                                        .changeFancyTextFontSize(
+                                          newSize: textSize,
+                                        );
+                                  },
+                                  dropdownMenuEntries: [
+                                    null,
+                                    ...Iterable.generate(
+                                      fancyTextSizeUpperLimit -
+                                          fancyTextSizeLowerLimit +
+                                          1,
+                                      (index) =>
+                                          index + fancyTextSizeLowerLimit,
+                                    )
+                                  ].map(
+                                    (e) {
+                                      if (e == null) {
+                                        return DropdownMenuEntry(
+                                          value: null,
+                                          label: "Default",
+                                        );
+                                      } else {
+                                        return DropdownMenuEntry(
+                                          value: e,
+                                          label: e.toString(),
+                                        );
+                                      }
+                                    },
+                                  ).toList(),
+                                ),
+                              ),
                             ],
                           ),
                         ),
