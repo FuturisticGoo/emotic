@@ -2,32 +2,33 @@
 * ~~Fix duplicate emoticons, shouldnt happen~~
 * ~~Add deletion of emoticons~~
 * ~~Add emoticon filter below search / show tags~~
-* Multi tag search
+* **Multi tag search**
 * ~~Merge new emoticons correctly on app update, instead of replacing~~
 * ~~Add a simple about screen~~ 
-* ^Now to add a complicated one
+* **^Now to add a complicated one**
 * ~~Add a tag<->emoticon link editor page~~
 * ~~Add export/import functionality~~
-* ~~Add image stuff to above ^ ~~
-* Maybe an emoji to emoticon converter, which displays the most equivlent emoticon to the given emoji
+* ~~Add image stuff to above ^~~
+* **Maybe an emoji to emoticon converter, which displays the most equivalent emoticon to the given emoji**
 * ~~I should probably use sqlite db as the initial asset instead of csv+json~~
-* ML algorithm to generate an emoticon for a particular prompt, or joining multiple emoticons using ML
+* **ML algorithm to generate an emoticon for a particular prompt, or joining multiple emoticons using ML**
 * ~~Emoticon ordering based on most recently copied~~ User preference ordering added
-* Ordering based on usage ^
+* **Ordering based on usage ^**
 * ~~Improve listing performance, use async for reading the database.~~
-* Add fancy text generator, because I use it a lot along with emoticons
+* ~~Add fancy text generator, because I use it a lot along with emoticons~~
 * ~~Image/GIF copy paste sharing page for image reactions~~
 * ~~Share button for images~~
 * ~~Text size settings~~
 * ~~Update images in directory URI on each start and refresh button  (new images/deleted images)~~ 
-* ^Kinda added, auto refresh not added yet
+* **^Kinda added, auto refresh not added yet**
 * ~~Join Data Editor page into Emoticons page~~
 * ~~Clear all data should also clear images~~
-* Emotipics/emoticons selection while exporting
+* **Emotipics/emoticons selection while exporting**
 * ~~Emotipics exclusion while listing~~
 * ~~Maybe a progress indicator?~~
-* Fix bug where importing legit file gives sqlite error after opening wrong file
-* Category based listing
+* **Fix bug where importing legit file gives sqlite error after opening wrong file**
+* **Category based listing**
 * ~~Show better quality preview in emotipic bottom sheet~~
-* Mark new emoticons as new_emoticons, so that during update, it only reads and
-adds the new emoticon to the database, instead of going through the whole list
+* **Mark new emoticons as new_emoticons, so that during update, it only reads and
+adds the new emoticon to the database, instead of going through the whole list**
+* **Store the hash of emotipics so that theres an option for exporting without the image itself, and importing will use the matching hash to link to the image**

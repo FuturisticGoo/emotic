@@ -588,6 +588,10 @@ WHERE
     """
 INSERT INTO
   ${_SQLNames.emoticonsOrderingTableName}
+  (
+    ${_SQLNames.emoticonsOrderingEmoticonId}, 
+    ${_SQLNames.emoticonsOrderingUserOrder}
+  )
 VALUES
   (?, ?)
     """,
@@ -662,6 +666,10 @@ WHERE
     """
 INSERT INTO
   ${_SQLNames.tagsOrderingTableName}
+  (
+    ${_SQLNames.tagsOrderingTagId},
+    ${_SQLNames.tagsOrderingUserOrder}
+  )
 VALUES
   (?, ?)
     """,
