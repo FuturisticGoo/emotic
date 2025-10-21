@@ -1,3 +1,4 @@
+# Important: Project in temporary hiatus because I'm busy irl, sorry if I'm unresponsive ༎ຶ‿༎ຶ
 <p align="center">
      
   <img src="https://github.com/FuturisticGoo/emotic/blob/5b07913b99662cabeff3ba7a3fd09bb596a335c5/metadata/en-US/images/featureGraphic.png?raw=true" />
