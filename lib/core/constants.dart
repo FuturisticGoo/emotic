@@ -5,7 +5,7 @@ const emoticonsSourceDbAsset = "assets/$emoticonsSourceDbName";
 const version = SemVer(
   major: 0,
   minor: 1,
-  patch: 10,
+  patch: 11,
 );
 
 const sqldbName = "emoticons_sqlite";
@@ -24,3 +24,7 @@ const emotipicsColCountUpperLimit = 12;
 /// Very less reasons to use this constant directly, use the helper function
 const mediaFolderName = "media";
 const imagesFolderName = "images";
+
+// Instance name for db source
+const assetSource = "assetBundle";
+const dbSource = "dbSource";

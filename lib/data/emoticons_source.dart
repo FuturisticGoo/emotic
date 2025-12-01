@@ -1,4 +1,5 @@
 import 'dart:io' as io;
+import 'package:emotic/core/entities/semver.dart';
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
@@ -89,6 +90,32 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     required this.globalProgressPipe,
   }) {
     _ensureTables(db);
+  }
+
+  Future<void> updateSchema({
+    required Database db,
+    required SemVer? dbPreviousVersion,
+    required SemVer currentVersion,
+  }) async {
+    if (dbPreviousVersion != null &&
+        dbPreviousVersion <= SemVer.fromString("0.1.10")) {
+      getLogger()
+          .config("Performing schema update from version 0.1.10 or below, "
+              "for ${_SQLNames.emoticonsTableName} table");
+      // Adding the new fields is_deleted and added_version to emoticons table
+      await db.execute("""
+ALTER TABLE 
+  ${_SQLNames.emoticonsTableName}
+ADD COLUMN
+  ${_SQLNames.emoticonsIsDeleted} INTEGER DEFAULT 0
+""");
+      await db.execute("""
+ALTER TABLE
+  ${_SQLNames.emoticonsTableName}
+ADD COLUMN
+  ${_SQLNames.emoticonsAddedVersion} TEXT 
+""");
+    }
   }
 
   @override
@@ -687,7 +714,9 @@ class SQLStatements {
 CREATE TABLE IF NOT EXISTS ${_SQLNames.emoticonsTableName} 
 (
   ${_SQLNames.emoticonsId} INTEGER PRIMARY KEY,
-  ${_SQLNames.emoticonsText} VARCHAR
+  ${_SQLNames.emoticonsText} VARCHAR,
+  ${_SQLNames.emoticonsIsDeleted} INTEGER DEFAULT 0,
+  ${_SQLNames.emoticonsAddedVersion} TEXT 
 )
 """;
 
@@ -789,6 +818,8 @@ abstract final class _SQLNames {
   static const emoticonsTableName = "emoticons";
   static const emoticonsId = "id";
   static const emoticonsText = "text";
+  static const emoticonsIsDeleted = "is_deleted";
+  static const emoticonsAddedVersion = "added_version";
 
   static const tagsTableName = "tags";
   static const tagId = "tag_id";

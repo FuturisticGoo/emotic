@@ -60,8 +60,6 @@ Future<void> initSetup() async {
     },
   );
 
-  const assetSource = "assetBundle";
-  const dbSource = "dbSource";
 
   sl.registerSingleton<EmoticonsSource>(
     EmoticonsSourceAssetDB(

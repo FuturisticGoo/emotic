@@ -9,16 +9,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sqflite/sqflite.dart';
 
 class GlobalSettings extends Equatable {
+  /// Indicates whether this is the first time the user has used Emotic
   final bool isFirstTime;
+  /// If the user has used it before, show the last used version. If it is
+  /// null, it should mean it's a first time user.
   final SemVer? lastUsedVersion;
+  /// Theme of the app
   final EmoticThemeMode emoticThemeMode;
+  /// Size of the emoticons in Emoticons listing page
   final int? emoticonsTextSize;
+  /// Size of the pictures in Emotipics listing page
   final int? emotipicsColumnCount;
+  /// Size of text in Fancy Text page
   final int? fancyTextSize;
+  /// Indicates whether the app has been updated, using [lastUsedVersion]
   bool get isUpdated {
     return (lastUsedVersion == null) ? true : lastUsedVersion! < version;
   }
-
+  /// Indicates whether the settings should be reloaded
   bool get shouldReload {
     return isFirstTime || isUpdated;
   }
@@ -126,7 +134,7 @@ FROM
       final isFirstTime = bool.tryParse(
         settingsKV[_SQLNames.settingsKeyIsFirstTime] ?? "",
       );
-      SemVer? lastUsedVersion;
+      SemVer lastUsedVersion;
       try {
         final lastUsedVersionString =
             settingsKV[_SQLNames.settingsKeylastUsedVersion];
@@ -135,11 +143,15 @@ FROM
             lastUsedVersionString,
           );
         } else {
-          lastUsedVersion = null;
+          lastUsedVersion = SemVer.fromString("0.1.10");
         }
       } on ArgumentError {
-        lastUsedVersion = null;
+        lastUsedVersion = SemVer.fromString("0.1.10");
       }
+
+      // From 0.1.11 onwards, [lastUsedVersion] should not be null if the app 
+      // has been used before. So if it it found to be null in the db, assume
+      // 0.1.10 as the [lastUsedVersion]
 
       final emoticThemeMode = EmoticThemeMode.values.byName(
         settingsKV[_SQLNames.settingsKeyThemeMode]?.toString() ??
