@@ -23,5 +23,6 @@ Future<void> performAppUpdateOperations({
   }
   await sl<EmoticonsRepository>().getEmoticons(
     shouldLoadFromAsset: true,
+    filterVersionFromAsset: version, // Only load the new emoticons 
   );
 }

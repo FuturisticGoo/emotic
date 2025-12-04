@@ -30,7 +30,11 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> loadEmoticonsFromAsset() async {
     emit(SettingsLoading());
-    await emoticonsRepository.getEmoticons(shouldLoadFromAsset: true);
+    await emoticonsRepository.getEmoticons(
+      shouldLoadFromAsset: true,
+      filterVersionFromAsset:
+          null, // Explicit [null] so that it loads all emoticons
+    );
     emit(SettingsLoaded(
       snackBarMessage: "Restored all emoticons",
     ));

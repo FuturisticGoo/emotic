@@ -1,4 +1,5 @@
 import 'package:emotic/core/entities/emoticon.dart';
+import 'package:emotic/core/entities/semver.dart';
 import 'package:emotic/data/emoticons_source.dart';
 
 class EmoticonsRepository {
@@ -9,8 +10,10 @@ class EmoticonsRepository {
     required this.assetSource,
     required this.database,
   });
-  Future<void> _loadEmoticonsToDatabase() async {
-    final emoticons = await assetSource.getEmoticons();
+  Future<void> _loadEmoticonsToDatabase({SemVer? filterVersion}) async {
+    final emoticons = await assetSource.getEmoticons(
+      filterVersion: filterVersion,
+    );
     for (final emoticon in emoticons) {
       await database.saveEmoticon(
         newOrModifyEmoticon: NewOrModifyEmoticon.copyFromEmoticon(
@@ -22,11 +25,17 @@ class EmoticonsRepository {
 
   Future<List<Emoticon>> getEmoticons({
     required bool shouldLoadFromAsset,
+    SemVer? filterVersionFromAsset,
+    SemVer? filterVersionFromDatabase,
   }) async {
     if (shouldLoadFromAsset) {
-      await _loadEmoticonsToDatabase();
+      await _loadEmoticonsToDatabase(
+        filterVersion: filterVersionFromAsset,
+      );
     }
-    return database.getEmoticons();
+    return database.getEmoticons(
+      filterVersion: filterVersionFromDatabase,
+    );
   }
 
   Future<void> saveEmoticon({
@@ -35,7 +44,9 @@ class EmoticonsRepository {
     await database.saveEmoticon(newOrModifyEmoticon: newOrModifyEmoticon);
   }
 
-  Future<void> deleteEmoticon({required Emoticon emoticon}) async {
+  Future<void> deleteEmoticon({
+    required Emoticon emoticon,
+  }) async {
     await database.deleteEmoticon(emoticon: emoticon);
   }
 

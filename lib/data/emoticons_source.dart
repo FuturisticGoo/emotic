@@ -1,10 +1,10 @@
 import 'dart:io' as io;
+import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/entities/semver.dart';
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/entities/emoticon.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,14 +12,12 @@ import 'package:sqflite/sqflite.dart';
 enum ImportStrategy { merge, overwrite }
 
 abstract class EmoticonsSource {
-  Future<List<Emoticon>> getEmoticons();
+  Future<List<Emoticon>> getEmoticons({SemVer? filterVersion});
   Future<List<String>> getTags();
 }
 
 abstract class EmoticonsStore extends EmoticonsSource {
-  Future<void> saveEmoticon({
-    required NewOrModifyEmoticon newOrModifyEmoticon,
-  }); // In case of update
+  Future<void> saveEmoticon({required NewOrModifyEmoticon newOrModifyEmoticon});
   Future<void> deleteEmoticon({
     required Emoticon emoticon,
   });
@@ -67,9 +65,12 @@ class EmoticonsSourceAssetDB implements EmoticonsSource {
   }
 
   @override
-  Future<List<Emoticon>> getEmoticons() async {
+  Future<List<Emoticon>> getEmoticons({SemVer? filterVersion}) async {
     await _copyDbFromAsset();
-    return _getEmoticonsFromDb(db: sourceDb!);
+    return _getEmoticonsFromDb(
+      db: sourceDb!,
+      filterVersion: filterVersion,
+    );
   }
 
   @override
@@ -102,13 +103,7 @@ class EmoticonsSqliteSource implements EmoticonsStore {
       getLogger()
           .config("Performing schema update from version 0.1.10 or below, "
               "for ${_SQLNames.emoticonsTableName} table");
-      // Adding the new fields is_deleted and added_version to emoticons table
-      await db.execute("""
-ALTER TABLE 
-  ${_SQLNames.emoticonsTableName}
-ADD COLUMN
-  ${_SQLNames.emoticonsIsDeleted} INTEGER DEFAULT 0
-""");
+      // Adding the new field added_version to emoticons table
       await db.execute("""
 ALTER TABLE
   ${_SQLNames.emoticonsTableName}
@@ -124,8 +119,11 @@ ADD COLUMN
   }
 
   @override
-  Future<List<Emoticon>> getEmoticons() async {
-    return _getEmoticonsFromDb(db: db);
+  Future<List<Emoticon>> getEmoticons({SemVer? filterVersion}) async {
+    return _getEmoticonsFromDb(
+      db: db,
+      filterVersion: filterVersion,
+    );
   }
 
   @override
@@ -139,8 +137,13 @@ ADD COLUMN
   }
 
   @override
-  Future<void> deleteEmoticon({required Emoticon emoticon}) {
-    return _deleteEmoticon(db, emoticon: emoticon);
+  Future<void> deleteEmoticon({
+    required Emoticon emoticon,
+  }) {
+    return _deleteEmoticon(
+      db,
+      emoticon: emoticon,
+    );
   }
 
   @override
@@ -182,9 +185,13 @@ ADD COLUMN
   Future<void> importFromDb({
     required Database importDb,
     required ImportStrategy importStrategy,
+    SemVer? filterVersion,
   }) async {
     await _ensureTables(importDb);
-    final emoticons = await _getEmoticonsFromDb(db: importDb);
+    final emoticons = await _getEmoticonsFromDb(
+      db: importDb,
+      filterVersion: filterVersion,
+    );
     final tags = await _getTagsFromDb(db: importDb);
     switch (importStrategy) {
       case ImportStrategy.overwrite:
@@ -263,12 +270,18 @@ Future<void> _ensureTables(Database db) async {
   await _prefillTagsOrdering(db);
 }
 
-Future<List<Emoticon>> _getEmoticonsFromDb({required Database db}) async {
+/// If [filterVersion] is passed, only emoticons added equal to or above that
+/// version of Emotic will be retrieved
+Future<List<Emoticon>> _getEmoticonsFromDb({
+  required Database db,
+  SemVer? filterVersion,
+}) async {
   List<Emoticon> emoticons = [];
   final emoticonSet = await db.rawQuery("""
 SELECT 
   em.${_SQLNames.emoticonsId},
-  em.${_SQLNames.emoticonsText} 
+  em.${_SQLNames.emoticonsText},
+  em.${_SQLNames.emoticonsAddedVersion} 
 FROM 
   ${_SQLNames.emoticonsTableName} em
 LEFT JOIN
@@ -279,7 +292,18 @@ ORDER BY
   ord.${_SQLNames.emoticonsOrderingUserOrder} ASC NULLS LAST,
   em.${_SQLNames.emoticonsId} ASC
 """);
-  for (final row in emoticonSet) {
+  final requiredEmoticonSet = switch (filterVersion) {
+    null => emoticonSet,
+    _ => emoticonSet.where(
+        (row) {
+          return SemVer.fromString(
+                row[_SQLNames.emoticonsAddedVersion]?.toString() ?? "0.1.10",
+              ) >=
+              filterVersion;
+        },
+      )
+  };
+  for (final row in requiredEmoticonSet) {
     final emoticonId = int.parse(row[_SQLNames.emoticonsId].toString());
     final tagSet = await db.rawQuery(
       """
@@ -387,34 +411,29 @@ Future<void> _saveEmoticon(
       [newOrModifyEmoticon.text],
     );
     if (emoticonResultSet.isEmpty) {
-      // Only inserting if its not there
+      // Only inserting if its not there.
       emoticonId = await db.rawInsert(
         SQLStatements.emoticonInsertStmt,
         [newOrModifyEmoticon.text],
       );
       await _appendToEmoticonsOrder(db, emoticonId: emoticonId);
     } else {
+      // This means the emoticon exists already, It's being redundant saved as
+      // part of the update process
       emoticonId = emoticonResultSet.first[_SQLNames.emoticonsId] as int;
     }
   } else {
-    final emoticonResultSet = await db.rawQuery(
-      SQLStatements.emoticonExistsCheckStmt,
-      [newOrModifyEmoticon.oldEmoticon!.text],
+    // It reaches this code block only if it's editing an existing emoticon
+    emoticonId = newOrModifyEmoticon.oldEmoticon!.id;
+    await db.execute(
+      SQLStatements.emoticonUpdateStmt,
+      [newOrModifyEmoticon.text, emoticonId],
     );
-    if (emoticonResultSet.length != 1) {
-      getLogger().warning(
-        "Got ${emoticonResultSet.length} length result when checking"
-        " emoticonExistsCheckStmt in saveEmoticon",
-      );
-    }
-    emoticonId = emoticonResultSet.first[_SQLNames.emoticonsId] as int;
-    await db.execute(SQLStatements.emoticonUpdateStmt,
-        [newOrModifyEmoticon.text, emoticonId]);
 
     // Only do this if we're updating an old emoticon, not when a new
     // (albeit duplicate) one is added, as in the case of app update, when its
     // loaded from assets db
-    await db.execute(SQLStatements.removeEmoticonFromJoinStmt, [emoticonId]);
+    await db.execute(SQLStatements.removeEmoticonFromTagJoinStmt, [emoticonId]);
   }
 
   // Its easier this way
@@ -459,7 +478,10 @@ Future<void> _linkEmoticonToTag(
   );
 }
 
-Future<void> _deleteEmoticon(Database db, {required Emoticon emoticon}) async {
+Future<void> _deleteEmoticon(
+  Database db, {
+  required Emoticon emoticon,
+}) async {
   final emoticonResultSet = await db.rawQuery(
     SQLStatements.emoticonExistsCheckStmt,
     [emoticon.text],
@@ -473,21 +495,17 @@ Future<void> _deleteEmoticon(Database db, {required Emoticon emoticon}) async {
     }
     final emoticonIdToRemove =
         int.parse(emoticonResultSet.first[_SQLNames.emoticonsId].toString());
+
     await db.execute(
-      SQLStatements.emoticonRemoveStmt,
-      [emoticonIdToRemove],
-    );
-    await db.execute(
-      SQLStatements.removeEmoticonFromJoinStmt,
+      SQLStatements.removeEmoticonFromTagJoinStmt,
       [emoticonIdToRemove],
     );
     await db.rawDelete(
-      """
-DELETE FROM 
-  ${_SQLNames.emoticonsOrderingTableName}
-WHERE
-  ${_SQLNames.emoticonsOrderingEmoticonId}=?
-      """,
+      SQLStatements.removeEmoticonFromOrderingTable,
+      [emoticonIdToRemove],
+    );
+    await db.execute(
+      SQLStatements.emoticonRemoveStmt,
       [emoticonIdToRemove],
     );
   }
@@ -508,20 +526,15 @@ Future<void> _deleteTag(Database db, {required String tag}) async {
   final tagId = await _getTagId(db, tag: tag);
   if (tagId != null) {
     await db.execute(
-      SQLStatements.tagDeleteStmt,
-      [tagId],
-    );
-    await db.execute(
       SQLStatements.removeTagFromJoinStmt,
       [tagId],
     );
     await db.rawDelete(
-      """
-DELETE FROM 
-  ${_SQLNames.tagsOrderingTableName}
-WHERE
-  ${_SQLNames.tagsOrderingTagId}=?
-      """,
+      SQLStatements.removeTagFromOrderingStmt,
+      [tagId],
+    );
+    await db.execute(
+      SQLStatements.tagDeleteStmt,
       [tagId],
     );
   }
@@ -715,7 +728,6 @@ CREATE TABLE IF NOT EXISTS ${_SQLNames.emoticonsTableName}
 (
   ${_SQLNames.emoticonsId} INTEGER PRIMARY KEY,
   ${_SQLNames.emoticonsText} VARCHAR,
-  ${_SQLNames.emoticonsIsDeleted} INTEGER DEFAULT 0,
   ${_SQLNames.emoticonsAddedVersion} TEXT 
 )
 """;
@@ -782,9 +794,16 @@ VALUES
   (?, ?)
 """;
 
-  static const PreparedStatement removeEmoticonFromJoinStmt = """
+  static const PreparedStatement removeEmoticonFromTagJoinStmt = """
 DELETE FROM ${_SQLNames.emoticonsToTagsJoinTableName}
 WHERE ${_SQLNames.emoticonsId}=?
+""";
+
+  static const PreparedStatement removeEmoticonFromOrderingTable = """
+DELETE FROM 
+  ${_SQLNames.emoticonsOrderingTableName}
+WHERE
+  ${_SQLNames.emoticonsOrderingEmoticonId}=?
 """;
 
   static const PreparedStatement tagExistsCheckStmt = """
@@ -812,13 +831,19 @@ WHERE ${_SQLNames.tagId}=?
 DELETE FROM ${_SQLNames.emoticonsToTagsJoinTableName}
 WHERE ${_SQLNames.tagId}=?
 """;
+
+  static const PreparedStatement removeTagFromOrderingStmt = """
+DELETE FROM 
+  ${_SQLNames.tagsOrderingTableName}
+WHERE
+  ${_SQLNames.tagsOrderingTagId}=?
+""";
 }
 
 abstract final class _SQLNames {
   static const emoticonsTableName = "emoticons";
   static const emoticonsId = "id";
   static const emoticonsText = "text";
-  static const emoticonsIsDeleted = "is_deleted";
   static const emoticonsAddedVersion = "added_version";
 
   static const tagsTableName = "tags";
