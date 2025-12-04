@@ -29,7 +29,6 @@
 * **Fix bug where importing legit file gives sqlite error after opening wrong file**
 * **Category based listing**
 * ~~Show better quality preview in emotipic bottom sheet~~
-* **Mark new emoticons as new_emoticons, so that during update, it only reads and
-adds the new emoticon to the database, instead of going through the whole list** Or use a new field - added_on so that we check it and then add it
-* Instead of deleting an emoticon, use is_deleted as a column of the table, so that it isnt added again when new update hits (by checking that field).
+* ~~Mark new emoticons as new_emoticons, so that during update, it only reads and adds the new emoticon to the database, instead of going through the whole list Or use a new field - added_on so that we check it and then add it~~
+* ~~Instead of deleting an emoticon, use is_deleted as a column of the table, so that it isnt added again when new update hits (by checking that field).~~ This is too complicated, cuz it will interfere with the ordering-reordering logic. Also the main problem was with deleted emoticons being added again on update, which won't happen anymore as only new version emoticons will be added on update, due to added_version check.
 * **Store the hash of emotipics so that theres an option for exporting without the image itself, and importing will use the matching hash to link to the image**

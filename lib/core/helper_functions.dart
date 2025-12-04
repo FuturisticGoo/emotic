@@ -19,6 +19,22 @@ import 'package:xdg_directories/xdg_directories.dart' as xdg;
 
 const _imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"];
 
+List<T> getRandomChoice<T>({
+  required List<T> items,
+  required int n,
+  required bool withReplacement,
+}) {
+  // TODO: fix withReplacement, now it's always withReplacement=True
+  List<T> choices = [];
+  final rng = Random();
+  for (int _ = 0; _ < n; _++) {
+    final i = rng.nextInt(items.length);
+    choices.add(items[i]);
+  }
+
+  return choices;
+}
+
 bool _isBetween(double a, double n, double b) {
   return (a < n) && (n < b);
 }
