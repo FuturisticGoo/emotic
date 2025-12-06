@@ -1,3 +1,5 @@
+import 'package:emotic/core/app_update_ops.dart';
+import 'package:emotic/core/export_config.dart';
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/data/emoticons_repository.dart';
 import 'package:emotic/data/image_repository.dart';
@@ -29,11 +31,9 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> loadEmoticonsFromAsset() async {
-    emit(SettingsLoading());
-    await emoticonsRepository.getEmoticons(
-      shouldLoadFromAsset: true,
-      filterVersionFromAsset:
-          null, // Explicit [null] so that it loads all emoticons
+    emit(SettingsLoading(loadingMessage: "Restoring emoticons..."));
+    await loadEmoticonsFromSourceDB(
+      filterVersion: null, // Force load all emoticons
     );
     emit(SettingsLoaded(
       snackBarMessage: "Restored all emoticons",
@@ -41,17 +41,25 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> clearAllData() async {
-    emit(SettingsLoading());
+    emit(SettingsLoading(loadingMessage: "Clearing all data..."));
     await emoticonsRepository.clearAllData();
     await imageRepository.clearAllData();
     emit(SettingsLoaded(snackBarMessage: "Cleared data"));
   }
 
-  Future<void> exportData() async {
-    emit(SettingsLoading());
-    _subscribeToEmoticonProgress();
-    _subscribeToEmotipicsProgress();
-    final result = await settingsRepository.exportToFile();
+  Future<void> exportData({
+    required ExportConfig exportConfig,
+  }) async {
+    emit(SettingsLoading(loadingMessage: "Exporting..."));
+    if (exportConfig.shouldExportEmoticons) {
+      _subscribeToEmoticonProgress();
+    }
+    if (exportConfig.shouldExportEmotipics) {
+      _subscribeToEmotipicsProgress();
+    }
+    final result = await settingsRepository.exportToFile(
+      exportConfig: exportConfig,
+    );
     switch (result) {
       case Left(:final value):
         emit(SettingsLoaded(alertMessage: "Error exporting: ${value.message}"));
@@ -61,7 +69,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> importData() async {
-    emit(SettingsLoading());
+    emit(SettingsLoading(loadingMessage: "Importing..."));
     _subscribeToEmoticonProgress();
     _subscribeToEmotipicsProgress();
     _subscribeToFileExtractionProgress();

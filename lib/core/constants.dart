@@ -25,6 +25,3 @@ const emotipicsColCountUpperLimit = 12;
 const mediaFolderName = "media";
 const imagesFolderName = "images";
 
-// Instance name for db source
-const assetSource = "assetBundle";
-const dbSource = "dbSource";

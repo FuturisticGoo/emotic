@@ -11,21 +11,28 @@ import 'package:sqflite/sqflite.dart';
 class GlobalSettings extends Equatable {
   /// Indicates whether this is the first time the user has used Emotic
   final bool isFirstTime;
+
   /// If the user has used it before, show the last used version. If it is
   /// null, it should mean it's a first time user.
   final SemVer? lastUsedVersion;
+
   /// Theme of the app
   final EmoticThemeMode emoticThemeMode;
+
   /// Size of the emoticons in Emoticons listing page
   final int? emoticonsTextSize;
+
   /// Size of the pictures in Emotipics listing page
   final int? emotipicsColumnCount;
+
   /// Size of text in Fancy Text page
   final int? fancyTextSize;
+
   /// Indicates whether the app has been updated, using [lastUsedVersion]
   bool get isUpdated {
     return (lastUsedVersion == null) ? true : lastUsedVersion! < version;
   }
+
   /// Indicates whether the settings should be reloaded
   bool get shouldReload {
     return isFirstTime || isUpdated;
@@ -89,7 +96,51 @@ abstract class GlobalSettingsSource {
 class GlobalSettingsSourceSQLite implements GlobalSettingsSource {
   final Database db;
   GlobalSettingsSourceSQLite({required this.db});
-  Future<void> _ensureTable() async {
+
+  @override
+  Future<void> saveSettings(GlobalSettings newSettings) {
+    return _saveSettings(
+      db: db,
+      newSettings: newSettings,
+    );
+  }
+
+  @override
+  Future<GlobalSettings> getSavedSettings() {
+    return _getSavedSettings(db: db);
+  }
+
+  Future<void> importFromDb({required Database importDb}) async {
+    final importSettings = await _getSavedSettings(db: importDb);
+    final currentSettings = await getSavedSettings();
+    if (importSettings.isFirstTime) {
+      // This means that there is no settings table in the importDb, so don't do
+      // anything
+      return;
+    } else {
+      return saveSettings(
+        GlobalSettings(
+          isFirstTime: currentSettings.isFirstTime,
+          lastUsedVersion: currentSettings.lastUsedVersion,
+          emoticThemeMode: importSettings.emoticThemeMode,
+          emoticonsTextSize: importSettings.emoticonsTextSize ??
+              currentSettings.emoticonsTextSize,
+          emotipicsColumnCount: importSettings.emotipicsColumnCount ??
+              currentSettings.emotipicsColumnCount,
+          fancyTextSize:
+              importSettings.fancyTextSize ?? currentSettings.fancyTextSize,
+        ),
+      );
+    }
+  }
+
+  Future<void> exportToDb({required Database exportDb}) async {
+    final currentSettings = await getSavedSettings();
+    await _ensureTable(db: exportDb);
+    return _saveSettings(db: exportDb, newSettings: currentSettings);
+  }
+
+  Future<void> _ensureTable({required Database db}) async {
     await db.execute("""
 CREATE TABLE IF NOT EXISTS ${_SQLNames.settingsTableName}
   (
@@ -113,10 +164,9 @@ CREATE TABLE IF NOT EXISTS ${_SQLNames.settingsTableName}
     );
   }
 
-  @override
-  Future<GlobalSettings> getSavedSettings() async {
-    await _performMigrationForPre0_1_6();
-    await _ensureTable();
+  Future<GlobalSettings> _getSavedSettings({required Database db}) async {
+    await _performMigrationForPre0_1_6(db: db);
+    await _ensureTable(db: db);
     final settingsResult = await db.rawQuery("""
 SELECT 
   ${_SQLNames.settingsKeyColName}, ${_SQLNames.settingsValueColName} 
@@ -149,7 +199,7 @@ FROM
         lastUsedVersion = SemVer.fromString("0.1.10");
       }
 
-      // From 0.1.11 onwards, [lastUsedVersion] should not be null if the app 
+      // From 0.1.11 onwards, [lastUsedVersion] should not be null if the app
       // has been used before. So if it it found to be null in the db, assume
       // 0.1.10 as the [lastUsedVersion]
 
@@ -176,9 +226,11 @@ FROM
     }
   }
 
-  @override
-  Future<void> saveSettings(GlobalSettings newSettings) async {
-    await _ensureTable();
+  Future<void> _saveSettings({
+    required Database db,
+    required GlobalSettings newSettings,
+  }) async {
+    await _ensureTable(db: db);
     getLogger().config("Going to save $newSettings");
 
     final settingsRowsToInsert = {
@@ -213,7 +265,7 @@ DELETE FROM ${_SQLNames.settingsTableName}
     }
   }
 
-  Future<void> _performMigrationForPre0_1_6() async {
+  Future<void> _performMigrationForPre0_1_6({required Database db}) async {
     final String? previousVersionString;
 
     // First check if the old settings table exists, by trying to create one
@@ -244,7 +296,7 @@ DROP TABLE IF EXISTS settings
 """);
 
     if (previousVersionString != null) {
-      await _ensureTable();
+      await _ensureTable(db: db);
       await db.rawInsert(
         """
 INSERT INTO ${_SQLNames.settingsTableName}
@@ -309,6 +361,10 @@ class GlobalSettingsCubit extends Cubit<GlobalSettingsState> {
         settings: await globalsettingsSource.getSavedSettings(),
       ),
     );
+  }
+
+  Future<void> refreshSettings() async {
+    await _loadSettings();
   }
 
   Future<void> saveSettings(GlobalSettings newSettings) async {

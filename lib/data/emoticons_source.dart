@@ -1,12 +1,9 @@
-import 'dart:io' as io;
 import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/entities/semver.dart';
 import 'package:emotic/core/global_progress_pipe.dart';
 import 'package:emotic/core/helper_functions.dart';
 import 'package:emotic/core/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:emotic/core/entities/emoticon.dart';
-import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
 enum ImportStrategy { merge, overwrite }
@@ -14,9 +11,6 @@ enum ImportStrategy { merge, overwrite }
 abstract class EmoticonsSource {
   Future<List<Emoticon>> getEmoticons({SemVer? filterVersion});
   Future<List<String>> getTags();
-}
-
-abstract class EmoticonsStore extends EmoticonsSource {
   Future<void> saveEmoticon({required NewOrModifyEmoticon newOrModifyEmoticon});
   Future<void> deleteEmoticon({
     required Emoticon emoticon,
@@ -38,49 +32,7 @@ abstract class EmoticonsStore extends EmoticonsSource {
   });
 }
 
-class EmoticonsSourceAssetDB implements EmoticonsSource {
-  final AssetBundle assetBundle;
-  final EmoticAppDataDirectory emoticAppDataDirectory;
-  EmoticonsSourceAssetDB({
-    required this.assetBundle,
-    required this.emoticAppDataDirectory,
-  });
-  Database? sourceDb;
-  io.File? dbFile;
-
-  Future<void> _copyDbFromAsset() async {
-    if (sourceDb == null) {
-      final sourceDbFile = await assetBundle.load(emoticonsSourceDbAsset);
-      final appDataPath = await emoticAppDataDirectory.getAppDataDir();
-      dbFile = io.File(p.join(appDataPath, emoticonsSourceDbName));
-      await dbFile!
-          .writeAsBytes(sourceDbFile.buffer.asUint8List(), flush: true);
-      sourceDb = await openDatabase(dbFile!.path);
-    }
-  }
-
-  Future<void> dispose() async {
-    await sourceDb?.close();
-    await dbFile?.delete();
-  }
-
-  @override
-  Future<List<Emoticon>> getEmoticons({SemVer? filterVersion}) async {
-    await _copyDbFromAsset();
-    return _getEmoticonsFromDb(
-      db: sourceDb!,
-      filterVersion: filterVersion,
-    );
-  }
-
-  @override
-  Future<List<String>> getTags() async {
-    await _copyDbFromAsset();
-    return _getTagsFromDb(db: sourceDb!);
-  }
-}
-
-class EmoticonsSqliteSource implements EmoticonsStore {
+class EmoticonsSqliteSource implements EmoticonsSource {
   final Database db;
   final EmoticAppDataDirectory emoticAppDataDirectory;
 
@@ -93,24 +45,16 @@ class EmoticonsSqliteSource implements EmoticonsStore {
     _ensureTables(db);
   }
 
-  Future<void> updateSchema({
+  Future<void> ensureAndUpdateSchema({
     required Database db,
     required SemVer? dbPreviousVersion,
     required SemVer currentVersion,
   }) async {
-    if (dbPreviousVersion != null &&
-        dbPreviousVersion <= SemVer.fromString("0.1.10")) {
-      getLogger()
-          .config("Performing schema update from version 0.1.10 or below, "
-              "for ${_SQLNames.emoticonsTableName} table");
-      // Adding the new field added_version to emoticons table
-      await db.execute("""
-ALTER TABLE
-  ${_SQLNames.emoticonsTableName}
-ADD COLUMN
-  ${_SQLNames.emoticonsAddedVersion} TEXT 
-""");
-    }
+    return _ensureAndUpdateSchema(
+      db: db,
+      dbPreviousVersion: dbPreviousVersion,
+      currentVersion: currentVersion,
+    );
   }
 
   @override
@@ -185,9 +129,15 @@ ADD COLUMN
   Future<void> importFromDb({
     required Database importDb,
     required ImportStrategy importStrategy,
+    required SemVer dbVersion,
     SemVer? filterVersion,
   }) async {
     await _ensureTables(importDb);
+    await _ensureAndUpdateSchema(
+      db: importDb,
+      currentVersion: version,
+      dbPreviousVersion: dbVersion,
+    );
     final emoticons = await _getEmoticonsFromDb(
       db: importDb,
       filterVersion: filterVersion,
@@ -268,6 +218,27 @@ Future<void> _ensureTables(Database db) async {
   await _prefillEmoticonsOrdering(db);
   await db.execute(SQLStatements.createTagsOrderingTableStmt);
   await _prefillTagsOrdering(db);
+}
+
+Future<void> _ensureAndUpdateSchema({
+  required Database db,
+  required SemVer? dbPreviousVersion,
+  required SemVer currentVersion,
+}) async {
+  if (dbPreviousVersion != null &&
+      dbPreviousVersion <= SemVer.fromString("0.1.10")) {
+    getLogger().config(
+      "Performing schema update for db version 0.1.10 or below, "
+      "for ${_SQLNames.emoticonsTableName} table",
+    );
+    // Adding the new field added_version to emoticons table
+    await db.execute("""
+ALTER TABLE
+  ${_SQLNames.emoticonsTableName}
+ADD COLUMN
+  ${_SQLNames.emoticonsAddedVersion} TEXT 
+""");
+  }
 }
 
 /// If [filterVersion] is passed, only emoticons added equal to or above that

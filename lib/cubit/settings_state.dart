@@ -6,7 +6,10 @@ sealed class SettingsState {
 
 class SettingsInitial extends SettingsState {}
 
-class SettingsLoading extends SettingsState {}
+class SettingsLoading extends SettingsState {
+  final String? loadingMessage;
+  const SettingsLoading({this.loadingMessage});
+}
 
 class SettingsProgressBar extends SettingsState with EquatableMixin {
   final int currentProgress;

@@ -11,7 +11,6 @@ import 'package:emotic/data/image_repository.dart';
 import 'package:emotic/data/image_source.dart';
 import 'package:emotic/data/settings_repository.dart';
 import 'package:emotic/data/settings_source.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart' as pp;
 import 'constants.dart';
 import 'package:get_it/get_it.dart';
@@ -62,32 +61,15 @@ Future<void> initSetup() async {
 
 
   sl.registerSingleton<EmoticonsSource>(
-    EmoticonsSourceAssetDB(
-      assetBundle: rootBundle,
-      emoticAppDataDirectory: sl(),
-    ),
-    instanceName: assetSource,
-    dispose: (sourceDb) async {
-      if (sourceDb is EmoticonsSourceAssetDB) {
-        await sourceDb.dispose();
-      }
-    },
-  );
-  sl.registerSingleton<EmoticonsStore>(
     EmoticonsSqliteSource(
       db: db,
       emoticAppDataDirectory: sl(),
       globalProgressPipe: sl(),
     ),
-    instanceName: dbSource,
   );
   sl.registerSingleton<EmoticonsRepository>(
     EmoticonsRepository(
-      assetSource: sl(
-        instanceName: assetSource,
-      ),
       database: sl(
-        instanceName: dbSource,
       ),
     ),
   );
@@ -123,10 +105,10 @@ Future<void> initSetup() async {
   sl.registerSingleton<SettingsRepository>(
     SettingsRepository(
       settingsSource: sl(),
-      emoticonsSource: sl<EmoticonsStore>(
-        instanceName: dbSource,
+      emoticonsSource: sl(
       ),
       imageSource: sl(),
+      globalsettingsSource: sl(),
     ),
   );
 }

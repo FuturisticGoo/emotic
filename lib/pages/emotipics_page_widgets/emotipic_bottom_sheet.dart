@@ -123,7 +123,11 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
                     imageWidget: final imageWidgetValue
                   )
                 ):
-                imageWidget = imageWidgetValue;
+                imageWidget = InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 5,
+                  child: imageWidgetValue,
+                );
 
               case fp.Left(:final value):
                 imageWidget = Center(child: Text(value.message));
@@ -167,6 +171,9 @@ class _UpdateEmotipicBottomSheetState extends State<UpdateEmotipicBottomSheet>
                             // width: double.infinity,
                             child: imageWidget,
                           ),
+                         
+                          
+                         
                           SizedBox(
                             height: isSmallScreen ? 15 : 30,
                           ),

@@ -14,7 +14,7 @@ class EmoticonsListingCubit extends Cubit<EmoticonsListingState> {
   Future<void> loadEmoticons() async {
     emit(EmoticonsListingLoading());
     final allEmoticons =
-        await emoticonsRepository.getEmoticons(shouldLoadFromAsset: false);
+        await emoticonsRepository.getEmoticons();
     emit(
       EmoticonsListingLoaded(
         allEmoticons: allEmoticons,

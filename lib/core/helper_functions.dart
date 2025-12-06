@@ -27,9 +27,9 @@ List<T> getRandomChoice<T>({
   // TODO: fix withReplacement, now it's always withReplacement=True
   List<T> choices = [];
   final rng = Random();
-  for (int _ = 0; _ < n; _++) {
-    final i = rng.nextInt(items.length);
-    choices.add(items[i]);
+  for (int i = 0; i < n; i++) {
+    final index = rng.nextInt(items.length);
+    choices.add(items[index]);
   }
 
   return choices;

@@ -3,6 +3,7 @@ import 'package:emotic/core/constants.dart';
 import 'package:emotic/core/init_setup.dart';
 import 'package:emotic/core/settings.dart';
 import 'package:emotic/cubit/settings_cubit.dart';
+import 'package:emotic/pages/settings_page_widgets/export_selection_dialog.dart';
 import 'package:emotic/pages/settings_page_widgets/list_tile_heading.dart';
 import 'package:emotic/widgets_common/show_message.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -121,6 +122,11 @@ class SettingsPage extends StatelessWidget {
                                             .read<SettingsCubit>()
                                             .importData();
                                       }
+                                      if (context.mounted) {
+                                        await context
+                                            .read<GlobalSettingsCubit>()
+                                            .refreshSettings();
+                                      }
                                     },
                                   );
                                 },
@@ -128,9 +134,18 @@ class SettingsPage extends StatelessWidget {
                               ListTile(
                                 title: const Text("Export"),
                                 onTap: () async {
-                                  await context
-                                      .read<SettingsCubit>()
-                                      .exportData();
+                                  final exportConfig =
+                                      await exportConfirmationDialog(context);
+                                  switch (exportConfig) {
+                                    case null:
+                                      break;
+                                    default:
+                                      await context
+                                          .read<SettingsCubit>()
+                                          .exportData(
+                                            exportConfig: exportConfig,
+                                          );
+                                  }
                                 },
                               ),
                               const Divider(),
@@ -285,9 +300,24 @@ class SettingsPage extends StatelessWidget {
                         ),
                       );
                     case SettingsInitial():
-                    case SettingsLoading():
                       return const Center(
                         child: CircularProgressIndicator(),
+                      );
+                    case SettingsLoading(:final loadingMessage):
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Visibility(
+                              visible: loadingMessage != null,
+                              child: Text(loadingMessage ?? ""),
+                            ),
+                          ],
+                        ),
                       );
                     case SettingsProgressBar(
                         :final currentProgress,

@@ -17,9 +17,7 @@ class EmoticonsDataEditorCubit extends Cubit<EmoticonsDataEditorState> {
   }
 
   Future<void> loadEmoticons() async {
-    final allEmoticons = await emoticonsRepository.getEmoticons(
-      shouldLoadFromAsset: false,
-    );
+    final allEmoticons = await emoticonsRepository.getEmoticons();
     switch (state) {
       case EmoticonsDataEditorModifyLinks(:final selectedEmoticon):
         emit(
