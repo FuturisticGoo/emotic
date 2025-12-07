@@ -1,0 +1,7 @@
+QoL: the second coming ദ്ദി(ᵔᗜᵔ)
+• 19 new emoticons
+• Add cursed text
+• Fix bug in emoticons ordering
+• Emotipics can be zoomed now in the edit menu
+• Now you can choose whether to include emoticons, emotipics and/or setting when exporting
+• Update process should take less time (by reading only newly added emoticons)
