@@ -12,6 +12,7 @@
 * **Maybe an emoji to emoticon converter, which displays the most equivalent emoticon to the given emoji**
 * ~~I should probably use sqlite db as the initial asset instead of csv+json~~
 * **ML algorithm to generate an emoticon for a particular prompt, or joining multiple emoticons using ML**
+* **Or an Emoticon Lab page, where we can combine multiple emoticons, create from scratch using parts, without ML**
 * ~~Emoticon ordering based on most recently copied~~ User preference ordering added
 * **Ordering based on usage ^**
 * ~~Improve listing performance, use async for reading the database.~~
@@ -23,7 +24,7 @@
 * **^Kinda added, auto refresh not added yet**
 * ~~Join Data Editor page into Emoticons page~~
 * ~~Clear all data should also clear images~~
-* **Emotipics/emoticons selection while exporting**
+* ~~Emotipics/emoticons selection while exporting~~ Added overall selection. No fine-grained selection, still.
 * ~~Emotipics exclusion while listing~~
 * ~~Maybe a progress indicator?~~
 * **Fix bug where importing legit file gives sqlite error after opening wrong file**
